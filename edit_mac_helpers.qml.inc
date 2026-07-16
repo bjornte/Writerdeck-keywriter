@@ -854,3 +854,48 @@
         event.accepted = true
         return true
     }
+
+    // Phase 3: cursor/autosave Timers + text-change Connections (was build-keywriter.sh §8b).
+    // Inserted with the rest of this file before showLobby(); ids resolve on Window.
+    Timer {
+        id: autosaveTimer
+        interval: 45000
+        repeat: true
+        running: !isLobby && currentFile !== "" && mode == 1
+        onTriggered: autosaveTick()
+    }
+    Timer {
+        id: cursorTimer
+        interval: 500
+        repeat: false
+        onTriggered: cursorStrong = true
+    }
+    Connections {
+        target: query
+        onCursorPositionChanged: {
+            if (harnessPrepareLock || mode != 1 || isLobby) return
+            rememberGoalX(query.cursorPosition)
+        }
+        onTextChanged: {
+            if (harnessPrepareLock || mode != 1 || isLobby) return
+            if (editSkipTextUndoPush) {
+                editSkipTextUndoPush = false
+                syncEditUndoSnapshot()
+                cursorStrong = false
+                cursorTimer.restart()
+                return
+            }
+            var len = query.text.length
+            if (!editUndoCapture && len !== _prevTextLen) {
+                pushEditUndoWithMerge({
+                    text: _prevTextSnapshot,
+                    cursor: _prevCursor,
+                    selStart: _prevSelStart,
+                    selEnd: _prevSelEnd
+                })
+            }
+            syncEditUndoSnapshot()
+            cursorStrong = false
+            cursorTimer.restart()
+        }
+    }
