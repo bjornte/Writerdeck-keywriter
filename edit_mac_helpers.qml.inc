@@ -370,14 +370,18 @@
         var len = query.text.length
         if (pos >= len) return len
         var curRect = query.positionToRectangle(pos)
-        var nextLineY = curRect.y + curRect.height - 0.1
         var goalXUse = (gx !== undefined && gx >= 0) ? gx : curRect.x
+        // Do not use curRect.height: on wrapped TextEdit mid-line rects can span
+        // multiple visual rows, which skipped lines (mid-prose Shift+Down jump).
+        var curY = curRect.y
         var best = -1
         var bestDist = 1e12
+        var targetY = -1
         for (var p = pos + 1; p < len; p++) {
             var r = query.positionToRectangle(p)
-            if (r.y + 0.1 < nextLineY) continue
-            if (best >= 0 && r.y > query.positionToRectangle(best).y + 0.1) break
+            if (r.y <= curY + 0.5) continue
+            if (targetY < 0) targetY = r.y
+            if (Math.abs(r.y - targetY) > 0.5) break
             var dist = Math.abs(r.x - goalXUse)
             if (best < 0 || dist < bestDist) { best = p; bestDist = dist }
         }
@@ -387,14 +391,14 @@
     function visualLineUpPos(pos, gx) {
         if (pos <= 0) return 0
         var curRect = query.positionToRectangle(pos)
-        var rowTop = curRect.y - curRect.height + 0.1
         var goalXUse = (gx !== undefined && gx >= 0) ? gx : curRect.x
+        var curY = curRect.y
         var best = -1
         var bestDist = 1e12
         var targetY = -1
         for (var p = pos - 1; p >= 0; p--) {
             var r = query.positionToRectangle(p)
-            if (r.y > rowTop) continue
+            if (r.y >= curY - 0.5) continue
             if (targetY < 0) targetY = r.y
             if (Math.abs(r.y - targetY) > 0.5) break
             var dist = Math.abs(r.x - goalXUse)
