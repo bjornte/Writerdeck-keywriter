@@ -152,8 +152,12 @@ static void rmkbdInjectLine(const std::string &line)
                 return;
             }
             QCoreApplication::sendEvent(target, &press);
-            bool blockRelease = rmkbdIsNavKey(key)
-                && (mods & (Qt::ControlModifier | Qt::AltModifier));
+            // Escape toggles mode on Keys.onReleased; an explicit release always
+            // follows (harness and real key-up). Auto-sending one here double-fires
+            // toggleMode() and cancels the mode change.
+            bool blockRelease = key == Qt::Key_Escape
+                || (rmkbdIsNavKey(key)
+                    && (mods & (Qt::ControlModifier | Qt::AltModifier)));
             if (!blockRelease)
                 QCoreApplication::sendEvent(target, &release);
         }, Qt::BlockingQueuedConnection);

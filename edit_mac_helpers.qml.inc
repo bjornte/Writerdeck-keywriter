@@ -16,6 +16,7 @@
     property int harnessDefaultQueryWidth: 0
     property bool harnessPrepareLock: false
     property real goalX: -1
+    property bool goalXTrackSuspended: false
     property int lastShiftHorizKey: 0
     property int shiftAnchor: -1
     property int shiftHead: -1
@@ -121,8 +122,9 @@
         var text = query.text
         var pos = query.cursorPosition
         if (!shift && cmd && !alt) {
-            if (key === Qt.Key_Right) { moveCursorTo(lineEndPos(pos, text), false); return }
-            if (key === Qt.Key_Left) { moveCursorTo(lineStartPos(pos, text), false); return }
+            // Ctrl+arrows = document bounds (Mac Cmd mapping), same as Ctrl+Home/End.
+            if (key === Qt.Key_Right) { moveCursorTo(text.length, false); return }
+            if (key === Qt.Key_Left) { moveCursorTo(0, false); return }
             if (key === Qt.Key_Up) { moveCursorTo(0, false); return }
             if (key === Qt.Key_Down) { moveCursorTo(text.length, false); return }
             if (key === Qt.Key_End) { moveCursorTo(text.length, false); return }
@@ -135,28 +137,24 @@
             if (key === Qt.Key_Down) { moveCursorTo(paragraphDownPos(pos, text), false); return }
         }
         if (shift && cmd && !alt) {
+            // Use shiftAnchor/shiftHead - raw query.select parks cursor at
+            // selectionEnd so repeat Shift+Ctrl+Right/Down collapsed.
+            cursorStrong = true
+            cursorTimer.stop()
             if (key === Qt.Key_Right) {
-                query.select(pos, macLineEndPos(pos, text))
-                cursorStrong = true
-                cursorTimer.stop()
+                extendSelectionHorizontal(macLineEndPos(selectionExtendFrom(Qt.Key_Right), text))
                 return
             }
             if (key === Qt.Key_Left) {
-                query.select(macLineStartPos(pos, text), pos)
-                cursorStrong = true
-                cursorTimer.stop()
+                extendSelectionHorizontal(macLineStartPos(selectionExtendFrom(Qt.Key_Left), text))
                 return
             }
             if (key === Qt.Key_Down || key === Qt.Key_End) {
-                query.select(pos, text.length)
-                cursorStrong = true
-                cursorTimer.stop()
+                extendSelectionHorizontal(text.length)
                 return
             }
             if (key === Qt.Key_Up || key === Qt.Key_Home) {
-                query.select(0, pos)
-                cursorStrong = true
-                cursorTimer.stop()
+                extendSelectionHorizontal(0)
                 return
             }
         }
@@ -249,7 +247,11 @@
     function deleteWordLeftPos(pos, text) {
         if (pos <= 0) return 0
         var start = wordLeftPos(pos, text)
-        if (start > 0) {
+        // Swallow the preceding gap only when the whole word was consumed
+        // (trailing-word Alt+BS). Mid-word must not eat the prior space.
+        var wordEnd = start
+        while (wordEnd < text.length && !isSpaceChar(text.charAt(wordEnd))) wordEnd++
+        if (pos >= wordEnd && start > 0) {
             var s = start - 1
             while (s >= 0 && isSpaceChar(text.charAt(s))) s--
             start = s + 1
@@ -331,11 +333,22 @@
         if (!extend) {
             clearShiftSelection()
             query.deselect()
+            // Suspend Connections onCursorPositionChanged so keepGoalColumn
+            // survives landing on a shorter line (cm-line-down-goal-col).
+            if (keepGoalColumn) goalXTrackSuspended = true
             query.cursorPosition = newPos
+            goalXTrackSuspended = false
             if (!keepGoalColumn) rememberGoalX(newPos)
             return
         }
         applyShiftSelection(newPos)
+    }
+
+    function lineWrapsVisually(pos, text) {
+        var s = lineStartPos(pos, text)
+        var e = lineEndPos(pos, text)
+        if (e <= s) return false
+        return Math.abs(query.positionToRectangle(s).y - query.positionToRectangle(e).y) > 0.5
     }
 
     function extendSelectionHorizontal(newPos) {
@@ -477,13 +490,13 @@
         }
         var head = shiftHead
         var newHead = down ? lineDownPos(head, text) : lineUpForSelection(head, shiftAnchor, text)
-        // Snap to logical line end/start only when vertical motion crossed a
-        // newline. Same-logical-line landings are visual wraps — keep goal x
-        // (Mac/Qt). Old unconditional snap jumped wrapped Shift+Down to EOF.
+        // Snap to logical line end/start only when the source line actually
+        // wraps visually. Mid-line on a short unwrapped line must keep goal x
+        // (cm-select-line-down-mid), not jump to lineEndPos of the next line.
         if (lineStartPos(newHead, text) !== lineStartPos(head, text)) {
-            if (down && newHead > head && head > lineStartPos(head, text))
+            if (down && newHead > head && lineWrapsVisually(head, text))
                 newHead = lineEndPos(newHead, text)
-            if (!down && newHead < head && head < lineEndPos(head, text))
+            if (!down && newHead < head && lineWrapsVisually(head, text))
                 newHead = lineStartPos(newHead, text)
         }
         if (down && newHead === head && head < text.length
@@ -491,8 +504,10 @@
             var vis = visualLineDownPos(head, goalXFor(head))
             if (vis > head) newHead = vis
         }
+        // Force a 1-char selection at EOF only on a wrapped last line
+        // (wrap-shift-down-last-to-eof). Short unwrapped docs stay collapsed.
         if (down && newHead === head && head === text.length && head > 0
-                && shiftAnchor === shiftHead)
+                && shiftAnchor === shiftHead && lineWrapsVisually(head, text))
             newHead = head - 1
         applyShiftSelection(newHead)
     }
@@ -728,13 +743,13 @@
             }
             return false
         } else if (event.key === Qt.Key_Left) {
-            if (cmd && shift) newPos = macLineStartPos(pos, text)
-            else if (cmd) newPos = lineStartPos(pos, text)
+            if (cmd && shift) newPos = macLineStartPos(selectionExtendFrom(Qt.Key_Left), text)
+            else if (cmd) newPos = 0
             else if (alt) newPos = wordLeftPos(selectionExtendFrom(Qt.Key_Left), text)
             else newPos = lineStartPos(pos, text)
         } else if (event.key === Qt.Key_Right) {
-            if (cmd && shift) newPos = macLineEndPos(pos, text)
-            else if (cmd) newPos = lineEndPos(pos, text)
+            if (cmd && shift) newPos = macLineEndPos(selectionExtendFrom(Qt.Key_Right), text)
+            else if (cmd) newPos = text.length
             else if (alt) newPos = wordRightPos(selectionExtendFrom(Qt.Key_Right), text)
             else newPos = lineEndPos(pos, text)
         } else if (event.key === Qt.Key_Up) {
@@ -873,7 +888,7 @@
     Connections {
         target: query
         onCursorPositionChanged: {
-            if (harnessPrepareLock || mode != 1 || isLobby) return
+            if (harnessPrepareLock || mode != 1 || isLobby || goalXTrackSuspended) return
             rememberGoalX(query.cursorPosition)
         }
         onTextChanged: {
