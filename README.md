@@ -1,6 +1,6 @@
 # Writerdeck-keywriter
 
-This repo is the core text editor of [the Writerdeck for reMarkable](https://github.com/bjornte/Writerdeck-for-reMarkable) app.
+This repo is the core text editor of the [Writerdeck for reMarkable](https://github.com/bjornte/Writerdeck-for-reMarkable) app.
 It is a Fork of [dps/remarkable-keywriter](https://github.com/dps/remarkable-keywriter) by Dave Singleton.
 It is driven by Writerdeck-server over a unix socket. 
 
