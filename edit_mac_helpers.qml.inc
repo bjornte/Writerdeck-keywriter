@@ -9,6 +9,31 @@
     property int _prevSelStart: 0
     property int _prevSelEnd: 0
 
+    // Phase 2D: edit/cursor/harness state + Keys.onPressed dispatch
+    property bool cursorStrong: true
+    property string autosaveSnapshot: ""
+    property int harnessTextWidth: 0
+    property int harnessDefaultQueryWidth: 0
+    property bool harnessPrepareLock: false
+    property real goalX: -1
+    property int lastShiftHorizKey: 0
+    property int shiftAnchor: -1
+    property int shiftHead: -1
+
+    // Single entry for edit-mode Keys.onPressed (script injects one call).
+    function handleMacKeysOnPressed(event) {
+        if (mode != 1) return false
+        if (handleMacBackspace(event))
+            return true
+        if (handleMacEditKeys(event))
+            return true
+        if (handleMacUndo(event))
+            return true
+        if (handleMacArrow(event))
+            return true
+        return false
+    }
+
     function harnessSetCursor(pos) {
         if (mode != 1 || isLobby) return
         var len = query.text.length
