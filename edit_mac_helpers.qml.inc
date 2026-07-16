@@ -373,25 +373,33 @@
         var goalXUse = (gx !== undefined && gx >= 0) ? gx : curRect.x
         var curY = curRect.y
         var h = curRect.height
-        // Mid-line wrapped rects can report multi-row height; using full height
-        // skipped visual lines. A 0.5px epsilon false-triggered mid-row and
-        // broke wrap calibration (want 20 got 10). Use half a normal row, or
-        // ~10px when the rect looks multi-row.
-        var minGap = 4
-        if (h > 8 && h < 40)
-            minGap = h * 0.4
-        else if (h >= 40)
-            minGap = 10
+        // Normal single-row glyph boxes: classic height step (wrap calibration).
+        // Mid-line wrapped rects often report multi-row height; walking by that
+        // skipped visual lines. Fall through to next-y walk when h looks tall.
+        if (h > 0 && h < 40) {
+            var nextLineY = curY + h - 0.1
+            var bestH = -1
+            var bestDistH = 1e12
+            for (var p = pos + 1; p < len; p++) {
+                var r = query.positionToRectangle(p)
+                if (r.y + 0.1 < nextLineY) continue
+                if (bestH >= 0 && r.y > query.positionToRectangle(bestH).y + 0.1) break
+                var dist = Math.abs(r.x - goalXUse)
+                if (bestH < 0 || dist < bestDistH) { bestH = p; bestDistH = dist }
+            }
+            return bestH >= 0 ? bestH : len
+        }
+        var minGap = 10
         var best = -1
         var bestDist = 1e12
         var targetY = -1
-        for (var p = pos + 1; p < len; p++) {
-            var r = query.positionToRectangle(p)
-            if (r.y <= curY + minGap) continue
-            if (targetY < 0) targetY = r.y
-            if (Math.abs(r.y - targetY) > 0.5) break
-            var dist = Math.abs(r.x - goalXUse)
-            if (best < 0 || dist < bestDist) { best = p; bestDist = dist }
+        for (var p2 = pos + 1; p2 < len; p2++) {
+            var r2 = query.positionToRectangle(p2)
+            if (r2.y <= curY + minGap) continue
+            if (targetY < 0) targetY = r2.y
+            if (Math.abs(r2.y - targetY) > 0.5) break
+            var dist2 = Math.abs(r2.x - goalXUse)
+            if (best < 0 || dist2 < bestDist) { best = p2; bestDist = dist2 }
         }
         return best >= 0 ? best : len
     }
@@ -402,21 +410,32 @@
         var goalXUse = (gx !== undefined && gx >= 0) ? gx : curRect.x
         var curY = curRect.y
         var h = curRect.height
-        var minGap = 4
-        if (h > 8 && h < 40)
-            minGap = h * 0.4
-        else if (h >= 40)
-            minGap = 10
+        if (h > 0 && h < 40) {
+            var rowTop = curY - h + 0.1
+            var bestH = -1
+            var bestDistH = 1e12
+            var targetYH = -1
+            for (var p = pos - 1; p >= 0; p--) {
+                var r = query.positionToRectangle(p)
+                if (r.y > rowTop) continue
+                if (targetYH < 0) targetYH = r.y
+                if (Math.abs(r.y - targetYH) > 0.5) break
+                var dist = Math.abs(r.x - goalXUse)
+                if (bestH < 0 || dist < bestDistH) { bestH = p; bestDistH = dist }
+            }
+            return bestH >= 0 ? bestH : 0
+        }
+        var minGap = 10
         var best = -1
         var bestDist = 1e12
         var targetY = -1
-        for (var p = pos - 1; p >= 0; p--) {
-            var r = query.positionToRectangle(p)
-            if (r.y >= curY - minGap) continue
-            if (targetY < 0) targetY = r.y
-            if (Math.abs(r.y - targetY) > 0.5) break
-            var dist = Math.abs(r.x - goalXUse)
-            if (best < 0 || dist < bestDist) { best = p; bestDist = dist }
+        for (var p2 = pos - 1; p2 >= 0; p2--) {
+            var r2 = query.positionToRectangle(p2)
+            if (r2.y >= curY - minGap) continue
+            if (targetY < 0) targetY = r2.y
+            if (Math.abs(r2.y - targetY) > 0.5) break
+            var dist2 = Math.abs(r2.x - goalXUse)
+            if (best < 0 || dist2 < bestDist) { best = p2; bestDist = dist2 }
         }
         return best >= 0 ? best : 0
     }
