@@ -13,10 +13,12 @@ Socket reader, Lobby bridge, and rotation watcher live in this tree — not appl
 - `rotation_watcher.{h,cpp}` — QML `rotationChanged` → server notify
 - `edit.pro` — toltec `linux-arm-remarkable-g++`, those sources, `-pthread`
 
-`build-keywriter.sh` in Writerdeck asserts these are present, then runs qmake/make and still applies the large Lobby/shell QML Python patches.
+## Lobby / shell QML (owned here)
+
+`main.qml` carries Writerdeck Lobby/shell behaviour (boot Lobby, Home, omni, save paths, scroll, sleep helpers, etc.). Modular Lobby UI lives under `lobby/*.inc` plus `concat-lobby.sh`. CI inserts `edit_mac_helpers.qml.inc` before `showLobby()`, then concatenates Lobby subpages + sleep screen into `main.qml`. No large Python string patches remain in Writerdeck’s build script.
 
 ## `edit_mac_helpers.qml.inc`
 
-Edit-mode caret, shift-selection, backspace/delete, wrap/visual-line, undo, combo helpers, edit/cursor property decls, `handleMacKeysOnPressed`, and the cursor/autosave Timers plus text-change Connections (QML). CI (`build-keywriter.sh`) inserts this file into `main.qml` before `showLobby()` after other Writerdeck QML patches; Keys.onPressed calls the dispatcher.
+Edit-mode caret, shift-selection, backspace/delete, wrap/visual-line, undo, combo helpers, edit/cursor property decls, `handleMacKeysOnPressed`, and the cursor/autosave Timers plus text-change Connections (QML). CI inserts this file into `main.qml` before `showLobby()`; Keys.onPressed calls the dispatcher.
 
 Source of truth for that helper stack lives here — not as an embedded string in the Writerdeck build script.
