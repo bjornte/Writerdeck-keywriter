@@ -10,6 +10,8 @@ Do not install this fork as standalone keywriter; use the Writerdeck project for
 
 # Technical details
 
+As of July 2026, all changes in this repo from the original writerdeck are vibe coded by various LLMs.
+
 **C++ vs QML:** QML is the screen and how typing/selection works. C++ is the engine under that (app start, display, feeding keys from Writerdeck's socket). Current editing work is almost all QML.
 
 ## C++ (owned here)
