@@ -216,23 +216,21 @@
         return curY <= topY + 1
     }
 
+    // Phase A1: pure string math lives in C++ EditHelper; keep names for callers.
     function isSpaceChar(c) {
-        return c === " " || c === "\t" || c === "\n"
+        return editHelper.isSpaceChar(c)
     }
 
     function lineStartPos(pos, text) {
-        var prev = text.lastIndexOf("\n", pos - 1)
-        return prev === -1 ? 0 : prev + 1
+        return editHelper.lineStartPos(pos, text)
     }
 
     function lineEndPos(pos, text) {
-        var nl = text.indexOf("\n", pos)
-        return nl === -1 ? text.length : nl
+        return editHelper.lineEndPos(pos, text)
     }
 
     function lineCharCount(lineStart, text) {
-        var end = lineEndPos(lineStart, text)
-        return end - lineStart
+        return editHelper.lineCharCount(lineStart, text)
     }
 
     function rememberGoalX(pos) {
@@ -245,67 +243,27 @@
     }
 
     function deleteWordLeftPos(pos, text) {
-        if (pos <= 0) return 0
-        var start = wordLeftPos(pos, text)
-        // Swallow the preceding gap only when the whole word was consumed
-        // (trailing-word Alt+BS). Mid-word must not eat the prior space.
-        var wordEnd = start
-        while (wordEnd < text.length && !isSpaceChar(text.charAt(wordEnd))) wordEnd++
-        if (pos >= wordEnd && start > 0) {
-            var s = start - 1
-            while (s >= 0 && isSpaceChar(text.charAt(s))) s--
-            start = s + 1
-        }
-        return start
+        return editHelper.deleteWordLeftPos(pos, text)
     }
 
     function deleteLineLeftPos(pos, text) {
-        if (pos <= 0) return 0
-        var start = lineStartPos(pos, text)
-        if (pos > start) return start
-        if (start === 0) return 0
-        return lineStartPos(start - 1, text)
+        return editHelper.deleteLineLeftPos(pos, text)
     }
 
     function wordLeftPos(pos, text) {
-        if (pos <= 0) return 0
-        if (pos > text.length) pos = text.length
-        pos--
-        while (pos > 0 && isSpaceChar(text.charAt(pos))) pos--
-        while (pos > 0 && !isSpaceChar(text.charAt(pos - 1))) pos--
-        if (pos < text.length && isSpaceChar(text.charAt(pos))) pos++
-        return pos
+        return editHelper.wordLeftPos(pos, text)
     }
 
     function wordRightPos(pos, text) {
-        var len = text.length
-        if (pos >= len) return len
-        while (pos < len && !isSpaceChar(text.charAt(pos))) pos++
-        while (pos < len && isSpaceChar(text.charAt(pos))) pos++
-        return pos
+        return editHelper.wordRightPos(pos, text)
     }
 
     function paragraphUpPos(pos, text) {
-        var lineStart = lineStartPos(pos, text)
-        if (lineStart === 0) return 0
-        var i = lineStart - 1
-        while (i > 0) {
-            if (text.charAt(i) === "\n" && text.charAt(i - 1) === "\n")
-                return i + 1
-            i--
-        }
-        return 0
+        return editHelper.paragraphUpPos(pos, text)
     }
 
     function paragraphDownPos(pos, text) {
-        var len = text.length
-        var lineEnd = lineEndPos(pos, text)
-        if (lineEnd >= len) return len
-        for (var i = lineEnd; i < len - 1; i++) {
-            if (text.charAt(i) === "\n" && text.charAt(i + 1) === "\n")
-                return i + 2
-        }
-        return lineEnd + 1
+        return editHelper.paragraphDownPos(pos, text)
     }
 
     function clearShiftSelection() {
@@ -538,14 +496,8 @@
     }
 
     function insertTextDelta(prevText, curText) {
-        if (curText.length <= prevText.length) return null
-        var extra = curText.length - prevText.length
-        for (var p = 0; p <= prevText.length; p++) {
-            if (curText.slice(0, p) === prevText.slice(0, p)
-                    && curText.slice(p + extra) === prevText.slice(p))
-                return {pos: p, len: extra}
-        }
-        return null
+        var r = editHelper.insertTextDelta(prevText, curText)
+        return (r === undefined || r === null) ? null : r
     }
 
     function beginTextEdit() {
@@ -578,11 +530,7 @@
     }
 
     function isOneCharInsert(prevText, curText) {
-        if (curText.length !== prevText.length + 1) return -1
-        for (var i = 0; i < curText.length; i++) {
-            if (curText.slice(0, i) + curText.slice(i + 1) === prevText) return i
-        }
-        return -1
+        return editHelper.isOneCharInsert(prevText, curText)
     }
 
     function pushEditUndoWithMerge(prevState) {
