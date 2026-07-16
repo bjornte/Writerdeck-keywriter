@@ -441,10 +441,14 @@
         }
         var head = shiftHead
         var newHead = down ? lineDownPos(head, text) : lineUpForSelection(head, shiftAnchor, text)
-        if (down && newHead > head && head > lineStartPos(head, text))
-            newHead = lineEndPos(newHead, text)
-        if (!down && newHead < head && head < lineEndPos(head, text))
-            newHead = lineStartPos(newHead, text)
+        // Logical line-end/start snap is for \n lines only. On wrapped paragraphs
+        // it jumps to EOF/BOL; Mac/Qt keep visual goal-column motion instead.
+        if (!onWrappedLine(head, text)) {
+            if (down && newHead > head && head > lineStartPos(head, text))
+                newHead = lineEndPos(newHead, text)
+            if (!down && newHead < head && head < lineEndPos(head, text))
+                newHead = lineStartPos(newHead, text)
+        }
         if (down && newHead === head && head < text.length
                 && text.indexOf("\n", head) === -1 && onWrappedLine(head, text)) {
             var vis = visualLineDownPos(head, goalXFor(head))
