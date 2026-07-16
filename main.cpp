@@ -31,9 +31,11 @@ Q_IMPORT_PLUGIN(QsgEpaperPlugin)
 #include <QJsonObject>
 #include <mutex>
 #include "lobby_bridge.h"
+#include "edit_helper.h"
 
 static const char *WRITERDECK_SOCK = "/run/Writerdeck.sock";
 static LobbyBridge g_lobbyBridge;
+static EditHelper g_editHelper;
 static QObject *g_rootObj = nullptr; // stashed after QML load; used by cmd handler
 static int g_clientFd = -1;
 static std::mutex g_clientMu;
@@ -614,6 +616,7 @@ int main(int argc, char *argv[])
     g_rootObj = engine.rootObjects().first(); // stash for cmd handler thread
     g_lobbyBridge.setRoot(g_rootObj);
     engine.rootContext()->setContextProperty("writerdeck", &g_lobbyBridge);
+    engine.rootContext()->setContextProperty("editHelper", &g_editHelper);
     static RotationWatcher rotWatcher;
     rotWatcher.setRoot(g_rootObj);
     rotWatcher.setApplying(&g_applyingRotation);

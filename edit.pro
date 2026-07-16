@@ -41,9 +41,10 @@ DISTFILES += \
 HEADERS += \
     edit_utils.h \
     rotation_watcher.h \
-    lobby_bridge.h
+    lobby_bridge.h \
+    edit_helper.h
 
-SOURCES += rotation_watcher.cpp lobby_bridge.cpp
+SOURCES += rotation_watcher.cpp lobby_bridge.cpp edit_helper.cpp
 
 # Socket reader thread (main.cpp) needs pthread.
 QMAKE_CXXFLAGS += -pthread
