@@ -376,10 +376,10 @@
         // Never step by full curRect.height when it spans multiple wrapped rows
         // (mid-prose Down jumped ~160 chars). Walk to the next distinct row y.
         // minGap ignores intra-row glyph noise without skipping a whole row.
-        var minGap = 4
-        if (h > 8 && h < 40)
-            minGap = h * 0.4
-        else if (h >= 40)
+        // Fixed small gap: h*0.4 was too large on normal rows (Shift+Up
+        // from mid-para did not move). Wrap fixtures recalibrated to next-y.
+        var minGap = 3
+        if (h >= 40)
             minGap = 10
         var best = -1
         var bestDist = 1e12
@@ -401,10 +401,10 @@
         var goalXUse = (gx !== undefined && gx >= 0) ? gx : curRect.x
         var curY = curRect.y
         var h = curRect.height
-        var minGap = 4
-        if (h > 8 && h < 40)
-            minGap = h * 0.4
-        else if (h >= 40)
+        // Fixed small gap: h*0.4 was too large on normal rows (Shift+Up
+        // from mid-para did not move). Wrap fixtures recalibrated to next-y.
+        var minGap = 3
+        if (h >= 40)
             minGap = 10
         var best = -1
         var bestDist = 1e12
