@@ -25,7 +25,8 @@ QML_IMPORT_PATH =
 # Additional import path used to resolve QML modules just for Qt Quick Designer
 QML_DESIGNER_IMPORT_PATH =
 
-linux-oe-g++ {
+# toltec Qt device spec (Writerdeck CI). Upstream used linux-oe-g++.
+linux-arm-remarkable-g++ {
     LIBS += -lqsgepaper
 }
 
@@ -38,4 +39,12 @@ DISTFILES += \
     index.txt
 
 HEADERS += \
-    edit_utils.h
+    edit_utils.h \
+    rotation_watcher.h \
+    lobby_bridge.h
+
+SOURCES += rotation_watcher.cpp lobby_bridge.cpp
+
+# Socket reader thread (main.cpp) needs pthread.
+QMAKE_CXXFLAGS += -pthread
+QMAKE_LFLAGS += -pthread
