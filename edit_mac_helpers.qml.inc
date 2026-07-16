@@ -441,9 +441,10 @@
         }
         var head = shiftHead
         var newHead = down ? lineDownPos(head, text) : lineUpForSelection(head, shiftAnchor, text)
-        // Logical line-end/start snap is for \n lines only. On wrapped paragraphs
-        // it jumps to EOF/BOL; Mac/Qt keep visual goal-column motion instead.
-        if (!onWrappedLine(head, text)) {
+        // Snap to logical line end/start only when vertical motion crossed a
+        // newline. Same-logical-line landings are visual wraps — keep goal x
+        // (Mac/Qt). Old unconditional snap jumped wrapped Shift+Down to EOF.
+        if (lineStartPos(newHead, text) !== lineStartPos(head, text)) {
             if (down && newHead > head && head > lineStartPos(head, text))
                 newHead = lineEndPos(newHead, text)
             if (!down && newHead < head && head < lineEndPos(head, text))
