@@ -1,3 +1,14 @@
+    // Phase 2C: undo/redo state (moved out of build-keywriter.sh)
+    property var editUndoStack: []
+    property var editRedoStack: []
+    property bool editUndoCapture: false
+    property bool editSkipTextUndoPush: false
+    property string _prevTextSnapshot: ""
+    property int _prevTextLen: 0
+    property int _prevCursor: 0
+    property int _prevSelStart: 0
+    property int _prevSelEnd: 0
+
     function harnessSetCursor(pos) {
         if (mode != 1 || isLobby) return
         var len = query.text.length
