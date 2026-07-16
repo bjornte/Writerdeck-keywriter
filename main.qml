@@ -929,6 +929,8 @@ Window {
             }
             function scrollDown() {
                 contentY += 1500
+                var maxY = Math.max(0, contentHeight - height)
+                if (contentY > maxY) contentY = maxY
             }
 
             TextEdit {
