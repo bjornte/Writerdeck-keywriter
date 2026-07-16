@@ -1,10 +1,14 @@
 # Writerdeck-keywriter
 
-Fork of [dps/remarkable-keywriter](https://github.com/dps/remarkable-keywriter) owned by [Writerdeck for reMarkable](https://github.com/bjornte/Writerdeck-for-reMarkable). Default branch: `master`.
+This repo is the core editor of [the Writerdeck for reMarkable](https://github.com/bjornte/Writerdeck-for-reMarkable) app.
+It is a Fork of [dps/remarkable-keywriter](https://github.com/dps/remarkable-keywriter) by Dave Singleton.
+It is driven by Writerdeck-server over a unix socket. 
 
-This tree is the tablet editor (deployed as **Writerdeck**): full-screen Markdown on reMarkable 1, driven by Writerdeck-server over a unix socket. Do not install this fork as standalone keywriter; use the Writerdeck project for deploy and runtime.
+Do not install this fork as standalone keywriter; use the Writerdeck project for deploy and runtime.
 
 ![Writerdeck for reMarkable 1](docs/Writerdeck-for-reMarkable.jpg)
+
+# Technical details
 
 **C++ vs QML:** QML is the screen and how typing/selection works. C++ is the engine under that (app start, display, feeding keys from Writerdeck's socket). Current editing work is almost all QML.
 
