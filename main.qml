@@ -42,7 +42,6 @@ Window {
     property string lobbyFilesInput: ""
     property int lobbyFilesInputPos: 0
     property bool lobbyOpenInReadMode: false
-    property bool suppressNextHomeKey: false
     property bool lobbyEncryptionEnabled: false
     property string lobbyVaultError: ""
     property string vaultOverlayMode: ""
@@ -706,9 +705,7 @@ Window {
         isSleeping = true
     }
 
-    function handleHome(fromPhysicalCmd) {
-        if (fromPhysicalCmd === undefined)
-            fromPhysicalCmd = false
+    function handleHome() {
         if (isLobby) {
             Qt.quit()
         } else {
@@ -724,8 +721,6 @@ Window {
             lobbyFilesMode = ""
             lobbyPage = 0
             lobbyLastEditedFile = lastFile
-            if (fromPhysicalCmd)
-                suppressNextHomeKey = true
             lobbyRefreshNotes()
         }
     }
@@ -835,23 +830,16 @@ Window {
 
     function handleKey(event) {
         if (event.key === Qt.Key_Home && event.modifiers === Qt.NoModifier) {
-            if (suppressNextHomeKey) {
-                suppressNextHomeKey = false
-                event.accepted = true
-                return
-            }
             // Edit mode: line start is handled on press (handleMacArrow); do not
             // treat Key_Home release as physical Home -> lobby.
             if (mode == 1 && !isLobby) {
                 event.accepted = true
                 return
             }
-            handleHome(false)
+            handleHome()
             event.accepted = true
             return
         }
-        if (suppressNextHomeKey)
-            suppressNextHomeKey = false
         if (vaultOverlayMode !== "") {
             if (vaultConsumeKey(event)) { event.accepted = true; return }
         }

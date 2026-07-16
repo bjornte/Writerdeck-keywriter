@@ -222,11 +222,8 @@ static void rmkbdInjectLine(const std::string &line)
             }
         }
         else if (cmd == "home" && g_rootObj) {
-            // Physical Home: daemon cmd and Qt Key_Home both fire; pass true so QML
-            // pairs off the duplicate Key_Home instead of treating it as quit-from-lobby.
-            QMetaObject::invokeMethod(g_rootObj, "handleHome", Qt::BlockingQueuedConnection,
-                Q_ARG(QVariant, true));
-            rmkbdSendAck("saved", "home");
+            // Physical Home arrives only via this cmd (daemon EVIOCGRAB on event1).
+            invokeSaveCmd("handleHome", "home");
         }
         else if (cmd == "preparesleep" && g_rootObj) {
             invokeSaveCmd("prepareSleep", "preparesleep");
