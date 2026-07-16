@@ -371,15 +371,23 @@
         if (pos >= len) return len
         var curRect = query.positionToRectangle(pos)
         var goalXUse = (gx !== undefined && gx >= 0) ? gx : curRect.x
-        // Do not use curRect.height: on wrapped TextEdit mid-line rects can span
-        // multiple visual rows, which skipped lines (mid-prose Shift+Down jump).
         var curY = curRect.y
+        var h = curRect.height
+        // Mid-line wrapped rects can report multi-row height; using full height
+        // skipped visual lines. A 0.5px epsilon false-triggered mid-row and
+        // broke wrap calibration (want 20 got 10). Use half a normal row, or
+        // ~10px when the rect looks multi-row.
+        var minGap = 4
+        if (h > 8 && h < 40)
+            minGap = h * 0.4
+        else if (h >= 40)
+            minGap = 10
         var best = -1
         var bestDist = 1e12
         var targetY = -1
         for (var p = pos + 1; p < len; p++) {
             var r = query.positionToRectangle(p)
-            if (r.y <= curY + 0.5) continue
+            if (r.y <= curY + minGap) continue
             if (targetY < 0) targetY = r.y
             if (Math.abs(r.y - targetY) > 0.5) break
             var dist = Math.abs(r.x - goalXUse)
@@ -393,12 +401,18 @@
         var curRect = query.positionToRectangle(pos)
         var goalXUse = (gx !== undefined && gx >= 0) ? gx : curRect.x
         var curY = curRect.y
+        var h = curRect.height
+        var minGap = 4
+        if (h > 8 && h < 40)
+            minGap = h * 0.4
+        else if (h >= 40)
+            minGap = 10
         var best = -1
         var bestDist = 1e12
         var targetY = -1
         for (var p = pos - 1; p >= 0; p--) {
             var r = query.positionToRectangle(p)
-            if (r.y >= curY - 0.5) continue
+            if (r.y >= curY - minGap) continue
             if (targetY < 0) targetY = r.y
             if (Math.abs(r.y - targetY) > 0.5) break
             var dist = Math.abs(r.x - goalXUse)
