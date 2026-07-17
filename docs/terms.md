@@ -16,22 +16,22 @@ Document integrity. Notes must survive as plain Markdown on disk.
 
 ## Editor
 
-QML. Screen and applying edits.
+QML. Screen language — layout and applying edits on screen.
 
-C++ / EditHelper. Startup, socket keys, and the math for chords, wrap, and undo.
+C++ / EditHelper. Startup, socket keys, and the math for shortcuts, wrap, and undo.
 
-TextEdit. Qt’s on-screen text box. Fine for drawing; weak for visual-line APIs.
+Text box (Qt TextEdit). Qt’s on-screen editor control. Fine for drawing; weak for “which wrapped row am I on?”
 
 Visual line / goal column. A wrapped row on screen, and the horizontal target Up/Down tries to keep.
 
-assemble-qml.sh. Builds committed `main.qml` from modular pieces. Run it after changing helpers or Lobby; CI does not stitch QML.
+assemble-qml.sh. Builds committed `main.qml` from modular pieces. Run it after changing helpers or Lobby; the automatic build does not stitch QML.
 
 ## Testing and git
 
-Keyboard harness. Automated on-device typing checks in the Writerdeck project.
+Automated typing tests. Scripted keystrokes on the real tablet in the Writerdeck project (`test-keyboard-harness.sh`).
 
-Critical / full suite. Smaller “basic editing works” gate; full product sign-off.
+Basic set / full set. Thirty-eight checks for “basic editing works”; one hundred ten checks before calling typing work done.
 
-Known-good commit. A fork revision that last passed the automated typing checks. Everyday builds usually follow `master`.
+Known-good commit. A fork revision that last passed those typing tests. Everyday builds usually follow `master`.
 
-The original / merge-base. Dave’s remarkable-keywriter repo, and the shared git ancestor that makes ordinary merges possible. Developers often nickname Dave’s remote `upstream`; it still means the original.
+The original / shared history. Dave’s remarkable-keywriter repo, and the shared git starting point that makes ordinary merges possible. Developers often nickname Dave’s remote `upstream`; it still means the original.

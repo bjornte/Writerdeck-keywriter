@@ -12,9 +12,9 @@ Terms: [docs/terms.md](docs/terms.md).
 
 ## Testing
 
-The Writerdeck project runs an on-device keyboard harness against this editor: scripted keystrokes over the same unix socket a phone uses, then asserts caret, selection, and text. About 110 scenarios; a critical subset of 38 is the “basic editing works” gate. A separate edit-session smoke test only checks that opening a note does not crash the app.
+The Writerdeck project runs automated typing tests against this editor on the real tablet. Scripted keystrokes travel the same local socket a phone uses; the tests then check the caret, selection, and text. There are about 110 checks; 38 of them are the “basic editing works” set. A separate edit-session check only asks whether opening a note keeps the app alive.
 
-Harness code and scoreboard live in Writerdeck (`scripts/test-keyboard-harness.sh`, `docs/editor-testing/`). This repo does not run those tests alone.
+Those tests live in Writerdeck (`scripts/test-keyboard-harness.sh`, `docs/editor-testing/`). This repo does not run them alone.
 
 ## What’s different from the original
 
@@ -22,17 +22,17 @@ Dave’s original is a Qt Markdown notepad for reMarkable: USB keyboard, Esc for
 
 This fork keeps that core and adds what Writerdeck needs:
 
-Socket input. Keystrokes arrive from Writerdeck-server as synthetic Qt events. The stock kernel has no usable uinput path.
+Socket input. Keystrokes arrive from Writerdeck-server as fake Qt key events. The stock tablet software cannot load a fake keyboard device the usual Linux way.
 
-Mac and Linux edit chords. Word and line motion, shift-selection, wrap-aware Up/Down, and undo that covers both socket typing and chord edits.
+Mac and Linux shortcuts. Word and line motion, shift-selection, wrap-aware Up/Down, and undo that covers both socket typing and shortcut edits.
 
-EditHelper in C++. Caret math, chord dispatch, visual-line walk, and undo stacks live in `edit_helper.*`. QML still owns the on-screen TextEdit, goal column, timers, and applying results (`edit_mac_helpers.qml.inc`).
+EditHelper in C++. Caret math, shortcut handling, wrapped-line motion, and undo live in `edit_helper.*`. QML still owns the on-screen text box, sticky column, timers, and applying results (`edit_mac_helpers.qml.inc`).
 
-Lobby shell. Files, Home, Settings, and sleep on the tablet; file and vault ops over the same socket (`lobby/`, `lobby_bridge`).
+Lobby. Files, Home, Settings, and sleep on the tablet; file and vault ops over the same socket (`lobby/`, `lobby_bridge`).
 
-Plain Markdown on disk. Editing stays PlainText. RichText is for preview only.
+Plain Markdown on disk. Editing stays plain text. Fancy rendering is for preview only.
 
-QML assembly. Edit helpers and Lobby fragments are modular (`edit_mac_helpers.qml.inc`, `lobby/*.inc`, skeleton `main.qml.in`). After changing those, run `./assemble-qml.sh` and commit the regenerated `main.qml` (`qml.qrc` loads that file). Writerdeck CI only clones, asserts, and builds — it does not stitch QML. New editor behavior belongs here, not in Writerdeck’s build script.
+Building the screen file. Edit helpers and Lobby pieces are modular. After changing them, run `./assemble-qml.sh` and commit the regenerated `main.qml`. Writerdeck’s automatic build only clones, checks, and compiles — it does not stitch the screen file together. New editor behavior belongs here, not in Writerdeck’s build script.
 
 ## Pulling in Dave’s updates
 
@@ -46,8 +46,8 @@ git merge upstream/master
 git push origin master
 ```
 
-Prefer a merge commit. Then rebuild Writerdeck via its CI, deploy, and run that project’s edit-session and keyboard harness checks.
+Prefer a merge commit. Then rebuild Writerdeck via its automatic build, deploy, and run that project’s edit-session and typing tests.
 
 ## Credit
 
-Original keywriter: [Dave Singleton](https://github.com/dps/remarkable-keywriter). Writerdeck-specific work is LLM-assisted; behavior is checked on-device by Writerdeck’s keyboard harness (see Testing above). How to install Dave’s original on its own (Toltec / standalone) stays in his repo.
+Original keywriter: [Dave Singleton](https://github.com/dps/remarkable-keywriter). Writerdeck-specific work is LLM-assisted; behavior is checked on-device by Writerdeck’s typing tests (see Testing above). How to install Dave’s original on its own stays in his repo.
