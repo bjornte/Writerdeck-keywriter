@@ -1,38 +1,31 @@
 # Writerdeck-keywriter
 
-This repo is the core text editor of the [Writerdeck for reMarkable](https://github.com/bjornte/Writerdeck-for-reMarkable) app.
-It is a Fork of [dps/remarkable-keywriter](https://github.com/dps/remarkable-keywriter) by Dave Singleton.
-It is driven by Writerdeck-server over a unix socket. 
+This is the tablet text editor inside [Writerdeck for reMarkable](https://github.com/bjornte/Writerdeck-for-reMarkable): a Wi-Fi Markdown typewriter on a first-gen reMarkable. You type from a phone (or keyboard); the tablet shows the page and keeps your notes as plain Markdown on disk.
 
-Do not install this fork as standalone keywriter; use the Writerdeck project for deploy and runtime.
+It is a fork of Dave Singleton’s [remarkable-keywriter](https://github.com/dps/remarkable-keywriter). Writerdeck-server drives it over a unix socket. Do not install this repo alone — deploy through Writerdeck.
+
+Ship tip (keyboard harness green): `6a15e08` — full suite 110/110, critical 38/38 (17 Jul 2026). Day-to-day builds track `master`; pin that SHA only for a known-good rollback.
 
 ![Writerdeck for reMarkable 1](docs/Writerdeck-for-reMarkable.jpg)
 
-# Technical details
+## What’s different from upstream
 
-As of July 2026, all changes in this repo from the original keywriter are vibe coded by various LLMs.
+Upstream is a Qt Markdown notepad for reMarkable: USB keyboard, Esc for preview, Ctrl-K note switcher, sundown rendering.
 
-**C++ vs QML:** QML is the screen and how typing/selection works. C++ is the engine under that (app start, display, feeding keys from Writerdeck's socket). Current editing work is almost all QML.
+This fork keeps that core and adds what Writerdeck needs:
 
-## C++ (owned here)
+Socket input. Keystrokes arrive from Writerdeck-server as synthetic Qt events. The stock kernel has no usable uinput path.
 
-Socket reader, Lobby bridge, and rotation watcher live in this tree — not applied at CI time from Writerdeck's `third_party/keywriter/`:
+Mac and Linux edit chords. Word and line motion, shift-selection, wrap-aware Up/Down, and undo that covers both socket typing and chord edits.
 
-- `main.cpp` — unix socket → synthetic `QKeyEvent`s; `qputenv` guards so `QT_QPA_PLATFORM` / `QMLSCENE_DEVICE` can override stock epaper
-- `lobby_bridge.{h,cpp}` — QML-callable file/sync/vault ops over the socket
-- `rotation_watcher.{h,cpp}` — QML `rotationChanged` → server notify
-- `edit.pro` — toltec `linux-arm-remarkable-g++`, those sources, `-pthread`
+EditHelper in C++. Caret math, chord dispatch, visual-line walk, and undo stacks live in `edit_helper.*`. QML still owns the on-screen TextEdit, goal column, timers, and applying results (`edit_mac_helpers.qml.inc`).
 
-## Lobby / shell QML (owned here)
+Lobby shell. Files, Home, Settings, and sleep on the tablet; file and vault ops over the same socket (`lobby/`, `lobby_bridge`).
 
-`main.qml` carries Writerdeck Lobby/shell behaviour (boot Lobby, Home, omni, save paths, scroll, sleep helpers, etc.). Modular Lobby UI lives under `lobby/*.inc` plus `concat-lobby.sh`. CI inserts `edit_mac_helpers.qml.inc` before `showLobby()`, then concatenates Lobby subpages + sleep screen into `main.qml`. No large Python string patches remain in Writerdeck's build script.
+Plain Markdown on disk. Editing stays PlainText. RichText is for preview only.
 
-## `edit_mac_helpers.qml.inc`
+Writerdeck’s CI still inserts the edit helpers into `main.qml` and concatenates Lobby fragments at build time. New editor behavior belongs here, not in that script.
 
-Edit-mode caret, shift-selection, backspace/delete, wrap/visual-line, undo, combo helpers, edit/cursor property decls, `handleMacKeysOnPressed`, and the cursor/autosave Timers plus text-change Connections (QML). CI inserts this file into `main.qml` before `showLobby()`; Keys.onPressed calls the dispatcher.
+## Credit
 
-Source of truth for that helper stack lives here — not as an embedded string in the Writerdeck build script.
-
-## Upstream
-
-Original keywriter by [Dave Singleton](https://github.com/dps/remarkable-keywriter): Qt Markdown editor for reMarkable with USB keyboard, sundown renderer, Esc edit/preview, Ctrl-K note switcher. Upstream install (Toltec / standalone) remains documented there.
+Original keywriter: [Dave Singleton](https://github.com/dps/remarkable-keywriter). Writerdeck-specific work is LLM-assisted; behavior is checked on-device by Writerdeck’s keyboard harness. Upstream install (Toltec / standalone) stays documented in Dave’s repo.
