@@ -61,7 +61,8 @@ public:
                                                 const QString &text, int cursor) const;
 
     // Phase C: visual-line math (layout via query TextEdit; QML keeps goalX + apply).
-    void setQueryItem(QObject *queryItem);
+    // Q_INVOKABLE so QML can re-bind after load/harness prepare.
+    Q_INVOKABLE void setQueryItem(QObject *queryItem);
     // gx < 0 means use the x at pos (same as omitted gx in QML).
     Q_INVOKABLE int visualLineDownPos(int pos, qreal gx = -1) const;
     Q_INVOKABLE int visualLineUpPos(int pos, qreal gx = -1) const;

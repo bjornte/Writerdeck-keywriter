@@ -13,6 +13,10 @@
     property int shiftAnchor: -1
     property int shiftHead: -1
 
+    function syncEditHelperQuery() {
+        editHelper.setQueryItem(query)
+    }
+
     // Single entry for edit-mode Keys.onPressed (script injects one call).
     function handleMacKeysOnPressed(event) {
         if (mode != 1) return false
@@ -101,6 +105,7 @@
             flick.contentY = 0
         try { if (query.undoStack) query.undoStack.clear() } catch (e) {}
         harnessPrepareLock = false
+        syncEditHelperQuery()
     }
 
     function socketRouteKey(key, mods) {
@@ -423,10 +428,12 @@
     }
 
     function visualLineDownPos(pos, gx) {
+        syncEditHelperQuery()
         return editHelper.visualLineDownPos(pos, (gx !== undefined && gx >= 0) ? gx : -1)
     }
 
     function visualLineUpPos(pos, gx) {
+        syncEditHelperQuery()
         return editHelper.visualLineUpPos(pos, (gx !== undefined && gx >= 0) ? gx : -1)
     }
 

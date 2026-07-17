@@ -525,22 +525,17 @@ EditHelper::QueryRect EditHelper::queryRectAt(int pos) const
     QueryRect out;
     if (!m_queryItem)
         return out;
-    QVariant ret;
-    if (!QMetaObject::invokeMethod(m_queryItem, "positionToRectangle",
-            Q_RETURN_ARG(QVariant, ret),
-            Q_ARG(QVariant, pos)))
-        return out;
-    const QVariantMap m = ret.toMap();
-    if (!m.isEmpty()) {
-        out.x = m.value(QStringLiteral("x")).toReal();
-        out.y = m.value(QStringLiteral("y")).toReal();
-        out.height = m.value(QStringLiteral("height")).toReal();
-        return out;
+    // TextEdit::positionToRectangle(int) -> QRectF. Do not use QVariant args
+    // (mismatch) or QRectF::isValid() (caret width can be 0 => "invalid").
+    QRectF rf;
+    if (QMetaObject::invokeMethod(m_queryItem, "positionToRectangle",
+            Qt::DirectConnection,
+            Q_RETURN_ARG(QRectF, rf),
+            Q_ARG(int, pos))) {
+        out.x = rf.x();
+        out.y = rf.y();
+        out.height = rf.height();
     }
-    const QRectF rf = ret.toRectF();
-    out.x = rf.x();
-    out.y = rf.y();
-    out.height = rf.height();
     return out;
 }
 
