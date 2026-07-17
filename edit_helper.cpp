@@ -1,6 +1,7 @@
 #include "edit_helper.h"
 
 #include <QMetaObject>
+#include <QRectF>
 #include <QVariantMap>
 #include <Qt>
 #include <QtMath>
