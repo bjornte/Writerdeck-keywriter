@@ -8,7 +8,7 @@ The repository is a fork of Dave Singleton’s [remarkable-keywriter](https://gi
 
 Last known-good editor build for automated typing tests: commit `0bb3b70` (all 110 checks passed, including the 38 “basic editing” ones). Everyday builds follow the `master` branch; use that commit hash only if you need to roll back to a proven binary.
 
-Terms: [docs/terms.md](docs/terms.md).
+Terms: [Writerdeck docs/terms.md](https://github.com/bjornte/Writerdeck-for-reMarkable/blob/main/docs/terms.md).
 
 ![Writerdeck for reMarkable 1](docs/Writerdeck-for-reMarkable.jpg)
 
