@@ -1,6 +1,7 @@
     // Phase 2C: undo/redo orchestration (stacks + merge live in editHelper)
     // Phase 2D: edit/cursor/harness state + Keys.onPressed dispatch
     // Phase B: chord -> action mapping in editHelper; QML applies layout effects
+    // Phase C: visual-line math in editHelper; QML keeps goalX + cursor apply
     property bool cursorStrong: true
     property string autosaveSnapshot: ""
     property int harnessTextWidth: 0
@@ -294,10 +295,7 @@
     }
 
     function lineWrapsVisually(pos, text) {
-        var s = lineStartPos(pos, text)
-        var e = lineEndPos(pos, text)
-        if (e <= s) return false
-        return Math.abs(query.positionToRectangle(s).y - query.positionToRectangle(e).y) > 0.5
+        return editHelper.lineWrapsVisually(pos, text)
     }
 
     function extendSelectionHorizontal(newPos) {
@@ -425,96 +423,31 @@
     }
 
     function visualLineDownPos(pos, gx) {
-        var len = query.text.length
-        if (pos >= len) return len
-        var curRect = query.positionToRectangle(pos)
-        var goalXUse = (gx !== undefined && gx >= 0) ? gx : curRect.x
-        var curY = curRect.y
-        var h = curRect.height
-        // Never step by full curRect.height when it spans multiple wrapped rows
-        // (mid-prose Down jumped ~160 chars). Walk to the next distinct row y.
-        // minGap ignores intra-row glyph noise without skipping a whole row.
-        // Fixed small gap: h*0.4 was too large on normal rows (Shift+Up
-        // from mid-para did not move). Wrap fixtures recalibrated to next-y.
-        var minGap = 3
-        if (h >= 40)
-            minGap = 10
-        var best = -1
-        var bestDist = 1e12
-        var targetY = -1
-        for (var p = pos + 1; p < len; p++) {
-            var r = query.positionToRectangle(p)
-            if (r.y <= curY + minGap) continue
-            if (targetY < 0) targetY = r.y
-            if (Math.abs(r.y - targetY) > 0.5) break
-            var dist = Math.abs(r.x - goalXUse)
-            if (best < 0 || dist < bestDist) { best = p; bestDist = dist }
-        }
-        return best >= 0 ? best : len
+        return editHelper.visualLineDownPos(pos, (gx !== undefined && gx >= 0) ? gx : -1)
     }
 
     function visualLineUpPos(pos, gx) {
-        if (pos <= 0) return 0
-        var curRect = query.positionToRectangle(pos)
-        var goalXUse = (gx !== undefined && gx >= 0) ? gx : curRect.x
-        var curY = curRect.y
-        var h = curRect.height
-        // Fixed small gap: h*0.4 was too large on normal rows (Shift+Up
-        // from mid-para did not move). Wrap fixtures recalibrated to next-y.
-        var minGap = 3
-        if (h >= 40)
-            minGap = 10
-        var best = -1
-        var bestDist = 1e12
-        var targetY = -1
-        for (var p = pos - 1; p >= 0; p--) {
-            var r = query.positionToRectangle(p)
-            if (r.y >= curY - minGap) continue
-            if (targetY < 0) targetY = r.y
-            if (Math.abs(r.y - targetY) > 0.5) break
-            var dist = Math.abs(r.x - goalXUse)
-            if (best < 0 || dist < bestDist) { best = p; bestDist = dist }
-        }
-        return best >= 0 ? best : 0
+        return editHelper.visualLineUpPos(pos, (gx !== undefined && gx >= 0) ? gx : -1)
     }
 
     function visualLineStartPos(pos) {
-        if (pos <= 0) return 0
-        var curY = query.positionToRectangle(pos).y
-        var best = pos
-        for (var p = pos - 1; p >= 0; p--) {
-            if (Math.abs(query.positionToRectangle(p).y - curY) < 0.5) best = p
-            else break
-        }
-        return best
+        return editHelper.visualLineStartPos(pos)
     }
 
     function visualLineEndPos(pos) {
-        var len = query.text.length
-        if (pos >= len) return len
-        var curY = query.positionToRectangle(pos).y
-        var best = pos
-        for (var p = pos + 1; p <= len; p++) {
-            if (Math.abs(query.positionToRectangle(p).y - curY) < 0.5) best = p
-            else break
-        }
-        return best
+        return editHelper.visualLineEndPos(pos)
     }
 
     function onWrappedLine(pos, text) {
-        var s = lineStartPos(pos, text)
-        var nl = text.indexOf("\n", s)
-        return nl === -1 || nl > lineEndPos(pos, text)
+        return editHelper.onWrappedLine(pos, text)
     }
 
     function macLineStartPos(pos, text) {
-        return onWrappedLine(pos, text) ? visualLineStartPos(pos)
-            : lineStartPos(pos, text)
+        return editHelper.macLineStartPos(pos, text)
     }
 
     function macLineEndPos(pos, text) {
-        return onWrappedLine(pos, text) ? visualLineEndPos(pos)
-            : lineEndPos(pos, text)
+        return editHelper.macLineEndPos(pos, text)
     }
 
     function lineDownPos(pos, text) {

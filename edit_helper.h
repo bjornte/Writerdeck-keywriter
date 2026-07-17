@@ -60,7 +60,29 @@ public:
     Q_INVOKABLE QVariantMap dispatchMacEditKeys(int key, int modifiers,
                                                 const QString &text, int cursor) const;
 
+    // Phase C: visual-line math (layout via query TextEdit; QML keeps goalX + apply).
+    void setQueryItem(QObject *queryItem);
+    // gx < 0 means use the x at pos (same as omitted gx in QML).
+    Q_INVOKABLE int visualLineDownPos(int pos, qreal gx = -1) const;
+    Q_INVOKABLE int visualLineUpPos(int pos, qreal gx = -1) const;
+    Q_INVOKABLE int visualLineStartPos(int pos) const;
+    Q_INVOKABLE int visualLineEndPos(int pos) const;
+    Q_INVOKABLE bool lineWrapsVisually(int pos, const QString &text) const;
+    Q_INVOKABLE bool onWrappedLine(int pos, const QString &text) const;
+    Q_INVOKABLE int macLineStartPos(int pos, const QString &text) const;
+    Q_INVOKABLE int macLineEndPos(int pos, const QString &text) const;
+
 private:
+    struct QueryRect {
+        qreal x = 0;
+        qreal y = 0;
+        qreal height = 0;
+    };
+
+    QueryRect queryRectAt(int pos) const;
+    int queryTextLength() const;
+
+    QObject *m_queryItem = nullptr;
     static int selectionExtendFrom(int key, int cursor, int selStart, int selEnd, int shiftHead);
     static QVariantMap notHandled();
     static QVariantMap handledAction(const QString &action);

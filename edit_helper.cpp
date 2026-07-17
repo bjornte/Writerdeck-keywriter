@@ -1,7 +1,9 @@
 #include "edit_helper.h"
 
+#include <QMetaObject>
 #include <QVariantMap>
 #include <Qt>
+#include <QtMath>
 
 EditHelper::EditState EditHelper::makeState(const QString &text, int cursor, int selStart, int selEnd)
 {
@@ -510,6 +512,162 @@ QVariantMap EditHelper::dispatchMacBackspace(int key, int modifiers,
 
     QVariantMap m = handledAction(QStringLiteral("noop"));
     return m;
+}
+
+void EditHelper::setQueryItem(QObject *queryItem)
+{
+    m_queryItem = queryItem;
+}
+
+EditHelper::QueryRect EditHelper::queryRectAt(int pos) const
+{
+    QueryRect out;
+    if (!m_queryItem)
+        return out;
+    QVariant ret;
+    if (!QMetaObject::invokeMethod(m_queryItem, "positionToRectangle",
+            Q_RETURN_ARG(QVariant, ret),
+            Q_ARG(QVariant, pos)))
+        return out;
+    const QVariantMap m = ret.toMap();
+    if (!m.isEmpty()) {
+        out.x = m.value(QStringLiteral("x")).toReal();
+        out.y = m.value(QStringLiteral("y")).toReal();
+        out.height = m.value(QStringLiteral("height")).toReal();
+        return out;
+    }
+    const QRectF rf = ret.toRectF();
+    out.x = rf.x();
+    out.y = rf.y();
+    out.height = rf.height();
+    return out;
+}
+
+int EditHelper::queryTextLength() const
+{
+    if (!m_queryItem)
+        return 0;
+    return m_queryItem->property("text").toString().length();
+}
+
+int EditHelper::visualLineDownPos(int pos, qreal gx) const
+{
+    const int len = queryTextLength();
+    if (pos >= len)
+        return len;
+    const QueryRect curRect = queryRectAt(pos);
+    const qreal goalXUse = (gx >= 0) ? gx : curRect.x;
+    const qreal curY = curRect.y;
+    const qreal h = curRect.height;
+    int minGap = 3;
+    if (h >= 40)
+        minGap = 10;
+    int best = -1;
+    qreal bestDist = 1e12;
+    qreal targetY = -1;
+    for (int p = pos + 1; p < len; p++) {
+        const QueryRect r = queryRectAt(p);
+        if (r.y <= curY + minGap)
+            continue;
+        if (targetY < 0)
+            targetY = r.y;
+        if (qAbs(r.y - targetY) > 0.5)
+            break;
+        const qreal dist = qAbs(r.x - goalXUse);
+        if (best < 0 || dist < bestDist) {
+            best = p;
+            bestDist = dist;
+        }
+    }
+    return best >= 0 ? best : len;
+}
+
+int EditHelper::visualLineUpPos(int pos, qreal gx) const
+{
+    if (pos <= 0)
+        return 0;
+    const QueryRect curRect = queryRectAt(pos);
+    const qreal goalXUse = (gx >= 0) ? gx : curRect.x;
+    const qreal curY = curRect.y;
+    const qreal h = curRect.height;
+    int minGap = 3;
+    if (h >= 40)
+        minGap = 10;
+    int best = -1;
+    qreal bestDist = 1e12;
+    qreal targetY = -1;
+    for (int p = pos - 1; p >= 0; p--) {
+        const QueryRect r = queryRectAt(p);
+        if (r.y >= curY - minGap)
+            continue;
+        if (targetY < 0)
+            targetY = r.y;
+        if (qAbs(r.y - targetY) > 0.5)
+            break;
+        const qreal dist = qAbs(r.x - goalXUse);
+        if (best < 0 || dist < bestDist) {
+            best = p;
+            bestDist = dist;
+        }
+    }
+    return best >= 0 ? best : 0;
+}
+
+int EditHelper::visualLineStartPos(int pos) const
+{
+    if (pos <= 0)
+        return 0;
+    const qreal curY = queryRectAt(pos).y;
+    int best = pos;
+    for (int p = pos - 1; p >= 0; p--) {
+        if (qAbs(queryRectAt(p).y - curY) < 0.5)
+            best = p;
+        else
+            break;
+    }
+    return best;
+}
+
+int EditHelper::visualLineEndPos(int pos) const
+{
+    const int len = queryTextLength();
+    if (pos >= len)
+        return len;
+    const qreal curY = queryRectAt(pos).y;
+    int best = pos;
+    for (int p = pos + 1; p <= len; p++) {
+        if (qAbs(queryRectAt(p).y - curY) < 0.5)
+            best = p;
+        else
+            break;
+    }
+    return best;
+}
+
+bool EditHelper::lineWrapsVisually(int pos, const QString &text) const
+{
+    const int s = lineStartPos(pos, text);
+    const int e = lineEndPos(pos, text);
+    if (e <= s)
+        return false;
+    return qAbs(queryRectAt(s).y - queryRectAt(e).y) > 0.5;
+}
+
+bool EditHelper::onWrappedLine(int pos, const QString &text) const
+{
+    const int s = lineStartPos(pos, text);
+    const int nl = text.indexOf(QLatin1Char('\n'), s);
+    return nl == -1 || nl > lineEndPos(pos, text);
+}
+
+int EditHelper::macLineStartPos(int pos, const QString &text) const
+{
+    return onWrappedLine(pos, text) ? visualLineStartPos(pos) : lineStartPos(pos, text);
+}
+
+int EditHelper::macLineEndPos(int pos, const QString &text) const
+{
+    return onWrappedLine(pos, text) ? visualLineEndPos(pos) : lineEndPos(pos, text);
 }
 
 QVariantMap EditHelper::dispatchMacEditKeys(int key, int modifiers, const QString &text, int cursor) const

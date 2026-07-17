@@ -615,6 +615,7 @@ int main(int argc, char *argv[])
         return -1;
     g_rootObj = engine.rootObjects().first(); // stash for cmd handler thread
     g_lobbyBridge.setRoot(g_rootObj);
+    g_editHelper.setQueryItem(g_rootObj->findChild<QObject *>(QStringLiteral("writerdeckQuery")));
     engine.rootContext()->setContextProperty("writerdeck", &g_lobbyBridge);
     engine.rootContext()->setContextProperty("editHelper", &g_editHelper);
     static RotationWatcher rotWatcher;
