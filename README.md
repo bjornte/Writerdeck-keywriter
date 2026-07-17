@@ -1,6 +1,6 @@
 # Writerdeck-keywriter
 
-This is the tablet text editor inside [Writerdeck for reMarkable](https://github.com/bjornte/Writerdeck-for-reMarkable): a Markdown typewriter on a first-gen reMarkable for USB and Bluetooth keyboards.
+This is the tablet text editor inside [Writerdeck for reMarkable](https://github.com/bjornte/Writerdeck-for-reMarkable): a Markdown typewriter on a first-gen reMarkable for USB and Bluetooth keyboards. The reMarkable 1 natively supports the "draw", "write by hand" and "read" use cases. With this app, "use as typewriter" is also supported.
 
 The reMarkable 1 doesn't have native support for either type of keyboard, so the USB keyboard is connected with an [OTG cable](https://en.wikipedia.org/wiki/USB_On-The-Go#OTG_micro_cables), while USB keyboards are bridged from the user's phone via Wi-Fi.
 
