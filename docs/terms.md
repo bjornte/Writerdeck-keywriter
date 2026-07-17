@@ -16,7 +16,7 @@ Document integrity. Notes must survive as plain Markdown on disk.
 
 ## Editor
 
-QML. Screen language — layout and applying edits on screen.
+QML. Screen language — layout and applying edits on screen (the main screen file is `main.qml`).
 
 C++ / EditHelper. Startup, socket keys, and the math for shortcuts, wrap, and undo.
 
@@ -24,7 +24,7 @@ Text box (Qt TextEdit). Qt’s on-screen editor control. Fine for drawing; weak 
 
 Visual line / goal column. A wrapped row on screen, and the horizontal target Up/Down tries to keep.
 
-assemble-qml.sh. Builds committed `main.qml` from modular pieces. Run it after changing helpers or Lobby; the automatic build does not stitch QML.
+assemble-qml.sh. Builds committed `main.qml` from modular pieces. Run it after changing helpers or Lobby; CI does not stitch QML.
 
 ## Testing and git
 

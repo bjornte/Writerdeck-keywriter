@@ -22,7 +22,7 @@ Dave’s original is a Qt Markdown notepad for reMarkable: USB keyboard, Esc for
 
 This fork keeps that core and adds what Writerdeck needs:
 
-Socket input. Keystrokes arrive from Writerdeck-server as fake Qt key events. The stock tablet software cannot load a fake keyboard device the usual Linux way.
+Socket input. Keystrokes arrive from Writerdeck-server as synthetic Qt key events (QKeyEvent). The stock tablet software cannot load uinput (a fake keyboard device) the usual Linux way.
 
 Mac and Linux shortcuts. Word and line motion, shift-selection, wrap-aware Up/Down, and undo that covers both socket typing and shortcut edits.
 
@@ -32,7 +32,7 @@ Lobby. Files, Home, Settings, and sleep on the tablet; file and vault ops over t
 
 Plain Markdown on disk. Editing stays plain text. Fancy rendering is for preview only.
 
-Building the screen file. Edit helpers and Lobby pieces are modular. After changing them, run `./assemble-qml.sh` and commit the regenerated `main.qml`. Writerdeck’s automatic build only clones, checks, and compiles — it does not stitch the screen file together. New editor behavior belongs here, not in Writerdeck’s build script.
+Building the screen file (QML). Edit helpers and Lobby pieces are modular. After changing them, run `./assemble-qml.sh` and commit the regenerated `main.qml`. Writerdeck’s CI only clones, checks, and compiles — it does not stitch QML together. New editor behavior belongs here, not in Writerdeck’s build script.
 
 ## Pulling in Dave’s updates
 
@@ -46,7 +46,7 @@ git merge upstream/master
 git push origin master
 ```
 
-Prefer a merge commit. Then rebuild Writerdeck via its automatic build, deploy, and run that project’s edit-session and typing tests.
+Prefer a merge commit. Then rebuild Writerdeck via CI, deploy, and run that project’s edit-session and typing tests.
 
 ## Credit
 
