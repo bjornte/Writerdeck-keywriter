@@ -4,7 +4,7 @@ Short definitions for this fork and Writerdeck. Product twin: [Writerdeck docs/t
 
 ## Product
 
-Writerdeck. Wi-Fi Markdown typewriter on a first-gen reMarkable. This repo is its tablet editor.
+Writerdeck. A Markdown typewriter on a first-gen reMarkable for USB and Bluetooth keyboards. This repo is its tablet editor.
 
 Writerdeck-server. Always-on program that talks to this app over a unix socket.
 
@@ -32,6 +32,6 @@ Keyboard harness. Automated on-device typing checks in the Writerdeck project.
 
 Critical / full suite. Smaller “basic editing works” gate; full product sign-off.
 
-Ship tip. A known-good commit of this fork. Day-to-day builds usually track `master`.
+Ship tip / known-good commit. A fork commit that last passed the automated typing checks. Everyday builds usually follow `master`.
 
 Upstream / merge-base. Dave’s repo, and the shared ancestor that makes ordinary merges possible.
