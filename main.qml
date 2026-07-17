@@ -746,6 +746,678 @@ Window {
         if (mode == 0) syncQueryDisplay()
     }
 
+    // Phase 2C: undo/redo orchestration (stacks + merge live in editHelper)
+    // Phase 2D: edit/cursor/harness state + Keys.onPressed dispatch
+    // Phase B: chord -> action mapping in editHelper; QML applies layout effects
+    // Phase C: visual-line math in editHelper; QML keeps goalX + cursor apply
+    property bool cursorStrong: true
+    property string autosaveSnapshot: ""
+    property int harnessTextWidth: 0
+    property int harnessDefaultQueryWidth: 0
+    property bool harnessPrepareLock: false
+    property real goalX: -1
+    property bool goalXTrackSuspended: false
+    property int lastShiftHorizKey: 0
+    property int shiftAnchor: -1
+    property int shiftHead: -1
+
+    function syncEditHelperQuery() {
+        editHelper.setQueryItem(query)
+    }
+
+    // Single entry for edit-mode Keys.onPressed (script injects one call).
+    function handleMacKeysOnPressed(event) {
+        if (mode != 1) return false
+        if (handleMacBackspace(event))
+            return true
+        if (handleMacEditKeys(event))
+            return true
+        if (handleMacUndo(event))
+            return true
+        if (handleMacArrow(event))
+            return true
+        return false
+    }
+
+    function harnessSetCursor(pos) {
+        if (mode != 1 || isLobby) return
+        var len = query.text.length
+        pos = Math.max(0, Math.min(parseInt(pos), len))
+        clearShiftSelection()
+        query.deselect()
+        query.cursorPosition = pos
+        rememberGoalX(pos)
+        cursorStrong = true
+        cursorTimer.stop()
+    }
+
+    function harnessSetWidth(w) {
+        if (mode != 1) return
+        if (harnessDefaultQueryWidth <= 0 && query.width > 0)
+            harnessDefaultQueryWidth = query.width
+        if (w > 0) {
+            harnessTextWidth = w
+            query.width = w
+        } else if (harnessDefaultQueryWidth > 0) {
+            harnessTextWidth = 0
+            query.width = harnessDefaultQueryWidth
+        }
+    }
+
+    function harnessOpenNote(name) {
+        isLobby = false
+        mode = 1
+        currentFile = name
+    }
+
+    function harnessSandboxReset(widthPx) {
+        if (currentFile === "") return
+        harnessPrepareLock = true
+        isLobby = false
+        mode = 1
+        cursorStrong = true
+        cursorTimer.stop()
+        if (widthPx > 0)
+            harnessSetWidth(widthPx)
+        else
+            harnessSetWidth(0)
+        var req = new XMLHttpRequest()
+        req.open("GET", "http://127.0.0.1:8000/api/notes/" + encodeURIComponent(currentFile), false)
+        req.send()
+        if (req.status !== 200) {
+            harnessPrepareLock = false
+            console.log("harnessSandboxReset: GET failed " + req.status)
+            return
+        }
+        var response = sanitizeLoadedNote(req.responseText)
+        doc = response
+        syncQueryDisplay()
+        autosaveSnapshot = response
+        if (widthPx > 0 && query.text.length > 0)
+            query.positionToRectangle(query.text.length)
+        query.deselect()
+        query.cursorPosition = 0
+        goalX = -1
+        lastShiftHorizKey = 0
+        clearShiftSelection()
+        clearEditUndoStacks()
+        syncEditUndoSnapshot()
+        ctrlPressed = false
+        query.forceActiveFocus()
+        if (query.text.length > 0) {
+            query.cursorPosition = query.text.length
+            query.cursorPosition = 0
+            query.deselect()
+        }
+        if (typeof flick !== "undefined")
+            flick.contentY = 0
+        try { if (query.undoStack) query.undoStack.clear() } catch (e) {}
+        harnessPrepareLock = false
+        syncEditHelperQuery()
+    }
+
+    function socketRouteKey(key, mods) {
+        if (mode != 1 || isLobby) return
+        query.forceActiveFocus()
+        key = parseInt(key)
+        mods = parseInt(mods)
+        var cmd = (mods & Qt.ControlModifier) !== 0
+        var alt = (mods & Qt.AltModifier) !== 0
+        var shift = (mods & Qt.ShiftModifier) !== 0
+        var text = query.text
+        var pos = query.cursorPosition
+        if (!shift && cmd && !alt) {
+            // Ctrl+arrows = document bounds (Mac Cmd mapping), same as Ctrl+Home/End.
+            if (key === Qt.Key_Right) { moveCursorTo(text.length, false); return }
+            if (key === Qt.Key_Left) { moveCursorTo(0, false); return }
+            if (key === Qt.Key_Up) { moveCursorTo(0, false); return }
+            if (key === Qt.Key_Down) { moveCursorTo(text.length, false); return }
+            if (key === Qt.Key_End) { moveCursorTo(text.length, false); return }
+            if (key === Qt.Key_Home) { moveCursorTo(0, false); return }
+        }
+        if (!shift && !cmd && alt) {
+            if (key === Qt.Key_Right) { moveCursorTo(wordRightPos(pos, text), false); return }
+            if (key === Qt.Key_Left) { moveCursorTo(wordLeftPos(pos, text), false); return }
+            if (key === Qt.Key_Up) { moveCursorTo(paragraphUpPos(pos, text), false); return }
+            if (key === Qt.Key_Down) { moveCursorTo(paragraphDownPos(pos, text), false); return }
+        }
+        if (shift && cmd && !alt) {
+            // Use shiftAnchor/shiftHead - raw query.select parks cursor at
+            // selectionEnd so repeat Shift+Ctrl+Right/Down collapsed.
+            cursorStrong = true
+            cursorTimer.stop()
+            if (key === Qt.Key_Right) {
+                extendSelectionHorizontal(macLineEndPos(selectionExtendFrom(Qt.Key_Right), text))
+                return
+            }
+            if (key === Qt.Key_Left) {
+                extendSelectionHorizontal(macLineStartPos(selectionExtendFrom(Qt.Key_Left), text))
+                return
+            }
+            if (key === Qt.Key_Down || key === Qt.Key_End) {
+                extendSelectionHorizontal(text.length)
+                return
+            }
+            if (key === Qt.Key_Up || key === Qt.Key_Home) {
+                extendSelectionHorizontal(0)
+                return
+            }
+        }
+        if (shift && alt && !cmd) {
+            var from = selectionExtendFrom(key)
+            var ap = from
+            if (key === Qt.Key_Left) ap = wordLeftPos(from, text)
+            else if (key === Qt.Key_Right) ap = wordRightPos(from, text)
+            else if (key === Qt.Key_Up) ap = paragraphUpPos(from, text)
+            else if (key === Qt.Key_Down) ap = paragraphDownPos(from, text)
+            else return
+            extendSelectionHorizontal(ap)
+            cursorStrong = true
+            cursorTimer.stop()
+            return
+        }
+        var event = { key: key, modifiers: mods, accepted: false }
+        if (handleMacBackspace(event)) return
+        if (handleMacEditKeys(event)) return
+        if (handleMacUndo(event)) return
+        if (handleMacArrow(event)) return
+        if (!shift && !cmd && !alt) {
+            if (key === Qt.Key_Right) { moveCursorTo(Math.min(pos + 1, query.text.length), false); return }
+            if (key === Qt.Key_Left) { moveCursorTo(Math.max(0, pos - 1), false); return }
+        }
+    }
+
+    function publishEditorState() {
+        var cy = 0
+        try { if (typeof flick !== "undefined") cy = Math.round(flick.contentY) } catch (e) {}
+        writerdeck.publishState(query.cursorPosition, query.selectionStart,
+            query.selectionEnd, query.text.length, mode, isLobby ? 1 : 0,
+            vaultOverlayMode, currentFile, query.text, cy)
+    }
+
+    function pageLeft() {
+        if (typeof flick === "undefined") return
+        flick.scrollUp()
+    }
+
+    function pageRight() {
+        if (typeof flick === "undefined") return
+        flick.scrollDown()
+    }
+
+    function cursorOnLastLine() {
+        if (mode != 1) return false
+        var len = query.text.length
+        if (len === 0) return true
+        var curY = query.positionToRectangle(query.cursorPosition).y
+        var endY = query.positionToRectangle(len).y
+        return curY >= endY - 1
+    }
+
+    function cursorOnFirstLine() {
+        if (mode != 1) return false
+        var curY = query.positionToRectangle(query.cursorPosition).y
+        var topY = query.positionToRectangle(0).y
+        return curY <= topY + 1
+    }
+
+    // Phase A1: pure string math lives in C++ EditHelper; keep names for callers.
+    function isSpaceChar(c) {
+        return editHelper.isSpaceChar(c)
+    }
+
+    function lineStartPos(pos, text) {
+        return editHelper.lineStartPos(pos, text)
+    }
+
+    function lineEndPos(pos, text) {
+        return editHelper.lineEndPos(pos, text)
+    }
+
+    function lineCharCount(lineStart, text) {
+        return editHelper.lineCharCount(lineStart, text)
+    }
+
+    function rememberGoalX(pos) {
+        goalX = query.positionToRectangle(pos).x
+    }
+
+    function goalXFor(pos) {
+        if (goalX >= 0) return goalX
+        return query.positionToRectangle(pos).x
+    }
+
+    function deleteWordLeftPos(pos, text) {
+        return editHelper.deleteWordLeftPos(pos, text)
+    }
+
+    function deleteLineLeftPos(pos, text) {
+        return editHelper.deleteLineLeftPos(pos, text)
+    }
+
+    function wordLeftPos(pos, text) {
+        return editHelper.wordLeftPos(pos, text)
+    }
+
+    function wordRightPos(pos, text) {
+        return editHelper.wordRightPos(pos, text)
+    }
+
+    function paragraphUpPos(pos, text) {
+        return editHelper.paragraphUpPos(pos, text)
+    }
+
+    function paragraphDownPos(pos, text) {
+        return editHelper.paragraphDownPos(pos, text)
+    }
+
+    function clearShiftSelection() {
+        shiftAnchor = -1
+        shiftHead = -1
+    }
+
+    function applyShiftSelection(newHead) {
+        var len = query.text.length
+        newHead = Math.max(0, Math.min(newHead, len))
+        if (shiftAnchor < 0) {
+            shiftAnchor = query.cursorPosition
+            shiftHead = shiftAnchor
+        }
+        shiftHead = newHead
+        query.select(Math.min(shiftAnchor, shiftHead), Math.max(shiftAnchor, shiftHead))
+        if (shiftHead === shiftAnchor)
+            clearShiftSelection()
+    }
+
+    function moveCursorTo(newPos, extend, keepGoalColumn) {
+        var len = query.text.length
+        var text = query.text
+        newPos = Math.max(0, Math.min(newPos, len))
+        if (!extend) {
+            clearShiftSelection()
+            query.deselect()
+            // Suspend Connections onCursorPositionChanged so keepGoalColumn
+            // survives landing on a shorter line (cm-line-down-goal-col).
+            if (keepGoalColumn) goalXTrackSuspended = true
+            query.cursorPosition = newPos
+            goalXTrackSuspended = false
+            if (!keepGoalColumn) rememberGoalX(newPos)
+            return
+        }
+        applyShiftSelection(newPos)
+    }
+
+    function lineWrapsVisually(pos, text) {
+        return editHelper.lineWrapsVisually(pos, text)
+    }
+
+    function extendSelectionHorizontal(newPos) {
+        applyShiftSelection(newPos)
+    }
+
+    function selectionExtendFrom(key) {
+        if (shiftHead >= 0) return shiftHead
+        var pos = query.cursorPosition
+        if (query.selectionStart === query.selectionEnd) return pos
+        if (key === Qt.Key_Left || key === Qt.Key_Up)
+            return Math.min(query.selectionStart, query.selectionEnd)
+        if (key === Qt.Key_Right || key === Qt.Key_Down)
+            return Math.max(query.selectionStart, query.selectionEnd)
+        return pos
+    }
+
+    // Phase B: resolve layout-dependent positions for C++ chord dispatch.
+    function resolveMacPosKind(posKind, extendKey) {
+        var text = query.text
+        var pos = query.cursorPosition
+        if (posKind === "macLineStartCursor")
+            return macLineStartPos(pos, text)
+        if (posKind === "macLineEndCursor")
+            return macLineEndPos(pos, text)
+        if (posKind === "macLineStartShiftHead")
+            return macLineStartPos((shiftHead >= 0) ? shiftHead : pos, text)
+        if (posKind === "macLineEndShiftHead")
+            return macLineEndPos((shiftHead >= 0) ? shiftHead : pos, text)
+        if (posKind === "macLineStartExtend")
+            return macLineStartPos(selectionExtendFrom(extendKey), text)
+        if (posKind === "macLineEndExtend")
+            return macLineEndPos(selectionExtendFrom(extendKey), text)
+        return pos
+    }
+
+    function applyMacArrowDispatch(r, eventKey) {
+        if (!r.handled) return false
+        var text = query.text
+        var pos = query.cursorPosition
+        var action = r.action
+        if (action === "collapseSel") {
+            var c = r.toMin
+                ? Math.min(query.selectionStart, query.selectionEnd)
+                : Math.max(query.selectionStart, query.selectionEnd)
+            clearShiftSelection()
+            query.deselect()
+            query.cursorPosition = c
+        } else if (action === "moveTo") {
+            if (r.extend)
+                extendSelectionHorizontal(r.pos)
+            else
+                moveCursorTo(r.pos, false, r.keepGoalColumn === true)
+        } else if (action === "moveToResolved") {
+            var p = resolveMacPosKind(r.posKind, r.extendKey)
+            if (r.extend)
+                extendSelectionHorizontal(p)
+            else
+                moveCursorTo(p, false)
+        } else if (action === "shiftHorizDelta") {
+            var headH = (shiftHead >= 0) ? shiftHead : query.cursorPosition
+            var newHead = (r.delta < 0)
+                ? Math.max(0, headH + r.delta)
+                : Math.min(text.length, headH + r.delta)
+            applyShiftSelection(newHead)
+            lastShiftHorizKey = (r.eventKey !== undefined) ? r.eventKey : eventKey
+        } else if (action === "shiftHorizTo") {
+            if (shiftAnchor < 0)
+                shiftAnchor = (query.selectionStart === query.selectionEnd)
+                    ? pos : ((r.posKind === "macLineEndShiftHead")
+                        ? Math.min(query.selectionStart, query.selectionEnd)
+                        : Math.max(query.selectionStart, query.selectionEnd))
+            applyShiftSelection(resolveMacPosKind(r.posKind, 0))
+        } else if (action === "shiftVert") {
+            extendSelectionVertical(r.down)
+        } else if (action === "moveVert") {
+            moveCursorVertical(r.down)
+        } else {
+            return false
+        }
+        cursorStrong = true
+        cursorTimer.stop()
+        return true
+    }
+
+    function applyMacBackspaceDispatch(r) {
+        if (!r.handled) return false
+        if (r.action === "noop") {
+            cursorStrong = true
+            cursorTimer.stop()
+            return true
+        }
+        if (r.action === "replaceText") {
+            if (r.beginEdit)
+                beginTextEdit()
+            query.text = r.text
+            query.cursorPosition = r.cursor
+            query.deselect()
+            doc = query.text
+        }
+        cursorStrong = true
+        cursorTimer.stop()
+        return true
+    }
+
+    function applyMacEditKeysDispatch(r) {
+        if (!r.handled) return false
+        if (r.action === "selectAll") {
+            query.select(0, r.len)
+            doc = query.text
+        } else if (r.action === "insertNewline") {
+            var text = query.text
+            var pos = r.pos
+            beginTextEdit()
+            query.text = text.slice(0, pos) + "\n" + text.slice(pos)
+            query.cursorPosition = pos + 1
+            query.deselect()
+            doc = query.text
+        } else {
+            return false
+        }
+        cursorStrong = true
+        cursorTimer.stop()
+        return true
+    }
+
+    function visualLineDownPos(pos, gx) {
+        syncEditHelperQuery()
+        return editHelper.visualLineDownPos(pos, (gx !== undefined && gx >= 0) ? gx : -1)
+    }
+
+    function visualLineUpPos(pos, gx) {
+        syncEditHelperQuery()
+        return editHelper.visualLineUpPos(pos, (gx !== undefined && gx >= 0) ? gx : -1)
+    }
+
+    function visualLineStartPos(pos) {
+        return editHelper.visualLineStartPos(pos)
+    }
+
+    function visualLineEndPos(pos) {
+        return editHelper.visualLineEndPos(pos)
+    }
+
+    function onWrappedLine(pos, text) {
+        return editHelper.onWrappedLine(pos, text)
+    }
+
+    function macLineStartPos(pos, text) {
+        return editHelper.macLineStartPos(pos, text)
+    }
+
+    function macLineEndPos(pos, text) {
+        return editHelper.macLineEndPos(pos, text)
+    }
+
+    function lineDownPos(pos, text) {
+        var gx = goalXFor(pos)
+        goalX = gx
+        return visualLineDownPos(pos, gx)
+    }
+
+    function lineUpPos(pos, text) {
+        if (pos <= 0) return 0
+        var gx = goalXFor(pos)
+        goalX = gx
+        return visualLineUpPos(pos, gx)
+    }
+
+    function lineUpForSelection(head, anchor, text) {
+        if (head === 0) return 0
+        return lineUpPos(head, text)
+    }
+
+    function moveCursorVertical(down) {
+        var pos = query.cursorPosition
+        var text = query.text
+        var newPos = down ? lineDownPos(pos, text) : lineUpPos(pos, text)
+        if (newPos === pos) {
+            if (down) {
+                var gx = goalXFor(pos)
+                var vis = visualLineDownPos(pos, gx)
+                newPos = (vis > pos) ? vis : lineEndPos(pos, text)
+            } else {
+                newPos = macLineStartPos(pos, text)
+            }
+        }
+        moveCursorTo(newPos, false, true)
+    }
+
+    function extendSelectionVertical(down) {
+        var text = query.text
+        if (shiftAnchor < 0) {
+            shiftAnchor = query.cursorPosition
+            shiftHead = shiftAnchor
+            if (!down && shiftHead === text.length) {
+                var upOnce = lineUpPos(shiftHead, text)
+                shiftAnchor = lineStartPos(upOnce, text)
+                query.select(shiftAnchor, shiftHead)
+                return
+            }
+        }
+        var head = shiftHead
+        var newHead = down ? lineDownPos(head, text) : lineUpForSelection(head, shiftAnchor, text)
+        // Snap to logical line end/start only when the source line actually
+        // wraps visually. Mid-line on a short unwrapped line must keep goal x
+        // (cm-select-line-down-mid), not jump to lineEndPos of the next line.
+        if (lineStartPos(newHead, text) !== lineStartPos(head, text)) {
+            if (down && newHead > head && lineWrapsVisually(head, text))
+                newHead = lineEndPos(newHead, text)
+            if (!down && newHead < head && lineWrapsVisually(head, text))
+                newHead = lineStartPos(newHead, text)
+        }
+        if (down && newHead === head && head < text.length
+                && text.indexOf("\n", head) === -1 && onWrappedLine(head, text)) {
+            var vis = visualLineDownPos(head, goalXFor(head))
+            if (vis > head) newHead = vis
+        }
+        // Force a 1-char selection at EOF only on a wrapped last line
+        // (wrap-shift-down-last-to-eof). Short unwrapped docs stay collapsed.
+        if (down && newHead === head && head === text.length && head > 0
+                && shiftAnchor === shiftHead && lineWrapsVisually(head, text))
+            newHead = head - 1
+        applyShiftSelection(newHead)
+    }
+
+    function moveCursorEndOfLine() {
+        moveCursorTo(lineEndPos(query.cursorPosition, query.text), false)
+    }
+
+    function moveCursorStartOfLine() {
+        moveCursorTo(lineStartPos(query.cursorPosition, query.text), false)
+    }
+
+    function insertTextDelta(prevText, curText) {
+        var r = editHelper.insertTextDelta(prevText, curText)
+        return (r === undefined || r === null) ? null : r
+    }
+
+    function beginTextEdit() {
+        if (harnessPrepareLock || mode != 1)
+            return
+        editHelper.beginTextEdit(query.text, query.cursorPosition,
+                                 query.selectionStart, query.selectionEnd)
+    }
+
+    function syncEditUndoSnapshot() {
+        editHelper.syncUndoSnapshot(query.text, query.cursorPosition,
+                                    query.selectionStart, query.selectionEnd)
+    }
+
+    function clearEditUndoStacks() {
+        editHelper.clearUndoStacks()
+    }
+
+    function isOneCharInsert(prevText, curText) {
+        return editHelper.isOneCharInsert(prevText, curText)
+    }
+
+    function restoreEditState(st) {
+        editHelper.beginRestore()
+        query.text = st.text
+        query.deselect()
+        query.cursorPosition = st.cursor
+        doc = query.text
+        editHelper.endRestore(query.text, query.cursorPosition,
+                              query.selectionStart, query.selectionEnd)
+    }
+
+    function editUndo() {
+        var st = editHelper.undo(query.text, query.cursorPosition,
+                                 query.selectionStart, query.selectionEnd)
+        if (st === undefined || st === null) return false
+        restoreEditState(st)
+        return true
+    }
+
+    function editRedo() {
+        var st = editHelper.redo(query.text, query.cursorPosition,
+                                 query.selectionStart, query.selectionEnd)
+        if (st === undefined || st === null) return false
+        restoreEditState(st)
+        return true
+    }
+
+    function handleMacUndo(event) {
+        if (mode != 1) return false
+        if (!(event.modifiers & Qt.ControlModifier)) return false
+        if (event.key === Qt.Key_Z && !(event.modifiers & Qt.ShiftModifier)) {
+            if (editUndo()) {
+                cursorStrong = true
+                cursorTimer.stop()
+                event.accepted = true
+                return true
+            }
+            return false
+        }
+        if (event.key === Qt.Key_Y || (event.key === Qt.Key_Z && (event.modifiers & Qt.ShiftModifier))) {
+            if (editRedo()) {
+                cursorStrong = true
+                cursorTimer.stop()
+                event.accepted = true
+                return true
+            }
+            return false
+        }
+        return false
+    }
+
+    function handleMacArrow(event) {
+        if (mode != 1) return false
+        var r = editHelper.dispatchMacArrow(event.key, event.modifiers, query.text,
+            query.cursorPosition, query.selectionStart, query.selectionEnd,
+            shiftAnchor, shiftHead)
+        if (!applyMacArrowDispatch(r, event.key))
+            return false
+        event.accepted = true
+        return true
+    }
+
+    function handleMacEditKeys(event) {
+        if (mode != 1) return false
+        var r = editHelper.dispatchMacEditKeys(event.key, event.modifiers,
+            query.text, query.cursorPosition)
+        if (!applyMacEditKeysDispatch(r))
+            return false
+        event.accepted = true
+        return true
+    }
+
+    function handleMacBackspace(event) {
+        if (mode != 1) return false
+        var r = editHelper.dispatchMacBackspace(event.key, event.modifiers, query.text,
+            query.cursorPosition, query.selectionStart, query.selectionEnd)
+        if (!applyMacBackspaceDispatch(r))
+            return false
+        event.accepted = true
+        return true
+    }
+
+    // Phase 3: cursor/autosave Timers + text-change Connections (was build-keywriter.sh §8b).
+    // Inserted with the rest of this file before showLobby(); ids resolve on Window.
+    Timer {
+        id: autosaveTimer
+        interval: 45000
+        repeat: true
+        running: !isLobby && currentFile !== "" && mode == 1
+        onTriggered: autosaveTick()
+    }
+    Timer {
+        id: cursorTimer
+        interval: 500
+        repeat: false
+        onTriggered: cursorStrong = true
+    }
+    Connections {
+        target: query
+        onCursorPositionChanged: {
+            if (harnessPrepareLock || mode != 1 || isLobby || goalXTrackSuspended) return
+            rememberGoalX(query.cursorPosition)
+        }
+        onTextChanged: {
+            if (harnessPrepareLock || mode != 1 || isLobby) return
+            editHelper.notifyTextChanged(query.text, query.cursorPosition,
+                                         query.selectionStart, query.selectionEnd)
+            cursorStrong = false
+            cursorTimer.restart()
+        }
+    }
     function showLobby() {
         var lastFile = ""
         if (!isLobby) {
@@ -1094,6 +1766,985 @@ Window {
 
                 model: folderModel
                 delegate: fileDelegate
+            }
+        }
+        ListModel {
+            id: lobbyNotesModel
+        }
+        Rectangle {
+            id: lobby
+            anchors.fill: parent
+            color: "white"
+            visible: isLobby
+            z: 5
+
+            readonly property int pageMargin: 24
+            readonly property int tabBtnHeight: 64
+            readonly property int rowHeight: 72
+            readonly property int actionBtnHeight: 72
+            readonly property int tabSpacing: 12
+            readonly property int contentSpacing: 12
+
+            FocusScope {
+                id: lobbyFocus
+                anchors.fill: parent
+                focus: isLobby && !isOmni
+                Keys.enabled: isLobby && !isOmni
+                Keys.onPressed: handleKeyDown(event)
+                Keys.onReleased: {
+                    handleKeyUp(event)
+                    handleKey(event)
+                }
+
+                Connections {
+                    target: root
+                    function onIsLobbyChanged() {
+                        if (isLobby) Qt.callLater(function() { lobbyFocus.forceActiveFocus() })
+                    }
+                }
+
+                // ---- tab bar (touch + keyboard 1-6 / Tab / arrows) ----
+                Row {
+                    id: lobbyTabRow
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: lobby.pageMargin
+                    anchors.rightMargin: lobby.pageMargin
+                    anchors.topMargin: lobby.pageMargin
+                    height: lobby.tabBtnHeight + 8
+                    spacing: lobby.tabSpacing
+
+                    Repeater {
+                        model: lobbyTabLabels
+                        delegate: Rectangle {
+                            width: Math.max(88, (lobby.width - lobby.pageMargin * 2 - lobby.tabSpacing * (lobbyTabLabels.length - 1)) / lobbyTabLabels.length)
+                            height: lobby.tabBtnHeight
+                            radius: 6
+                            color: lobbyPage === index ? "#e0e0e0" : "#f5f5f5"
+                            border.color: lobbyPage === index ? "#999" : "#ccc"
+                            border.width: 1
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: (index + 1) + " " + modelData
+                                font.family: "Noto Sans"
+                                font.pointSize: 11
+                                color: "black"
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: root.lobbyGoPage(index)
+                            }
+                        }
+                    }
+                }
+
+                // ---- page stack ----
+                Item {
+                    anchors.top: lobbyTabRow.bottom
+                    anchors.topMargin: lobby.contentSpacing
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: lobbyHint.top
+                    anchors.bottomMargin: lobby.contentSpacing
+                    anchors.leftMargin: lobby.pageMargin
+                    anchors.rightMargin: lobby.pageMargin
+
+                    // 0 Home
+                    Item {
+                        visible: lobbyPage === 5
+                        anchors.fill: parent
+                        Flickable {
+                            anchors.fill: parent
+                            contentWidth: width
+                            contentHeight: homeCol.height
+                            clip: true
+                            Column {
+                                id: homeCol
+                                width: parent.width
+                                spacing: lobby.contentSpacing
+                                Text {
+                                    text: "Writerdeck"
+                                    color: "black"
+                                    font.pointSize: 26
+                                    font.family: "Noto Mono"
+                                    width: parent.width
+                                }
+                                Text {
+                                    text: "A text editor for use with a physical keyboard.\nWith Markdown support."
+                                    color: "#555555"
+                                    font.pointSize: 12
+                                    font.family: "Noto Sans"
+                                    width: parent.width
+                                    wrapMode: Text.WordWrap
+                                }
+                                Text {
+                                    text: (lobbyNoteCount === 1 ? "1 note" : lobbyNoteCount + " notes") + " on this device."
+                                    color: "#555555"
+                                    font.pointSize: 11
+                                    font.family: "Noto Sans"
+                                    width: parent.width
+                                    wrapMode: Text.WordWrap
+                                }
+                                Text {
+                                    text: "Open the Files tab (1) or press Ctrl-K.\nUse Tab / arrows / 1-6 to switch pages."
+                                    color: "#888888"
+                                    font.pointSize: 10
+                                    font.family: "Noto Sans"
+                                    width: parent.width
+                                    wrapMode: Text.WordWrap
+                                }
+                                Text {
+                                    text: "Open sourced at github.com/bjornte/Writerdeck-for-reMarkable"
+                                    color: "#888888"
+                                    font.pointSize: 9
+                                    font.family: "Noto Mono"
+                                    width: parent.width
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                        }
+                    }
+                    // 1 Files
+                    Item {
+                        visible: lobbyPage === 0
+                        anchors.fill: parent
+
+                        Column {
+                            anchors.fill: parent
+                            spacing: lobby.contentSpacing
+
+                            Text {
+                                text: lobbyFilesMode === "new" ? "New note name:"
+                                     : lobbyFilesMode === "rename" ? "Rename to:"
+                                     : lobbyFilesMode === "confirm-delete" ? "Delete this note? Enter=yes  Esc=no"
+                                     : "Notes"
+                                font.family: "Noto Sans"
+                                font.pointSize: 13
+                                color: "black"
+                                width: parent.width
+                            }
+
+                            Text {
+                                visible: lobbyFilesMode === "new" || lobbyFilesMode === "rename"
+                                text: lobbyFilesInputDisplay()
+                                font.family: "Noto Mono"
+                                font.pointSize: 12
+                                color: "#333"
+                                width: parent.width
+                            }
+
+                            Text {
+                                visible: lobbyVaultError !== "" && lobbyFilesMode === ""
+                                text: lobbyVaultError
+                                font.family: "Noto Sans"
+                                font.pointSize: 11
+                                color: "#aa0000"
+                                width: parent.width
+                                wrapMode: Text.WordWrap
+                            }
+
+                            ListView {
+                                id: lobbyFilesList
+                                width: parent.width
+                                height: {
+                                    var reserved = lobbyFilesBar.height + lobby.contentSpacing * 2
+                                    if (lobbyEncryptionEnabled && lobbyFilesMode === "" && lobbyNotesModel.count > 0)
+                                        reserved += lobbyFilesVaultBar.height + lobby.contentSpacing
+                                    return Math.max(lobby.rowHeight * 2, parent.height - reserved)
+                                }
+                                clip: true
+                                model: lobbyNotesModel
+                                currentIndex: lobbyFilesIndex
+                                spacing: 4
+                                visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
+                                delegate: Rectangle {
+                                    width: lobbyFilesList.width
+                                    height: lobby.rowHeight
+                                    color: index === lobbyFilesIndex ? "#e8e8e8" : "white"
+                                    border.color: "#ddd"
+                                    border.width: 1
+                                    radius: 4
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.left: parent.left
+                                        anchors.leftMargin: 16
+                                        text: lobbyFilesStripSuffix(model.name) + (model.encrypted ? " [private]" : "")
+                                        font.family: "Noto Mono"
+                                        font.pointSize: 11
+                                        color: "black"
+                                        elide: Text.ElideRight
+                                        width: parent.width - 32
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            if (index === lobbyFilesIndex)
+                                                root.lobbyOpenSelected()
+                                            else {
+                                                lobbyFilesIndex = index
+                                                lobbyFilesList.currentIndex = index
+                                            }
+                                        }
+                                        onDoubleClicked: root.lobbyOpenSelected()
+                                    }
+                                }
+                                onCurrentIndexChanged: lobbyFilesIndex = currentIndex
+                                highlight: Rectangle { color: "#d0d0d0"; radius: 4 }
+                            }
+
+                            Row {
+                                id: lobbyFilesBar
+                                width: parent.width
+                                height: lobby.actionBtnHeight + 8
+                                spacing: lobby.tabSpacing
+                                visible: lobbyFilesMode === ""
+
+                                Repeater {
+                                    model: ["New", "Edit", "Read", "Rename", "Delete"]
+                                    delegate: Rectangle {
+                                        width: (lobbyFilesBar.width - lobby.tabSpacing * 4) / 5
+                                        height: lobby.actionBtnHeight
+                                        radius: 6
+                                        color: "#f0f0f0"
+                                        border.color: "#bbb"
+                                        border.width: 1
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: modelData
+                                            font.family: "Noto Sans"
+                                            font.pointSize: 11
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: {
+                                                if (modelData === "New") root.lobbyFilesBeginNew()
+                                                else if (modelData === "Edit") root.lobbyOpenSelected()
+                                                else if (modelData === "Read") root.lobbyReadSelected()
+                                                else if (modelData === "Rename") root.lobbyFilesBeginRename()
+                                                else if (modelData === "Delete") root.lobbyFilesBeginDelete()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Row {
+                                id: lobbyFilesVaultBar
+                                width: parent.width
+                                height: lobby.actionBtnHeight + 4
+                                spacing: lobby.tabSpacing
+                                visible: lobbyFilesMode === "" && lobbyEncryptionEnabled && lobbyNotesModel.count > 0
+
+                                property bool selectedEncrypted: {
+                                    if (lobbyNotesModel.count === 0) return false
+                                    var row = lobbyNotesModel.get(lobbyFilesIndex)
+                                    return row && row.encrypted
+                                }
+
+                                Rectangle {
+                                    visible: !lobbyFilesVaultBar.selectedEncrypted
+                                    width: (lobbyFilesVaultBar.width - lobby.tabSpacing) / 2
+                                    height: lobby.actionBtnHeight
+                                    radius: 6
+                                    color: "#f0f0f0"
+                                    border.color: "#bbb"
+                                    border.width: 1
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Encrypt"
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 11
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: root.lobbyEncryptSelected()
+                                    }
+                                }
+                                Rectangle {
+                                    visible: !lobbyFilesVaultBar.selectedEncrypted
+                                    width: (lobbyFilesVaultBar.width - lobby.tabSpacing) / 2
+                                    height: lobby.actionBtnHeight
+                                    radius: 6
+                                    color: "#f0f0f0"
+                                    border.color: "#bbb"
+                                    border.width: 1
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "New encrypted"
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 11
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: root.lobbyFilesBeginNewEncrypted()
+                                    }
+                                }
+                                Rectangle {
+                                    visible: lobbyFilesVaultBar.selectedEncrypted
+                                    width: lobbyFilesVaultBar.width
+                                    height: lobby.actionBtnHeight
+                                    radius: 6
+                                    color: "#f0f0f0"
+                                    border.color: "#bbb"
+                                    border.width: 1
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Decrypt"
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 11
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: root.lobbyDecryptSelected()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // 2 Keyboard
+                    Item {
+                        visible: lobbyPage === 1
+                        anchors.fill: parent
+                        Flickable {
+                            anchors.fill: parent
+                            contentWidth: width
+                            contentHeight: kbCol.height
+                            clip: true
+                            Column {
+                                id: kbCol
+                                width: parent.width
+                                spacing: lobby.contentSpacing
+                                Text {
+                                    text: "USB keyboard"
+                                    font.pointSize: 14
+                                    font.family: "Noto Sans"
+                                    color: "black"
+                                    width: parent.width
+                                }
+                                Text {
+                                    text: "Connect with a USB OTG cable.\nChanging layout restarts Writerdeck."
+                                    font.pointSize: 11
+                                    font.family: "Noto Sans"
+                                    color: "#555555"
+                                    width: parent.width
+                                    wrapMode: Text.WordWrap
+                                }
+                                Text {
+                                    text: "Layout"
+                                    font.pointSize: 12
+                                    font.family: "Noto Sans"
+                                    color: "black"
+                                    width: parent.width
+                                }
+                                Row {
+                                    id: kbLayoutRow
+                                    width: parent.width
+                                    spacing: lobby.tabSpacing
+                                    property var layoutOptions: [
+                                        { id: "us", label: "US QWERTY" },
+                                        { id: "no", label: "Norwegian" }
+                                    ]
+                                    Repeater {
+                                        model: kbLayoutRow.layoutOptions
+                                        delegate: Rectangle {
+                                            width: (kbLayoutRow.width - lobby.tabSpacing * (kbLayoutRow.layoutOptions.length - 1)) / kbLayoutRow.layoutOptions.length
+                                            height: lobby.actionBtnHeight
+                                            radius: 6
+                                            property bool selected: lobbyKeyboardLayout === modelData.id
+                                            color: selected ? "#e8e8e8" : "#f0f0f0"
+                                            border.color: selected ? "black" : "#bbb"
+                                            border.width: selected ? 2 : 1
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: modelData.label
+                                                font.family: "Noto Sans"
+                                                font.pointSize: 11
+                                            }
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                onClicked: writerdeck.setKeyboardLayout(modelData.id)
+                                            }
+                                        }
+                                    }
+                                }
+                                Text {
+                                    text: "Bluetooth / phone"
+                                    font.pointSize: 14
+                                    font.family: "Noto Sans"
+                                    color: "black"
+                                    width: parent.width
+                                }
+                                Text {
+                                    text: "Pair the keyboard to your phone, then open:\nhttp://" + lobbyIP + ":8000\nTyping is forwarded over Wi-Fi.\n" + (lobbyPIN !== "" ? ("PIN: " + lobbyPIN) : "PIN is not set")
+                                    font.pointSize: 11
+                                    font.family: "Noto Sans"
+                                    color: "#555555"
+                                    width: parent.width
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                        }
+                    }
+                    // 3 Sync
+                    Item {
+                        visible: lobbyPage === 2
+                        anchors.fill: parent
+                        Flickable {
+                            anchors.fill: parent
+                            contentWidth: width
+                            contentHeight: syncCol.height
+                            clip: true
+                            Column {
+                                id: syncCol
+                                width: parent.width
+                                spacing: lobby.contentSpacing
+                                Text {
+                                    text: "GitHub sync"
+                                    font.pointSize: 14
+                                    font.family: "Noto Sans"
+                                    color: "black"
+                                    width: parent.width
+                                }
+                                Text {
+                                    visible: !(lobbySyncOn && lobbySyncRepo !== "" && !lobbySyncReady)
+                                        && !(lobbySyncOn && lobbySyncRepo !== "" && lobbySyncReady && lobbySyncError !== "")
+                                    text: lobbySyncOn && lobbySyncRepo !== ""
+                                        ? (lobbyLastSync !== ""
+                                            ? "Last sync was " + lobbyLastSync + ".\nNotes sync to github.com/" + lobbySyncRepo
+                                            : "Notes sync to github.com/" + lobbySyncRepo)
+                                        : ("Sync not configured.\nSet up in phone Sync setup:\nhttp://" + lobbyIP + ":8000")
+                                    font.pointSize: 11
+                                    font.family: "Noto Sans"
+                                    color: lobbySyncOn && lobbySyncRepo !== "" ? "#1b5e20" : "#555555"
+                                    width: parent.width
+                                    wrapMode: Text.WordWrap
+                                }
+                                Rectangle {
+                                    visible: lobbySyncOn && lobbySyncRepo !== "" && lobbySyncReady && lobbySyncError !== ""
+                                    width: parent.width
+                                    height: syncErrCol.height + 20
+                                    color: "white"
+                                    border.color: "black"
+                                    border.width: 2
+                                    radius: 4
+                                    Column {
+                                        id: syncErrCol
+                                        anchors.centerIn: parent
+                                        width: parent.width - 20
+                                        spacing: 10
+                                        Text {
+                                            text: !lobbyWifi ? "SYNC OFFLINE" : "SYNC FAILED"
+                                            font.pointSize: 16
+                                            font.bold: true
+                                            font.family: "Noto Sans"
+                                            color: "black"
+                                            width: parent.width
+                                        }
+                                        Text {
+                                            text: lobbySyncError
+                                            font.pointSize: 13
+                                            font.family: "Noto Sans"
+                                            color: "black"
+                                            width: parent.width
+                                            wrapMode: Text.WordWrap
+                                            lineHeight: 1.25
+                                        }
+                                    }
+                                }
+                                Rectangle {
+                                    visible: lobbySyncOn && lobbySyncRepo !== "" && !lobbySyncReady
+                                    width: parent.width
+                                    height: tokenWarnCol.height + 20
+                                    color: "white"
+                                    border.color: "black"
+                                    border.width: 2
+                                    radius: 4
+                                    Column {
+                                        id: tokenWarnCol
+                                        anchors.centerIn: parent
+                                        width: parent.width - 20
+                                        spacing: 10
+                                        Text {
+                                            text: "TOKEN NEEDED"
+                                            font.pointSize: 16
+                                            font.bold: true
+                                            font.family: "Noto Sans"
+                                            color: "black"
+                                            width: parent.width
+                                        }
+                                        Text {
+                                            text: "GitHub token is not on the tablet.\nOpen phone Sync setup and tap Save:\nhttp://" + lobbyIP + ":8000\nRepo: github.com/" + lobbySyncRepo
+                                            font.pointSize: 13
+                                            font.family: "Noto Sans"
+                                            color: "black"
+                                            width: parent.width
+                                            wrapMode: Text.WordWrap
+                                            lineHeight: 1.25
+                                        }
+                                    }
+                                }
+                                Rectangle {
+                                    visible: lobbySyncOn && lobbySyncRepo !== ""
+                                    width: parent.width
+                                    height: lobby.actionBtnHeight
+                                    radius: 6
+                                    color: (lobbySyncReady && !lobbySyncing) ? "#f0f0f0" : "white"
+                                    border.color: lobbySyncReady ? "#bbb" : "black"
+                                    border.width: lobbySyncReady ? 1 : 2
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: !lobbySyncReady ? "Token needed — phone Sync setup"
+                                            : (lobbySyncing ? "Syncing…" : "Sync now")
+                                        font.family: "Noto Sans"
+                                        font.pointSize: !lobbySyncReady ? 14 : 12
+                                        font.bold: !lobbySyncReady
+                                        color: (lobbySyncReady && !lobbySyncing) ? "black" : (lobbySyncReady ? "#888888" : "black")
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        enabled: lobbySyncReady && !lobbySyncing
+                                        onClicked: writerdeck.syncNow()
+                                    }
+                                }
+                                Text {
+                                    text: "Sync also runs automatically on save, Home, and every few minutes."
+                                    font.pointSize: 10
+                                    font.family: "Noto Sans"
+                                    color: "#888888"
+                                    width: parent.width
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                        }
+                    }
+                    // 4 Settings
+                    Item {
+                        visible: lobbyPage === 3
+                        anchors.fill: parent
+                        Flickable {
+                            anchors.fill: parent
+                            contentWidth: width
+                            contentHeight: setCol.height
+                            clip: true
+                            Column {
+                                id: setCol
+                                width: parent.width
+                                spacing: lobby.contentSpacing
+                                Text {
+                                    text: lobbySettingsMode === "confirm-exit"
+                                          ? "Stop Writerdeck? Enter=yes  Esc=no"
+                                          : "Settings"
+                                    font.pointSize: 14
+                                    font.family: "Noto Sans"
+                                    color: "black"
+                                    width: parent.width
+                                }
+
+                                Column {
+                                    width: parent.width
+                                    spacing: lobby.contentSpacing
+                                    visible: lobbySettingsMode === ""
+
+                                    Text {
+                                        text: "\nReading font"
+                                        font.pointSize: 12
+                                        font.family: "Noto Sans"
+                                        color: "black"
+                                        width: parent.width
+                                    }
+                                    Grid {
+                                        id: fontGrid
+                                        width: parent.width
+                                        columns: 2
+                                        rowSpacing: lobby.tabSpacing
+                                        columnSpacing: lobby.tabSpacing
+                                        property var fontOptions: [
+                                            { id: "Inter", label: "Inter" },
+                                            { id: "Literata", label: "Literata" },
+                                            { id: "EB Garamond", label: "EB Garamond" },
+                                            { id: "DejaVu Sans", label: "DejaVu Sans" }
+                                        ]
+                                        Repeater {
+                                            model: fontGrid.fontOptions
+                                            delegate: Rectangle {
+                                                width: (fontGrid.width - lobby.tabSpacing) / 2
+                                                height: lobby.actionBtnHeight
+                                                radius: 6
+                                                property bool selected: readFont === modelData.id
+                                                color: selected ? "#e8e8e8" : "#f0f0f0"
+                                                border.color: selected ? "black" : "#bbb"
+                                                border.width: selected ? 2 : 1
+                                                Text {
+                                                    anchors.centerIn: parent
+                                                    text: modelData.label
+                                                    font.family: "Noto Sans"
+                                                    font.pointSize: 11
+                                                }
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    onClicked: writerdeck.setReadFont(modelData.id)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Text {
+                                        text: "\nPrivate notes"
+                                        font.pointSize: 12
+                                        font.family: "Noto Sans"
+                                        color: "black"
+                                        width: parent.width
+                                    }
+                                    Text {
+                                        text: lobbyEncryptionEnabled
+                                            ? "On — encrypted notes require PIN to open, read, or edit"
+                                            : "Off — optional encryption with a separate 6-digit PIN. Recovery via GitHub secret/pin when sync is on."
+                                        font.pointSize: 10
+                                        font.family: "Noto Sans"
+                                        color: "#666666"
+                                        width: parent.width
+                                        wrapMode: Text.WordWrap
+                                    }
+                                    Row {
+                                        width: parent.width
+                                        spacing: lobby.tabSpacing
+                                        visible: !lobbyEncryptionEnabled
+                                        Rectangle {
+                                            width: (parent.width - lobby.tabSpacing) / 2
+                                            height: lobby.actionBtnHeight
+                                            radius: 6
+                                            color: "#f0f0f0"
+                                            border.color: "#bbb"
+                                            border.width: 1
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "Enable"
+                                                font.family: "Noto Sans"
+                                                font.pointSize: 11
+                                            }
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                onClicked: root.vaultBeginSetup()
+                                            }
+                                        }
+                                    }
+                                    Row {
+                                        width: parent.width
+                                        spacing: lobby.tabSpacing
+                                        visible: lobbyEncryptionEnabled
+                                        Rectangle {
+                                            width: parent.width
+                                            height: lobby.actionBtnHeight
+                                            radius: 6
+                                            color: "#f0f0f0"
+                                            border.color: "#bbb"
+                                            border.width: 1
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "Change PIN"
+                                                font.family: "Noto Sans"
+                                                font.pointSize: 11
+                                            }
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                onClicked: root.vaultBeginChangePIN()
+                                            }
+                                        }
+                                    }
+
+                                    Text {
+                                        text: "\nPIN for phone pairing"
+                                        font.pointSize: 12
+                                        font.family: "Noto Sans"
+                                        color: "black"
+                                        width: parent.width
+                                    }
+                                    Text {
+                                        text: "Adding a PIN ensures that only intended devices can access your notes"
+                                        font.pointSize: 10
+                                        font.family: "Noto Sans"
+                                        color: "#666666"
+                                        width: parent.width
+                                        wrapMode: Text.WordWrap
+                                    }
+                                    Column {
+                                        width: parent.width
+                                        spacing: lobby.tabSpacing
+                                        Repeater {
+                                            model: [
+                                                { id: "6", label: "6 digits" },
+                                                { id: "4", label: "4 digits" },
+                                                { id: "none", label: "No PIN", warn: "Anyone on Wi-Fi can read and edit notes" }
+                                            ]
+                                            delegate: Rectangle {
+                                                width: parent.width
+                                                height: modelData.warn ? lobby.actionBtnHeight + 28 : lobby.actionBtnHeight
+                                                radius: 6
+                                                property bool selected: lobbyPinDigits === modelData.id
+                                                color: selected ? "#e8e8e8" : "#f0f0f0"
+                                                border.color: selected ? "black" : "#bbb"
+                                                border.width: selected ? 2 : 1
+                                                Column {
+                                                    anchors.centerIn: parent
+                                                    width: parent.width - 16
+                                                    spacing: 2
+                                                    Text {
+                                                        anchors.horizontalCenter: parent.horizontalCenter
+                                                        text: modelData.label
+                                                        font.family: "Noto Sans"
+                                                        font.pointSize: 11
+                                                        color: "black"
+                                                    }
+                                                    Text {
+                                                        visible: !!modelData.warn
+                                                        anchors.horizontalCenter: parent.horizontalCenter
+                                                        text: modelData.warn || ""
+                                                        font.family: "Noto Sans"
+                                                        font.pointSize: 9
+                                                        color: "#666666"
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        wrapMode: Text.WordWrap
+                                                        width: parent.width
+                                                    }
+                                                }
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    onClicked: writerdeck.setPinDigits(modelData.id)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Text {
+                                        text: "\nDisplay rotation"
+                                        font.pointSize: 12
+                                        font.family: "Noto Sans"
+                                        color: "black"
+                                        width: parent.width
+                                    }
+                                    Text {
+                                        text: root.rotation + " degrees. Ctrl-R or Ctrl+arrows to rotate."
+                                        font.pointSize: 10
+                                        font.family: "Noto Sans"
+                                        color: "#666666"
+                                        width: parent.width
+                                        wrapMode: Text.WordWrap
+                                    }
+                                    Rectangle {
+                                        width: parent.width
+                                        height: lobby.actionBtnHeight
+                                        radius: 6
+                                        color: "#f0f0f0"
+                                        border.color: "#bbb"
+                                        border.width: 1
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "Rotate 90"
+                                            font.family: "Noto Sans"
+                                            font.pointSize: 12
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: root.rotateScreen()
+                                        }
+                                    }
+
+                                    Text {
+                                        text: "\nService"
+                                        font.pointSize: 12
+                                        font.family: "Noto Sans"
+                                        color: "black"
+                                        width: parent.width
+                                    }
+                                    Text {
+                                        text: "Stop Writerdeck and return the tablet to the stock reMarkable UI. Reconnect later via SSH or reboot."
+                                        font.pointSize: 10
+                                        font.family: "Noto Sans"
+                                        color: "#666666"
+                                        width: parent.width
+                                        wrapMode: Text.WordWrap
+                                    }
+                                    Rectangle {
+                                        width: parent.width
+                                        height: lobby.actionBtnHeight
+                                        radius: 6
+                                        color: "#f0f0f0"
+                                        border.color: "#bbb"
+                                        border.width: 1
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "Exit Writerdeck"
+                                            font.family: "Noto Sans"
+                                            font.pointSize: 12
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: root.lobbySettingsBeginExit()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // 5 Shortcuts
+                    Item {
+                        visible: lobbyPage === 4
+                        anchors.fill: parent
+                        Flickable {
+                            anchors.fill: parent
+                            contentWidth: width
+                            contentHeight: scCol.height
+                            clip: true
+                            Column {
+                                id: scCol
+                                width: parent.width
+                                spacing: lobby.contentSpacing
+                                Text {
+                                    text: "Shortcuts"
+                                    font.pointSize: 14
+                                    font.family: "Noto Sans"
+                                    color: "black"
+                                    width: parent.width
+                                }
+                                Text {
+                                    text: "Lobby: Tab / arrows / 1-6 switch pages\nFiles: Up/Down select  Enter edit  v read  n d r\nStock UI: Esc (USB) or L+R page buttons → Lobby\nCtrl-K: quick file picker\nCtrl-R: rotate  Ctrl-Q: quit\nHome: exit to reMarkable UI"
+                                    font.pointSize: 10
+                                    font.family: "Noto Mono"
+                                    color: "#555555"
+                                    width: parent.width
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                        }
+                    }
+                }
+                Text {
+                    id: lobbyHint
+                    anchors.bottom: parent.bottom
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: lobby.pageMargin
+                    anchors.rightMargin: lobby.pageMargin
+                    anchors.bottomMargin: lobby.pageMargin
+                    height: 48
+                    verticalAlignment: Text.AlignVCenter
+                    font.family: "Noto Mono"
+                    font.pointSize: 9
+                    color: "#888888"
+                    text: lobbyPage === 0 && lobbyFilesMode === ""
+                        ? "n new  Enter edit  v read  r rename  d delete"
+                        : "Tab next page  1-6 jump  Ctrl-K files"
+                }
+            }
+        }
+        Rectangle {
+            id: vaultOverlay
+            anchors.fill: parent
+            color: "#f8f8f8"
+            visible: vaultOverlayMode !== ""
+            z: 25
+
+            Column {
+                anchors.centerIn: parent
+                width: parent.width * 0.7
+                spacing: lobby.contentSpacing
+
+                Text {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.family: "Noto Sans"
+                    font.pointSize: 14
+                    color: "black"
+                    text: vaultOverlayMode === "setup" ? "Choose a 6-digit private PIN"
+                        : vaultOverlayMode === "confirm" ? "Confirm private PIN"
+                        : vaultOverlayMode === "change-old" ? "Enter current private PIN"
+                        : vaultOverlayMode === "change-new" ? "Enter new private PIN"
+                        : vaultOverlayMode === "change-confirm" ? "Confirm new private PIN"
+                        : vaultOverlayReason !== "" ? vaultOverlayReason
+                        : "Enter private PIN"
+                }
+
+                Text {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    font.family: "Noto Mono"
+                    font.pointSize: 18
+                    color: "#333"
+                    text: vaultPinDisplay()
+                }
+
+                Grid {
+                    id: vaultPad
+                    width: parent.width
+                    columns: 3
+                    rowSpacing: 8
+                    columnSpacing: 8
+                    Repeater {
+                        model: ["1","2","3","4","5","6","7","8","9","Bksp","0","Done"]
+                        delegate: Rectangle {
+                            width: (vaultPad.width - 16) / 3
+                            height: lobby.actionBtnHeight
+                            radius: 6
+                            color: "#f0f0f0"
+                            border.color: "#bbb"
+                            border.width: 1
+                            Text {
+                                anchors.centerIn: parent
+                                text: modelData
+                                font.family: "Noto Sans"
+                                font.pointSize: 12
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: vaultNumpadTap(modelData)
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: lobby.actionBtnHeight
+                    radius: 6
+                    color: "#f0f0f0"
+                    border.color: "#bbb"
+                    border.width: 1
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Cancel"
+                        font.family: "Noto Sans"
+                        font.pointSize: 12
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: vaultNumpadCancel()
+                    }
+                }
+            }
+        }
+        Rectangle {
+            id: sleepScreen
+            anchors.fill: parent
+            color: "white"
+            visible: isSleeping
+            z: 10
+            Column {
+                anchors.centerIn: parent
+                width: sleepScreen.width * 0.75
+                spacing: 24
+                Text {
+                    text: "Writerdeck is sleeping.\nWi-Fi is off. Press power to wake."
+                    color: "black"
+                    font.pointSize: 18
+                    font.family: "Noto Sans"
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                }
             }
         }
     }

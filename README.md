@@ -4,7 +4,7 @@ This is the tablet text editor inside [Writerdeck for reMarkable](https://github
 
 It is a fork of Dave Singleton’s [remarkable-keywriter](https://github.com/dps/remarkable-keywriter). Writerdeck-server drives it over a unix socket. Do not install this repo alone — deploy through Writerdeck.
 
-Ship tip (keyboard harness green): `6a15e08` — full suite 110/110, critical 38/38 (17 Jul 2026). Day-to-day builds track `master`; pin that SHA only for a known-good rollback.
+Ship tip (keyboard harness green): see latest `master` after QML assembly hygiene — full suite 110/110, critical 38/38. Day-to-day builds track `master`; pin a SHA only for a known-good rollback.
 
 ![Writerdeck for reMarkable 1](docs/Writerdeck-for-reMarkable.jpg)
 
@@ -24,7 +24,7 @@ Lobby shell. Files, Home, Settings, and sleep on the tablet; file and vault ops 
 
 Plain Markdown on disk. Editing stays PlainText. RichText is for preview only.
 
-Writerdeck’s CI still inserts the edit helpers into `main.qml` and concatenates Lobby fragments at build time. New editor behavior belongs here, not in that script.
+QML assembly. Edit helpers and Lobby fragments are modular (`edit_mac_helpers.qml.inc`, `lobby/*.inc`, skeleton `main.qml.in`). After changing those, run `./assemble-qml.sh` and commit the regenerated `main.qml` (`qml.qrc` loads that file). Writerdeck CI only clones, asserts, and builds — it does not stitch QML. New editor behavior belongs here, not in Writerdeck’s build script.
 
 ## Credit
 

@@ -1,5 +1,6 @@
 #!/bin/sh
-# Concatenate lobby/*.inc into lobby_subpages.qml.inc (source of truth: lobby/ dir).
+# Concatenate lobby/*.inc into lobby_subpages.qml.inc (called by assemble-qml.sh).
+# Edit lobby/*.inc, then run ./assemble-qml.sh and commit main.qml.
 set -e
 cd "$(dirname "$0")"
 OUT=lobby_subpages.qml.inc
