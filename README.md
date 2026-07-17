@@ -26,6 +26,20 @@ Plain Markdown on disk. Editing stays PlainText. RichText is for preview only.
 
 QML assembly. Edit helpers and Lobby fragments are modular (`edit_mac_helpers.qml.inc`, `lobby/*.inc`, skeleton `main.qml.in`). After changing those, run `./assemble-qml.sh` and commit the regenerated `main.qml` (`qml.qrc` loads that file). Writerdeck CI only clones, asserts, and builds — it does not stitch QML. New editor behavior belongs here, not in Writerdeck’s build script.
 
+## Merging upstream
+
+History is linked to [dps/remarkable-keywriter](https://github.com/dps/remarkable-keywriter) (merge `5946cae`; tree unchanged). Pull upstream on purpose, not every session:
+
+```bash
+git remote add upstream https://github.com/dps/remarkable-keywriter.git   # once
+git fetch upstream
+git merge upstream/master
+# resolve conflicts in favor of Writerdeck where edit/Lobby/socket diverged
+git push origin master
+```
+
+Prefer a merge commit. Then rebuild Writerdeck via its CI, deploy, and run that project’s edit-session and keyboard harness checks.
+
 ## Credit
 
 Original keywriter: [Dave Singleton](https://github.com/dps/remarkable-keywriter). Writerdeck-specific work is LLM-assisted; behavior is checked on-device by Writerdeck’s keyboard harness. Upstream install (Toltec / standalone) stays documented in Dave’s repo.
