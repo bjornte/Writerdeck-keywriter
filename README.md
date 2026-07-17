@@ -6,7 +6,15 @@ It is a fork of Dave Singleton’s [remarkable-keywriter](https://github.com/dps
 
 Ship tip (keyboard harness green): `0bb3b70` (QML assembly hygiene; harness 110/110 @ 17-23-47) — full suite 110/110, critical 38/38. Day-to-day builds track `master`; pin a SHA only for a known-good rollback.
 
+Terms: [docs/terms.md](docs/terms.md).
+
 ![Writerdeck for reMarkable 1](docs/Writerdeck-for-reMarkable.jpg)
+
+## Testing
+
+The Writerdeck project runs an on-device keyboard harness against this editor: scripted keystrokes over the same unix socket a phone uses, then asserts caret, selection, and text. About 110 scenarios; a critical subset of 38 is the “basic editing works” gate. A separate edit-session smoke test only checks that opening a note does not crash the app.
+
+Harness code and scoreboard live in Writerdeck (`scripts/test-keyboard-harness.sh`, `docs/editor-testing/`). This repo does not run those tests alone.
 
 ## What’s different from upstream
 
@@ -42,4 +50,4 @@ Prefer a merge commit. Then rebuild Writerdeck via its CI, deploy, and run that 
 
 ## Credit
 
-Original keywriter: [Dave Singleton](https://github.com/dps/remarkable-keywriter). Writerdeck-specific work is LLM-assisted; behavior is checked on-device by Writerdeck’s keyboard harness. Upstream install (Toltec / standalone) stays documented in Dave’s repo.
+Original keywriter: [Dave Singleton](https://github.com/dps/remarkable-keywriter). Writerdeck-specific work is LLM-assisted; behavior is checked on-device by Writerdeck’s keyboard harness (see Testing above). Upstream install (Toltec / standalone) stays documented in Dave’s repo.
