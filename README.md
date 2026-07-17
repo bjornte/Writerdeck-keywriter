@@ -16,9 +16,9 @@ The Writerdeck project runs an on-device keyboard harness against this editor: s
 
 Harness code and scoreboard live in Writerdeck (`scripts/test-keyboard-harness.sh`, `docs/editor-testing/`). This repo does not run those tests alone.
 
-## What’s different from upstream
+## What’s different from the original
 
-Upstream is a Qt Markdown notepad for reMarkable: USB keyboard, Esc for preview, Ctrl-K note switcher, sundown rendering.
+Dave’s original is a Qt Markdown notepad for reMarkable: USB keyboard, Esc for preview, Ctrl-K note switcher, sundown rendering.
 
 This fork keeps that core and adds what Writerdeck needs:
 
@@ -34,9 +34,9 @@ Plain Markdown on disk. Editing stays PlainText. RichText is for preview only.
 
 QML assembly. Edit helpers and Lobby fragments are modular (`edit_mac_helpers.qml.inc`, `lobby/*.inc`, skeleton `main.qml.in`). After changing those, run `./assemble-qml.sh` and commit the regenerated `main.qml` (`qml.qrc` loads that file). Writerdeck CI only clones, asserts, and builds — it does not stitch QML. New editor behavior belongs here, not in Writerdeck’s build script.
 
-## Merging upstream
+## Pulling in Dave’s updates
 
-History is linked to [dps/remarkable-keywriter](https://github.com/dps/remarkable-keywriter) (merge `5946cae`; tree unchanged). Pull upstream on purpose, not every session:
+History is linked to [dps/remarkable-keywriter](https://github.com/dps/remarkable-keywriter) (merge `5946cae`; tree unchanged). Pull from the original on purpose, not every session. In git the remote is often named `upstream` — that just means Dave’s repo:
 
 ```bash
 git remote add upstream https://github.com/dps/remarkable-keywriter.git   # once
@@ -50,4 +50,4 @@ Prefer a merge commit. Then rebuild Writerdeck via its CI, deploy, and run that 
 
 ## Credit
 
-Original keywriter: [Dave Singleton](https://github.com/dps/remarkable-keywriter). Writerdeck-specific work is LLM-assisted; behavior is checked on-device by Writerdeck’s keyboard harness (see Testing above). Upstream install (Toltec / standalone) stays documented in Dave’s repo.
+Original keywriter: [Dave Singleton](https://github.com/dps/remarkable-keywriter). Writerdeck-specific work is LLM-assisted; behavior is checked on-device by Writerdeck’s keyboard harness (see Testing above). How to install Dave’s original on its own (Toltec / standalone) stays in his repo.

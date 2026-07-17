@@ -8,7 +8,7 @@ Writerdeck. A Markdown typewriter on a first-gen reMarkable for USB and Bluetoot
 
 Writerdeck-server. Always-on program that talks to this app over a unix socket.
 
-keywriter. Dave Singleton’s original Qt Markdown notepad. Upstream of this fork.
+keywriter. Dave Singleton’s original Qt Markdown notepad — the project this fork started from.
 
 Lobby. In-app home on the tablet — not the stock reMarkable UI.
 
@@ -32,6 +32,6 @@ Keyboard harness. Automated on-device typing checks in the Writerdeck project.
 
 Critical / full suite. Smaller “basic editing works” gate; full product sign-off.
 
-Ship tip / known-good commit. A fork commit that last passed the automated typing checks. Everyday builds usually follow `master`.
+Known-good commit. A fork revision that last passed the automated typing checks. Everyday builds usually follow `master`.
 
-Upstream / merge-base. Dave’s repo, and the shared ancestor that makes ordinary merges possible.
+The original / merge-base. Dave’s remarkable-keywriter repo, and the shared git ancestor that makes ordinary merges possible. Developers often nickname Dave’s remote `upstream`; it still means the original.
