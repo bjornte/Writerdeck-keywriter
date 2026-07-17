@@ -1,6 +1,7 @@
 #include "edit_helper.h"
 
 #include <QVariantMap>
+#include <Qt>
 
 EditHelper::EditState EditHelper::makeState(const QString &text, int cursor, int selStart, int selEnd)
 {
@@ -266,4 +267,267 @@ void EditHelper::endRestore(const QString &text, int cursor, int selStart, int s
 {
     syncUndoSnapshot(text, cursor, selStart, selEnd);
     m_undoCapture = false;
+}
+
+QVariantMap EditHelper::notHandled()
+{
+    QVariantMap m;
+    m.insert(QStringLiteral("handled"), false);
+    return m;
+}
+
+QVariantMap EditHelper::handledAction(const QString &action)
+{
+    QVariantMap m;
+    m.insert(QStringLiteral("handled"), true);
+    m.insert(QStringLiteral("action"), action);
+    return m;
+}
+
+int EditHelper::selectionExtendFrom(int key, int cursor, int selStart, int selEnd, int shiftHead)
+{
+    if (shiftHead >= 0)
+        return shiftHead;
+    if (selStart == selEnd)
+        return cursor;
+    if (key == Qt::Key_Left || key == Qt::Key_Up)
+        return qMin(selStart, selEnd);
+    if (key == Qt::Key_Right || key == Qt::Key_Down)
+        return qMax(selStart, selEnd);
+    return cursor;
+}
+
+static QVariantMap moveToResult(int pos, bool extend)
+{
+    QVariantMap m;
+    m.insert(QStringLiteral("handled"), true);
+    m.insert(QStringLiteral("action"), QStringLiteral("moveTo"));
+    m.insert(QStringLiteral("pos"), pos);
+    m.insert(QStringLiteral("extend"), extend);
+    return m;
+}
+
+static QVariantMap moveToResolvedResult(const QString &posKind, bool extend, int extendKey = 0)
+{
+    QVariantMap m;
+    m.insert(QStringLiteral("handled"), true);
+    m.insert(QStringLiteral("action"), QStringLiteral("moveToResolved"));
+    m.insert(QStringLiteral("posKind"), posKind);
+    m.insert(QStringLiteral("extend"), extend);
+    if (extendKey != 0)
+        m.insert(QStringLiteral("extendKey"), extendKey);
+    return m;
+}
+
+QVariantMap EditHelper::dispatchMacArrow(int key, int modifiers,
+                                         const QString &text, int cursor,
+                                         int selStart, int selEnd,
+                                         int shiftAnchor, int shiftHead) const
+{
+    Q_UNUSED(shiftAnchor)
+    const int len = text.length();
+    const bool shift = (modifiers & Qt::ShiftModifier) != 0;
+    const bool cmd = (modifiers & Qt::ControlModifier) != 0;
+    const bool alt = (modifiers & Qt::AltModifier) != 0;
+
+    if (modifiers == Qt::NoModifier) {
+        if (key == Qt::Key_Left || key == Qt::Key_Right) {
+            if (selStart != selEnd) {
+                QVariantMap m = handledAction(QStringLiteral("collapseSel"));
+                m.insert(QStringLiteral("toMin"), key == Qt::Key_Left);
+                return m;
+            }
+            const int newPos = (key == Qt::Key_Left)
+                ? qMax(0, cursor - 1)
+                : qMin(len, cursor + 1);
+            return moveToResult(newPos, false);
+        }
+    }
+
+    int newPos = cursor;
+
+    if ((key == Qt::Key_Home || key == Qt::Key_End) && !(shift && !cmd && !alt)) {
+        if (alt)
+            return notHandled();
+        if (key == Qt::Key_Home) {
+            if (cmd)
+                newPos = 0;
+            else
+                return moveToResolvedResult(QStringLiteral("macLineStartCursor"), shift);
+        } else {
+            if (cmd)
+                newPos = len;
+            else
+                return moveToResolvedResult(QStringLiteral("macLineEndCursor"), shift);
+        }
+    } else if (shift && !cmd && !alt) {
+        if (key == Qt::Key_Left || key == Qt::Key_Right) {
+            QVariantMap m = handledAction(QStringLiteral("shiftHorizDelta"));
+            m.insert(QStringLiteral("delta"), (key == Qt::Key_Left) ? -1 : 1);
+            m.insert(QStringLiteral("eventKey"), key);
+            return m;
+        }
+        if (key == Qt::Key_Up || key == Qt::Key_Down) {
+            QVariantMap m = handledAction(QStringLiteral("shiftVert"));
+            m.insert(QStringLiteral("down"), key == Qt::Key_Down);
+            return m;
+        }
+        if (key == Qt::Key_Home) {
+            QVariantMap m = handledAction(QStringLiteral("shiftHorizTo"));
+            m.insert(QStringLiteral("posKind"), QStringLiteral("macLineStartShiftHead"));
+            return m;
+        }
+        if (key == Qt::Key_End) {
+            QVariantMap m = handledAction(QStringLiteral("shiftHorizTo"));
+            m.insert(QStringLiteral("posKind"), QStringLiteral("macLineEndShiftHead"));
+            return m;
+        }
+        return notHandled();
+    } else if (!cmd && !alt && !shift) {
+        if (key == Qt::Key_Up || key == Qt::Key_Down) {
+            QVariantMap m = handledAction(QStringLiteral("moveVert"));
+            m.insert(QStringLiteral("down"), key == Qt::Key_Down);
+            return m;
+        }
+        if (key == Qt::Key_Left || key == Qt::Key_Right) {
+            if (selStart != selEnd) {
+                const int selLo = qMin(selStart, selEnd);
+                const int selHi = qMax(selStart, selEnd);
+                newPos = (key == Qt::Key_Left) ? selLo : selHi;
+                QVariantMap m = moveToResult(newPos, false);
+                m.insert(QStringLiteral("keepGoalColumn"), false);
+                return m;
+            }
+        }
+        return notHandled();
+    } else if (key == Qt::Key_Left) {
+        if (cmd && shift)
+            return moveToResolvedResult(QStringLiteral("macLineStartExtend"), true, Qt::Key_Left);
+        if (cmd)
+            newPos = 0;
+        else if (alt)
+            newPos = wordLeftPos(selectionExtendFrom(Qt::Key_Left, cursor, selStart, selEnd, shiftHead), text);
+        else
+            newPos = lineStartPos(cursor, text);
+    } else if (key == Qt::Key_Right) {
+        if (cmd && shift)
+            return moveToResolvedResult(QStringLiteral("macLineEndExtend"), true, Qt::Key_Right);
+        if (cmd)
+            newPos = len;
+        else if (alt)
+            newPos = wordRightPos(selectionExtendFrom(Qt::Key_Right, cursor, selStart, selEnd, shiftHead), text);
+        else
+            newPos = lineEndPos(cursor, text);
+    } else if (key == Qt::Key_Up) {
+        if (cmd)
+            newPos = 0;
+        else if (alt && shift)
+            newPos = paragraphUpPos(selectionExtendFrom(Qt::Key_Up, cursor, selStart, selEnd, shiftHead), text);
+        else
+            newPos = paragraphUpPos(cursor, text);
+    } else if (key == Qt::Key_Down) {
+        if (cmd)
+            newPos = len;
+        else if (alt && shift)
+            newPos = paragraphDownPos(selectionExtendFrom(Qt::Key_Down, cursor, selStart, selEnd, shiftHead), text);
+        else
+            newPos = paragraphDownPos(cursor, text);
+    } else {
+        return notHandled();
+    }
+
+    return moveToResult(newPos, shift);
+}
+
+QVariantMap EditHelper::dispatchMacBackspace(int key, int modifiers,
+                                             const QString &text, int cursor,
+                                             int selStart, int selEnd) const
+{
+    if (key != Qt::Key_Backspace && key != Qt::Key_Delete)
+        return notHandled();
+
+    const bool cmd = (modifiers & Qt::ControlModifier) != 0;
+    const bool alt = (modifiers & Qt::AltModifier) != 0;
+    const int len = text.length();
+
+    if (!cmd && !alt) {
+        QVariantMap m = handledAction(QStringLiteral("replaceText"));
+        m.insert(QStringLiteral("beginEdit"), true);
+        if (key == Qt::Key_Backspace) {
+            if (selStart != selEnd) {
+                const int a = qMin(selStart, selEnd);
+                const int b = qMax(selStart, selEnd);
+                m.insert(QStringLiteral("text"), text.left(a) + text.mid(b));
+                m.insert(QStringLiteral("cursor"), a);
+            } else if (cursor > 0) {
+                m.insert(QStringLiteral("text"), text.left(cursor - 1) + text.mid(cursor));
+                m.insert(QStringLiteral("cursor"), cursor - 1);
+            } else {
+                m.insert(QStringLiteral("text"), text);
+                m.insert(QStringLiteral("cursor"), cursor);
+            }
+        } else {
+            if (selStart != selEnd) {
+                const int a = qMin(selStart, selEnd);
+                const int b = qMax(selStart, selEnd);
+                m.insert(QStringLiteral("text"), text.left(a) + text.mid(b));
+                m.insert(QStringLiteral("cursor"), a);
+            } else if (cursor < len) {
+                m.insert(QStringLiteral("text"), text.left(cursor) + text.mid(cursor + 1));
+                m.insert(QStringLiteral("cursor"), cursor);
+            } else {
+                m.insert(QStringLiteral("text"), text);
+                m.insert(QStringLiteral("cursor"), cursor);
+            }
+        }
+        return m;
+    }
+
+    if (cursor <= 0 && len == 0) {
+        QVariantMap m = handledAction(QStringLiteral("noop"));
+        return m;
+    }
+
+    if (selStart != selEnd) {
+        const int selA = qMin(selStart, selEnd);
+        const int selB = qMax(selStart, selEnd);
+        QVariantMap m = handledAction(QStringLiteral("replaceText"));
+        m.insert(QStringLiteral("beginEdit"), true);
+        m.insert(QStringLiteral("text"), text.left(selA) + text.mid(selB));
+        m.insert(QStringLiteral("cursor"), selA);
+        return m;
+    }
+
+    const int start = cmd ? deleteLineLeftPos(cursor, text) : deleteWordLeftPos(cursor, text);
+    const int end = cursor;
+    if (start < end) {
+        QVariantMap m = handledAction(QStringLiteral("replaceText"));
+        m.insert(QStringLiteral("beginEdit"), true);
+        m.insert(QStringLiteral("text"), text.left(start) + text.mid(end));
+        m.insert(QStringLiteral("cursor"), start);
+        return m;
+    }
+
+    QVariantMap m = handledAction(QStringLiteral("noop"));
+    return m;
+}
+
+QVariantMap EditHelper::dispatchMacEditKeys(int key, int modifiers, const QString &text, int cursor) const
+{
+    const bool cmd = (modifiers & Qt::ControlModifier) != 0;
+    const bool alt = (modifiers & Qt::AltModifier) != 0;
+
+    if (cmd && !alt && key == Qt::Key_A) {
+        QVariantMap m = handledAction(QStringLiteral("selectAll"));
+        m.insert(QStringLiteral("len"), text.length());
+        return m;
+    }
+
+    if (key == Qt::Key_Return && modifiers == Qt::NoModifier) {
+        QVariantMap m = handledAction(QStringLiteral("insertNewline"));
+        m.insert(QStringLiteral("pos"), cursor);
+        return m;
+    }
+
+    return notHandled();
 }

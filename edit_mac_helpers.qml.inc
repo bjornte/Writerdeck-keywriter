@@ -1,5 +1,6 @@
     // Phase 2C: undo/redo orchestration (stacks + merge live in editHelper)
     // Phase 2D: edit/cursor/harness state + Keys.onPressed dispatch
+    // Phase B: chord -> action mapping in editHelper; QML applies layout effects
     property bool cursorStrong: true
     property string autosaveSnapshot: ""
     property int harnessTextWidth: 0
@@ -314,6 +315,115 @@
         return pos
     }
 
+    // Phase B: resolve layout-dependent positions for C++ chord dispatch.
+    function resolveMacPosKind(posKind, extendKey) {
+        var text = query.text
+        var pos = query.cursorPosition
+        if (posKind === "macLineStartCursor")
+            return macLineStartPos(pos, text)
+        if (posKind === "macLineEndCursor")
+            return macLineEndPos(pos, text)
+        if (posKind === "macLineStartShiftHead")
+            return macLineStartPos((shiftHead >= 0) ? shiftHead : pos, text)
+        if (posKind === "macLineEndShiftHead")
+            return macLineEndPos((shiftHead >= 0) ? shiftHead : pos, text)
+        if (posKind === "macLineStartExtend")
+            return macLineStartPos(selectionExtendFrom(extendKey), text)
+        if (posKind === "macLineEndExtend")
+            return macLineEndPos(selectionExtendFrom(extendKey), text)
+        return pos
+    }
+
+    function applyMacArrowDispatch(r, eventKey) {
+        if (!r.handled) return false
+        var text = query.text
+        var pos = query.cursorPosition
+        var action = r.action
+        if (action === "collapseSel") {
+            var c = r.toMin
+                ? Math.min(query.selectionStart, query.selectionEnd)
+                : Math.max(query.selectionStart, query.selectionEnd)
+            clearShiftSelection()
+            query.deselect()
+            query.cursorPosition = c
+        } else if (action === "moveTo") {
+            if (r.extend)
+                extendSelectionHorizontal(r.pos)
+            else
+                moveCursorTo(r.pos, false, r.keepGoalColumn === true)
+        } else if (action === "moveToResolved") {
+            var p = resolveMacPosKind(r.posKind, r.extendKey)
+            if (r.extend)
+                extendSelectionHorizontal(p)
+            else
+                moveCursorTo(p, false)
+        } else if (action === "shiftHorizDelta") {
+            var headH = (shiftHead >= 0) ? shiftHead : query.cursorPosition
+            var newHead = (r.delta < 0)
+                ? Math.max(0, headH + r.delta)
+                : Math.min(text.length, headH + r.delta)
+            applyShiftSelection(newHead)
+            lastShiftHorizKey = (r.eventKey !== undefined) ? r.eventKey : eventKey
+        } else if (action === "shiftHorizTo") {
+            if (shiftAnchor < 0)
+                shiftAnchor = (query.selectionStart === query.selectionEnd)
+                    ? pos : ((r.posKind === "macLineEndShiftHead")
+                        ? Math.min(query.selectionStart, query.selectionEnd)
+                        : Math.max(query.selectionStart, query.selectionEnd))
+            applyShiftSelection(resolveMacPosKind(r.posKind, 0))
+        } else if (action === "shiftVert") {
+            extendSelectionVertical(r.down)
+        } else if (action === "moveVert") {
+            moveCursorVertical(r.down)
+        } else {
+            return false
+        }
+        cursorStrong = true
+        cursorTimer.stop()
+        return true
+    }
+
+    function applyMacBackspaceDispatch(r) {
+        if (!r.handled) return false
+        if (r.action === "noop") {
+            cursorStrong = true
+            cursorTimer.stop()
+            return true
+        }
+        if (r.action === "replaceText") {
+            if (r.beginEdit)
+                beginTextEdit()
+            query.text = r.text
+            query.cursorPosition = r.cursor
+            query.deselect()
+            doc = query.text
+        }
+        cursorStrong = true
+        cursorTimer.stop()
+        return true
+    }
+
+    function applyMacEditKeysDispatch(r) {
+        if (!r.handled) return false
+        if (r.action === "selectAll") {
+            query.select(0, r.len)
+            doc = query.text
+        } else if (r.action === "insertNewline") {
+            var text = query.text
+            var pos = r.pos
+            beginTextEdit()
+            query.text = text.slice(0, pos) + "\n" + text.slice(pos)
+            query.cursorPosition = pos + 1
+            query.deselect()
+            doc = query.text
+        } else {
+            return false
+        }
+        cursorStrong = true
+        cursorTimer.stop()
+        return true
+    }
+
     function visualLineDownPos(pos, gx) {
         var len = query.text.length
         if (pos >= len) return len
@@ -562,229 +672,31 @@
 
     function handleMacArrow(event) {
         if (mode != 1) return false
-        var mods = event.modifiers
-        if (mods === Qt.NoModifier) {
-            if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
-                if (query.selectionStart !== query.selectionEnd) {
-                    var c = (event.key === Qt.Key_Left)
-                        ? Math.min(query.selectionStart, query.selectionEnd)
-                        : Math.max(query.selectionStart, query.selectionEnd)
-                    clearShiftSelection()
-                    query.deselect()
-                    query.cursorPosition = c
-                } else {
-                    var textLR = query.text
-                    var posLR = query.cursorPosition
-                    var nextLR = (event.key === Qt.Key_Left)
-                        ? Math.max(0, posLR - 1)
-                        : Math.min(textLR.length, posLR + 1)
-                    moveCursorTo(nextLR, false)
-                }
-                cursorStrong = true
-                cursorTimer.stop()
-                event.accepted = true
-                return true
-            }
-        }
-        var shift = mods & Qt.ShiftModifier
-        var cmd = mods & Qt.ControlModifier
-        var alt = mods & Qt.AltModifier
-        var text = query.text
-        var pos = query.cursorPosition
-        var newPos = pos
-        if ((event.key === Qt.Key_Home || event.key === Qt.Key_End) && !(shift && !cmd && !alt)) {
-            if (alt) return false
-            newPos = (event.key === Qt.Key_Home)
-                ? (cmd ? 0 : macLineStartPos(pos, text))
-                : (cmd ? text.length : macLineEndPos(pos, text))
-        } else if (shift && !cmd && !alt) {
-            if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
-                // Persistent shiftAnchor/shiftHead: Qt keeps cursor at selectionEnd,
-                // so cursorPosition cannot be the moving end when selecting left/up.
-                var headH = (shiftHead >= 0) ? shiftHead : query.cursorPosition
-                var newHead = (event.key === Qt.Key_Left)
-                    ? Math.max(0, headH - 1)
-                    : Math.min(text.length, headH + 1)
-                cursorStrong = true
-                cursorTimer.stop()
-                applyShiftSelection(newHead)
-                lastShiftHorizKey = event.key
-                event.accepted = true
-                return true
-            } else if (event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
-                cursorStrong = true
-                cursorTimer.stop()
-                extendSelectionVertical(event.key === Qt.Key_Down)
-                event.accepted = true
-                return true
-            } else if (event.key === Qt.Key_Home) {
-                if (shiftAnchor < 0)
-                    shiftAnchor = (query.selectionStart === query.selectionEnd)
-                        ? pos : Math.max(query.selectionStart, query.selectionEnd)
-                newPos = macLineStartPos((shiftHead >= 0) ? shiftHead : pos, text)
-                cursorStrong = true
-                cursorTimer.stop()
-                applyShiftSelection(newPos)
-                event.accepted = true
-                return true
-            } else if (event.key === Qt.Key_End) {
-                if (shiftAnchor < 0)
-                    shiftAnchor = (query.selectionStart === query.selectionEnd)
-                        ? pos : Math.min(query.selectionStart, query.selectionEnd)
-                newPos = macLineEndPos((shiftHead >= 0) ? shiftHead : pos, text)
-                cursorStrong = true
-                cursorTimer.stop()
-                applyShiftSelection(newPos)
-                event.accepted = true
-                return true
-            } else {
-                return false
-            }
-        } else if (!cmd && !alt && !shift) {
-            if (event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
-                cursorStrong = true
-                cursorTimer.stop()
-                moveCursorVertical(event.key === Qt.Key_Down)
-                event.accepted = true
-                return true
-            }
-            if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
-                if (query.selectionStart !== query.selectionEnd) {
-                    var selLo = Math.min(query.selectionStart, query.selectionEnd)
-                    var selHi = Math.max(query.selectionStart, query.selectionEnd)
-                    newPos = (event.key === Qt.Key_Left) ? selLo : selHi
-                    moveCursorTo(newPos, false, false)
-                    cursorStrong = true
-                    cursorTimer.stop()
-                    event.accepted = true
-                    return true
-                }
-            }
+        var r = editHelper.dispatchMacArrow(event.key, event.modifiers, query.text,
+            query.cursorPosition, query.selectionStart, query.selectionEnd,
+            shiftAnchor, shiftHead)
+        if (!applyMacArrowDispatch(r, event.key))
             return false
-        } else if (event.key === Qt.Key_Left) {
-            if (cmd && shift) newPos = macLineStartPos(selectionExtendFrom(Qt.Key_Left), text)
-            else if (cmd) newPos = 0
-            else if (alt) newPos = wordLeftPos(selectionExtendFrom(Qt.Key_Left), text)
-            else newPos = lineStartPos(pos, text)
-        } else if (event.key === Qt.Key_Right) {
-            if (cmd && shift) newPos = macLineEndPos(selectionExtendFrom(Qt.Key_Right), text)
-            else if (cmd) newPos = text.length
-            else if (alt) newPos = wordRightPos(selectionExtendFrom(Qt.Key_Right), text)
-            else newPos = lineEndPos(pos, text)
-        } else if (event.key === Qt.Key_Up) {
-            if (cmd) newPos = 0
-            else if (alt && shift) newPos = paragraphUpPos(selectionExtendFrom(Qt.Key_Up), text)
-            else newPos = paragraphUpPos(pos, text)
-        } else if (event.key === Qt.Key_Down) {
-            if (cmd) newPos = text.length
-            else if (alt && shift) newPos = paragraphDownPos(selectionExtendFrom(Qt.Key_Down), text)
-            else newPos = paragraphDownPos(pos, text)
-        } else {
-            return false
-        }
-        cursorStrong = true
-        cursorTimer.stop()
-        if (shift)
-            extendSelectionHorizontal(newPos)
-        else
-            moveCursorTo(newPos, false)
         event.accepted = true
         return true
     }
 
     function handleMacEditKeys(event) {
         if (mode != 1) return false
-        var mods = event.modifiers
-        var cmd = mods & Qt.ControlModifier
-        if (cmd && !(mods & Qt.AltModifier) && event.key === Qt.Key_A) {
-            var len = query.text.length
-            query.select(0, len)
-            cursorStrong = true
-            cursorTimer.stop()
-            event.accepted = true
-            doc = query.text
-            return true
-        }
-        if (event.key !== Qt.Key_Return || mods !== Qt.NoModifier) return false
-        var text = query.text
-        var pos = query.cursorPosition
-        beginTextEdit()
-        query.text = text.slice(0, pos) + "\n" + text.slice(pos)
-        query.cursorPosition = pos + 1
-        query.deselect()
-        cursorStrong = true
-        cursorTimer.stop()
+        var r = editHelper.dispatchMacEditKeys(event.key, event.modifiers,
+            query.text, query.cursorPosition)
+        if (!applyMacEditKeysDispatch(r))
+            return false
         event.accepted = true
-        doc = query.text
         return true
     }
 
     function handleMacBackspace(event) {
         if (mode != 1) return false
-        if (event.key !== Qt.Key_Backspace && event.key !== Qt.Key_Delete) return false
-        var mods = event.modifiers
-        var cmd = mods & Qt.ControlModifier
-        var alt = mods & Qt.AltModifier
-        var text = query.text
-        var pos = query.cursorPosition
-        if (!cmd && !alt) {
-            if (event.key === Qt.Key_Backspace || event.key === Qt.Key_Delete) {
-                beginTextEdit()
-                if (event.key === Qt.Key_Backspace) {
-                    if (query.selectionStart !== query.selectionEnd) {
-                        var a = Math.min(query.selectionStart, query.selectionEnd)
-                        var b = Math.max(query.selectionStart, query.selectionEnd)
-                        query.text = text.slice(0, a) + text.slice(b)
-                        query.cursorPosition = a
-                    } else if (pos > 0) {
-                        query.text = text.slice(0, pos - 1) + text.slice(pos)
-                        query.cursorPosition = pos - 1
-                    }
-                } else if (event.key === Qt.Key_Delete) {
-                    if (query.selectionStart !== query.selectionEnd) {
-                        var sa = Math.min(query.selectionStart, query.selectionEnd)
-                        var sb = Math.max(query.selectionStart, query.selectionEnd)
-                        query.text = text.slice(0, sa) + text.slice(sb)
-                        query.cursorPosition = sa
-                    } else if (pos < text.length) {
-                        query.text = text.slice(0, pos) + text.slice(pos + 1)
-                        query.cursorPosition = pos
-                    }
-                }
-                query.deselect()
-            }
-            doc = query.text
-            cursorStrong = true
-            cursorTimer.stop()
-            event.accepted = true
-            return true
-        }
-        if (pos <= 0 && text.length === 0) {
-            event.accepted = true
-            return true
-        }
-        if (query.selectionStart !== query.selectionEnd) {
-            beginTextEdit()
-            var selA = Math.min(query.selectionStart, query.selectionEnd)
-            var selB = Math.max(query.selectionStart, query.selectionEnd)
-            query.text = text.slice(0, selA) + text.slice(selB)
-            query.cursorPosition = selA
-            query.deselect()
-            cursorStrong = true
-            cursorTimer.stop()
-            event.accepted = true
-            return true
-        }
-        var start = cmd ? deleteLineLeftPos(pos, text) : deleteWordLeftPos(pos, text)
-        var end = pos
-        if (start < end) {
-            beginTextEdit()
-            query.text = text.slice(0, start) + text.slice(end)
-            query.cursorPosition = start
-            query.deselect()
-        }
-        cursorStrong = true
-        cursorTimer.stop()
+        var r = editHelper.dispatchMacBackspace(event.key, event.modifiers, query.text,
+            query.cursorPosition, query.selectionStart, query.selectionEnd)
+        if (!applyMacBackspaceDispatch(r))
+            return false
         event.accepted = true
         return true
     }

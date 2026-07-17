@@ -48,7 +48,22 @@ public:
     Q_INVOKABLE void beginRestore();
     Q_INVOKABLE void endRestore(const QString &text, int cursor, int selStart, int selEnd);
 
+    // Phase B: chord -> action mapping (QML applies layout-dependent effects).
+    // Returns {handled:bool, action:QString, ...}; handled=false when not matched.
+    Q_INVOKABLE QVariantMap dispatchMacArrow(int key, int modifiers,
+                                             const QString &text, int cursor,
+                                             int selStart, int selEnd,
+                                             int shiftAnchor, int shiftHead) const;
+    Q_INVOKABLE QVariantMap dispatchMacBackspace(int key, int modifiers,
+                                                 const QString &text, int cursor,
+                                                 int selStart, int selEnd) const;
+    Q_INVOKABLE QVariantMap dispatchMacEditKeys(int key, int modifiers,
+                                                const QString &text, int cursor) const;
+
 private:
+    static int selectionExtendFrom(int key, int cursor, int selStart, int selEnd, int shiftHead);
+    static QVariantMap notHandled();
+    static QVariantMap handledAction(const QString &action);
     struct EditState {
         QString text;
         int cursor = 0;
