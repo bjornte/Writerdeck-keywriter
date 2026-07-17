@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Assemble main.qml from main.qml.in + edit_mac_helpers.qml.inc + lobby/*.inc.
 # Source of truth for modular fragments; commit the regenerated main.qml.
-# Writerdeck CI does not run this — it builds the committed main.qml as-is.
+# Writerdeck CI does not run this - it builds the committed main.qml as-is.
 set -euo pipefail
 cd "$(dirname "$0")"
 
