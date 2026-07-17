@@ -4,7 +4,7 @@ This is the tablet text editor inside [Writerdeck for reMarkable](https://github
 
 It is a fork of Dave Singleton’s [remarkable-keywriter](https://github.com/dps/remarkable-keywriter). Writerdeck-server drives it over a unix socket. Do not install this repo alone — deploy through Writerdeck.
 
-Ship tip (keyboard harness green): ``2537892`` (QML assembly hygiene) — full suite 110/110, critical 38/38. Day-to-day builds track `master`; pin a SHA only for a known-good rollback.
+Ship tip (keyboard harness green): `e2a8436` (QML assembly hygiene) — full suite 110/110, critical 38/38. Day-to-day builds track `master`; pin a SHA only for a known-good rollback.
 
 ![Writerdeck for reMarkable 1](docs/Writerdeck-for-reMarkable.jpg)
 
