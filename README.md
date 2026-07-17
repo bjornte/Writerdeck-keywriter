@@ -4,7 +4,7 @@ This is the tablet text editor inside [Writerdeck for reMarkable](https://github
 
 The reMarkable 1 doesn't have native support for either type of keyboard, so the USB keyboard is connected with an [OTG cable](https://en.wikipedia.org/wiki/USB_On-The-Go#OTG_micro_cables), while USB keyboards are bridged from the user's phone via Wi-Fi.
 
-The repository is a fork of Dave Singleton’s [remarkable-keywriter](https://github.com/dps/remarkable-keywriter). Writerdeck-server drives it over a unix socket. Do not install this repo alone — deploy through Writerdeck.
+The repository is a fork of Singleton’s [remarkable-keywriter](https://github.com/dps/remarkable-keywriter). Writerdeck-server drives it over a unix socket. Do not install this repo alone — deploy through Writerdeck.
 
 Last known-good editor build for automated typing tests: commit `0bb3b70` (all 110 checks passed, including the 38 “basic editing” ones). Everyday builds follow the `master` branch; use that commit hash only if you need to roll back to a proven binary.
 
@@ -20,7 +20,7 @@ Those tests live in Writerdeck (`scripts/test-keyboard-harness.sh`, `docs/editor
 
 ## What’s different from the original
 
-Dave’s original is a Qt Markdown notepad for reMarkable: USB keyboard, Esc for preview, Ctrl-K note switcher, sundown rendering.
+Singleton’s original is a Qt Markdown notepad for reMarkable: USB keyboard, Esc for preview, Ctrl-K note switcher, sundown rendering.
 
 This fork keeps that core and adds what Writerdeck needs:
 
@@ -36,9 +36,9 @@ Plain Markdown on disk. Editing stays plain text. Fancy rendering is for preview
 
 Building QML (the screen file). Edit helpers and Lobby pieces are modular. After changing them, run `./assemble-qml.sh` and commit the regenerated `main.qml`. Writerdeck’s CI only clones, checks, and compiles — it does not stitch QML together. New editor behavior belongs here, not in Writerdeck’s build script.
 
-## Pulling in Dave’s updates
+## Pulling in Singleton’s updates
 
-History is linked to [dps/remarkable-keywriter](https://github.com/dps/remarkable-keywriter) (merge `5946cae`; tree unchanged). Pull from the original on purpose, not every session. In git the remote is often named `upstream` — that just means Dave’s repo:
+History is linked to [dps/remarkable-keywriter](https://github.com/dps/remarkable-keywriter) (merge `5946cae`; tree unchanged). Pull from the original on purpose, not every session. In git the remote is often named `upstream` — that just means Singleton’s repo:
 
 ```bash
 git remote add upstream https://github.com/dps/remarkable-keywriter.git   # once
@@ -52,4 +52,4 @@ Prefer a merge commit. Then rebuild Writerdeck via CI, deploy, and run that proj
 
 ## Credit
 
-Original keywriter: [Dave Singleton](https://github.com/dps/remarkable-keywriter). Writerdeck-specific work is LLM-assisted; behavior is checked on-device by Writerdeck’s typing tests (see Testing above). How to install Dave’s original on its own stays in his repo.
+Original keywriter: [Singleton](https://github.com/dps/remarkable-keywriter). Writerdeck-specific work is LLM-assisted; behavior is checked on-device by Writerdeck’s typing tests (see Testing above). How to install Singleton’s original on its own stays in his repo.
