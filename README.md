@@ -1,8 +1,8 @@
 # Writerdeck-keywriter
 
-This is the tablet text editor inside [Writerdeck for reMarkable](https://github.com/bjornte/Writerdeck-for-reMarkable): a Markdown typewriter on a first-gen reMarkable for USB and Bluetooth keyboards.
+This is the tablet text editor inside [Writerdeck for reMarkable](https://github.com/bjornte/Writerdeck-for-reMarkable): a Markdown typewriter on a first-gen reMarkable for USB and Bluetooth keyboards. The reMarkable 1 doesn't have native support for either type of keyboard, so the USB keyboard is connected with an [OTG cable](https://en.wikipedia.org/wiki/USB_On-The-Go#OTG_micro_cables), while USB keyboards are bridged from the user's phone via Wi-Fi.
 
-It is a fork of Dave Singleton’s [remarkable-keywriter](https://github.com/dps/remarkable-keywriter). Writerdeck-server drives it over a unix socket. Do not install this repo alone — deploy through Writerdeck.
+The repository is a fork of Dave Singleton’s [remarkable-keywriter](https://github.com/dps/remarkable-keywriter). Writerdeck-server drives it over a unix socket. Do not install this repo alone — deploy through Writerdeck.
 
 Last known-good editor build for automated typing tests: commit `0bb3b70` (all 110 checks passed, including the 38 “basic editing” ones). Everyday builds follow the `master` branch; use that commit hash only if you need to roll back to a proven binary.
 
