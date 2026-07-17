@@ -2,6 +2,26 @@
 
 #include <QVariantMap>
 
+EditHelper::EditState EditHelper::makeState(const QString &text, int cursor, int selStart, int selEnd)
+{
+    EditState st;
+    st.text = text;
+    st.cursor = cursor;
+    st.selStart = selStart;
+    st.selEnd = selEnd;
+    return st;
+}
+
+QVariantMap EditHelper::stateToMap(const EditState &st)
+{
+    QVariantMap m;
+    m.insert(QStringLiteral("text"), st.text);
+    m.insert(QStringLiteral("cursor"), st.cursor);
+    m.insert(QStringLiteral("selStart"), st.selStart);
+    m.insert(QStringLiteral("selEnd"), st.selEnd);
+    return m;
+}
+
 EditHelper::EditHelper(QObject *parent)
     : QObject(parent)
 {
@@ -152,4 +172,98 @@ int EditHelper::isOneCharInsert(const QString &prevText, const QString &curText)
             return i;
     }
     return -1;
+}
+
+void EditHelper::clearUndoStacks()
+{
+    m_undoStack.clear();
+    m_redoStack.clear();
+}
+
+void EditHelper::syncUndoSnapshot(const QString &text, int cursor, int selStart, int selEnd)
+{
+    m_snapshot = makeState(text, cursor, selStart, selEnd);
+}
+
+void EditHelper::pushWithMerge(const EditState &prevState, const QString &curText, int curCursor)
+{
+    const int insPos = isOneCharInsert(prevState.text, curText);
+    if (insPos >= 0 && !m_undoStack.isEmpty()) {
+        const EditState &top = m_undoStack.last();
+        const QVariant fromTop = insertTextDelta(top.text, curText);
+        if (fromTop.isValid()) {
+            const QVariantMap m = fromTop.toMap();
+            const int pos = m.value(QStringLiteral("pos")).toInt();
+            const int len = m.value(QStringLiteral("len")).toInt();
+            if (pos == top.cursor && pos + len == curCursor) {
+                m_redoStack.clear();
+                return;
+            }
+        }
+    }
+    m_undoStack.append(prevState);
+    m_redoStack.clear();
+}
+
+void EditHelper::beginTextEdit(const QString &text, int cursor, int selStart, int selEnd)
+{
+    if (m_undoCapture || m_skipTextUndoPush)
+        return;
+    pushWithMerge(makeState(text, cursor, selStart, selEnd), text, cursor);
+    m_skipTextUndoPush = true;
+}
+
+void EditHelper::notifyTextChanged(const QString &text, int cursor, int selStart, int selEnd)
+{
+    if (m_skipTextUndoPush) {
+        m_skipTextUndoPush = false;
+        syncUndoSnapshot(text, cursor, selStart, selEnd);
+        return;
+    }
+    if (!m_undoCapture && text.length() != m_snapshot.text.length()) {
+        pushWithMerge(m_snapshot, text, cursor);
+    }
+    syncUndoSnapshot(text, cursor, selStart, selEnd);
+}
+
+QVariant EditHelper::undo(const QString &text, int cursor, int selStart, int selEnd)
+{
+    if (m_undoStack.isEmpty())
+        return QVariant();
+    const EditState prevState = m_undoStack.last();
+    EditState redoState = makeState(text, cursor, selStart, selEnd);
+    const QVariant ins = insertTextDelta(prevState.text, redoState.text);
+    if (ins.isValid()) {
+        const QVariantMap m = ins.toMap();
+        const int pos = m.value(QStringLiteral("pos")).toInt();
+        const int len = m.value(QStringLiteral("len")).toInt();
+        if (pos == prevState.cursor) {
+            redoState.cursor = pos + len;
+            redoState.selStart = redoState.cursor;
+            redoState.selEnd = redoState.cursor;
+        }
+    }
+    m_redoStack.append(redoState);
+    m_undoStack.removeLast();
+    return stateToMap(prevState);
+}
+
+QVariant EditHelper::redo(const QString &text, int cursor, int selStart, int selEnd)
+{
+    if (m_redoStack.isEmpty())
+        return QVariant();
+    m_undoStack.append(makeState(text, cursor, selStart, selEnd));
+    const EditState next = m_redoStack.takeLast();
+    return stateToMap(next);
+}
+
+void EditHelper::beginRestore()
+{
+    m_undoCapture = true;
+}
+
+void EditHelper::endRestore(const QString &text, int cursor, int selStart, int selEnd)
+{
+    syncUndoSnapshot(text, cursor, selStart, selEnd);
+    m_undoCapture = false;
 }

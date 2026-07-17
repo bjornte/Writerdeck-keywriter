@@ -1,14 +1,4 @@
-    // Phase 2C: undo/redo state (moved out of build-keywriter.sh)
-    property var editUndoStack: []
-    property var editRedoStack: []
-    property bool editUndoCapture: false
-    property bool editSkipTextUndoPush: false
-    property string _prevTextSnapshot: ""
-    property int _prevTextLen: 0
-    property int _prevCursor: 0
-    property int _prevSelStart: 0
-    property int _prevSelEnd: 0
-
+    // Phase 2C: undo/redo orchestration (stacks + merge live in editHelper)
     // Phase 2D: edit/cursor/harness state + Keys.onPressed dispatch
     property bool cursorStrong: true
     property string autosaveSnapshot: ""
@@ -501,84 +491,48 @@
     }
 
     function beginTextEdit() {
-        if (editUndoCapture || editSkipTextUndoPush || harnessPrepareLock || mode != 1)
+        if (harnessPrepareLock || mode != 1)
             return
-        pushEditUndoWithMerge(captureEditState())
-        editSkipTextUndoPush = true
-    }
-
-    function captureEditState() {
-        return {
-            text: query.text,
-            cursor: query.cursorPosition,
-            selStart: query.selectionStart,
-            selEnd: query.selectionEnd
-        }
+        editHelper.beginTextEdit(query.text, query.cursorPosition,
+                                 query.selectionStart, query.selectionEnd)
     }
 
     function syncEditUndoSnapshot() {
-        _prevTextSnapshot = query.text
-        _prevTextLen = query.text.length
-        _prevCursor = query.cursorPosition
-        _prevSelStart = query.selectionStart
-        _prevSelEnd = query.selectionEnd
+        editHelper.syncUndoSnapshot(query.text, query.cursorPosition,
+                                    query.selectionStart, query.selectionEnd)
     }
 
     function clearEditUndoStacks() {
-        editUndoStack = []
-        editRedoStack = []
+        editHelper.clearUndoStacks()
     }
 
     function isOneCharInsert(prevText, curText) {
         return editHelper.isOneCharInsert(prevText, curText)
     }
 
-    function pushEditUndoWithMerge(prevState) {
-        var curText = query.text
-        var prevText = prevState.text
-        var insPos = isOneCharInsert(prevText, curText)
-        if (insPos >= 0 && editUndoStack.length > 0) {
-            var top = editUndoStack[editUndoStack.length - 1]
-            var fromTop = insertTextDelta(top.text, curText)
-            if (fromTop && fromTop.pos === top.cursor
-                    && fromTop.pos + fromTop.len === query.cursorPosition) {
-                editRedoStack = []
-                return
-            }
-        }
-        editUndoStack.push(prevState)
-        editRedoStack = []
-    }
-
     function restoreEditState(st) {
-        editUndoCapture = true
+        editHelper.beginRestore()
         query.text = st.text
         query.deselect()
         query.cursorPosition = st.cursor
         doc = query.text
-        syncEditUndoSnapshot()
-        editUndoCapture = false
+        editHelper.endRestore(query.text, query.cursorPosition,
+                              query.selectionStart, query.selectionEnd)
     }
 
     function editUndo() {
-        if (editUndoStack.length === 0) return false
-        var prevState = editUndoStack[editUndoStack.length - 1]
-        var redoState = captureEditState()
-        var ins = insertTextDelta(prevState.text, redoState.text)
-        if (ins && ins.pos === prevState.cursor) {
-            redoState.cursor = ins.pos + ins.len
-            redoState.selStart = redoState.cursor
-            redoState.selEnd = redoState.cursor
-        }
-        editRedoStack.push(redoState)
-        restoreEditState(editUndoStack.pop())
+        var st = editHelper.undo(query.text, query.cursorPosition,
+                                 query.selectionStart, query.selectionEnd)
+        if (st === undefined || st === null) return false
+        restoreEditState(st)
         return true
     }
 
     function editRedo() {
-        if (editRedoStack.length === 0) return false
-        editUndoStack.push(captureEditState())
-        restoreEditState(editRedoStack.pop())
+        var st = editHelper.redo(query.text, query.cursorPosition,
+                                 query.selectionStart, query.selectionEnd)
+        if (st === undefined || st === null) return false
+        restoreEditState(st)
         return true
     }
 
@@ -858,23 +812,8 @@
         }
         onTextChanged: {
             if (harnessPrepareLock || mode != 1 || isLobby) return
-            if (editSkipTextUndoPush) {
-                editSkipTextUndoPush = false
-                syncEditUndoSnapshot()
-                cursorStrong = false
-                cursorTimer.restart()
-                return
-            }
-            var len = query.text.length
-            if (!editUndoCapture && len !== _prevTextLen) {
-                pushEditUndoWithMerge({
-                    text: _prevTextSnapshot,
-                    cursor: _prevCursor,
-                    selStart: _prevSelStart,
-                    selEnd: _prevSelEnd
-                })
-            }
-            syncEditUndoSnapshot()
+            editHelper.notifyTextChanged(query.text, query.cursorPosition,
+                                         query.selectionStart, query.selectionEnd)
             cursorStrong = false
             cursorTimer.restart()
         }

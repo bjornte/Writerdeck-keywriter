@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QString>
 #include <QVariant>
+#include <QVector>
 
 // Pure text math + undo for the editor (migration Phase A).
 // QML still owns the on-screen TextEdit; this object is the typed brain.
@@ -31,6 +32,39 @@ public:
     Q_INVOKABLE QVariant insertTextDelta(const QString &prevText, const QString &curText) const;
     // Insert index, or -1 if not a single-character insert.
     Q_INVOKABLE int isOneCharInsert(const QString &prevText, const QString &curText) const;
+
+    // Phase A2: undo/redo stacks + one-char merge (behavior-identical).
+    Q_INVOKABLE void clearUndoStacks();
+    Q_INVOKABLE void syncUndoSnapshot(const QString &text, int cursor, int selStart, int selEnd);
+    // Push current state (with merge), then skip the next onTextChanged push.
+    // No-op while already capturing or skipping. Caller still gates mode/harness.
+    Q_INVOKABLE void beginTextEdit(const QString &text, int cursor, int selStart, int selEnd);
+    // TextEdit onTextChanged: skip/capture/merge push + snapshot sync.
+    Q_INVOKABLE void notifyTextChanged(const QString &text, int cursor, int selStart, int selEnd);
+    // Returns {text,cursor,selStart,selEnd} to apply, or invalid if stack empty.
+    Q_INVOKABLE QVariant undo(const QString &text, int cursor, int selStart, int selEnd);
+    Q_INVOKABLE QVariant redo(const QString &text, int cursor, int selStart, int selEnd);
+    // Wrap QML restore so onTextChanged does not push.
+    Q_INVOKABLE void beginRestore();
+    Q_INVOKABLE void endRestore(const QString &text, int cursor, int selStart, int selEnd);
+
+private:
+    struct EditState {
+        QString text;
+        int cursor = 0;
+        int selStart = 0;
+        int selEnd = 0;
+    };
+
+    static EditState makeState(const QString &text, int cursor, int selStart, int selEnd);
+    static QVariantMap stateToMap(const EditState &st);
+    void pushWithMerge(const EditState &prevState, const QString &curText, int curCursor);
+
+    QVector<EditState> m_undoStack;
+    QVector<EditState> m_redoStack;
+    bool m_undoCapture = false;
+    bool m_skipTextUndoPush = false;
+    EditState m_snapshot;
 };
 
 #endif
