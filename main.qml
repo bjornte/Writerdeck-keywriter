@@ -2672,9 +2672,12 @@ Window {
                                         width: parent.width
                                         wrapMode: Text.WordWrap
                                     }
-                                    Column {
+                                    Row {
+                                        id: pinDigitsRow
                                         width: parent.width
                                         spacing: lobby.tabSpacing
+                                        // No PIN’s warn line sets the row height; all three match.
+                                        readonly property int btnHeight: lobby.actionBtnHeight + 28
                                         Repeater {
                                             model: [
                                                 { id: "6", label: "6 digits" },
@@ -2682,8 +2685,8 @@ Window {
                                                 { id: "none", label: "No PIN", warn: "Anyone on Wi-Fi can read and edit notes" }
                                             ]
                                             delegate: Rectangle {
-                                                width: parent.width
-                                                height: modelData.warn ? lobby.actionBtnHeight + 28 : lobby.actionBtnHeight
+                                                width: (pinDigitsRow.width - lobby.tabSpacing * 2) / 3
+                                                height: pinDigitsRow.btnHeight
                                                 radius: 6
                                                 property bool selected: lobbyPinDigits === modelData.id
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
@@ -2691,7 +2694,7 @@ Window {
                                                 border.width: selected ? 2 : 1
                                                 Column {
                                                     anchors.centerIn: parent
-                                                    width: parent.width - 16
+                                                    width: parent.width - 12
                                                     spacing: 2
                                                     Text {
                                                         anchors.horizontalCenter: parent.horizontalCenter
@@ -2705,7 +2708,7 @@ Window {
                                                         anchors.horizontalCenter: parent.horizontalCenter
                                                         text: modelData.warn || ""
                                                         font.family: "Noto Sans"
-                                                        font.pointSize: 9
+                                                        font.pointSize: 8
                                                         color: "#666666"
                                                         horizontalAlignment: Text.AlignHCenter
                                                         wrapMode: Text.WordWrap
