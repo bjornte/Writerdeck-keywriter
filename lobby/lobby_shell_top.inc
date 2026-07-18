@@ -28,6 +28,15 @@
                     function onIsLobbyChanged() {
                         if (isLobby) Qt.callLater(function() { lobbyFocus.forceActiveFocus() })
                     }
+                    // Touch on tabs/buttons/Flickable can steal focus; keys must stay on Lobby.
+                    function onActiveFocusItemChanged() {
+                        if (!isLobby || isOmni) return
+                        if (root.activeFocusItem === lobbyFocus) return
+                        Qt.callLater(function() {
+                            if (isLobby && !isOmni)
+                                lobbyFocus.forceActiveFocus()
+                        })
+                    }
                 }
 
                 // ---- tab bar (touch + keyboard 1-6 / Tab / arrows) ----
@@ -62,7 +71,10 @@
 
                             MouseArea {
                                 anchors.fill: parent
-                                onClicked: root.lobbyGoPage(index)
+                                onClicked: {
+                                    root.lobbyGoPage(index)
+                                    root.lobbyKeepFocus()
+                                }
                             }
                         }
                     }

@@ -36,15 +36,27 @@ Window {
     property int lobbyPage: 0
     property var lobbyTabLabels: ["Files", "Keyboard", "Sync", "Settings", "Shortcuts", "Home"]
     property int lobbyFilesIndex: 0
+    // How many note rows fit on one Files page (set from list height; e-ink pages, no flick).
+    property int lobbyFilesPageSize: 6
     property string lobbyLastEditedFile: ""
     property string lobbyFilesMode: ""
-    onLobbyFilesModeChanged: writerdeck.notifyLobbyInput(lobbyFilesMode)
+    onLobbyFilesModeChanged: {
+        if (vaultOverlayMode === "")
+            writerdeck.notifyLobbyInput(lobbyFilesMode)
+    }
     property string lobbyFilesInput: ""
     property int lobbyFilesInputPos: 0
     property bool lobbyOpenInReadMode: false
     property bool lobbyEncryptionEnabled: false
     property string lobbyVaultError: ""
     property string vaultOverlayMode: ""
+    onVaultOverlayModeChanged: {
+        if (vaultOverlayMode !== "")
+            writerdeck.notifyLobbyInput("pin")
+        else
+            writerdeck.notifyLobbyInput(lobbyFilesMode)
+        lobbyKeepFocus()
+    }
     property string vaultOverlayReason: ""
     property string vaultPinInput: ""
     property string vaultPinPending: ""
@@ -55,6 +67,30 @@ Window {
     property string omniQuery: ""
     property string currentFile: ""
     property string folder: "file://%1/Writerdeck-user-documents/".arg(home_dir)
+
+    function lobbyKeepFocus() {
+        if (!isLobby || isOmni) return
+        Qt.callLater(function() {
+            if (isLobby && !isOmni && typeof lobbyFocus !== "undefined" && lobbyFocus)
+                lobbyFocus.forceActiveFocus()
+        })
+    }
+
+    function lobbyFilesPageCount() {
+        var ps = Math.max(1, lobbyFilesPageSize)
+        if (lobbyNotesModel.count <= 0) return 1
+        return Math.ceil(lobbyNotesModel.count / ps)
+    }
+
+    function lobbyFilesPageIndex() {
+        var ps = Math.max(1, lobbyFilesPageSize)
+        if (lobbyFilesIndex < 0) return 0
+        return Math.floor(lobbyFilesIndex / ps)
+    }
+
+    function lobbyFilesPageStart() {
+        return lobbyFilesPageIndex() * Math.max(1, lobbyFilesPageSize)
+    }
 
     function isHtmlPayload(t) {
         if (!t || t.length < 9) return false
@@ -274,6 +310,7 @@ Window {
         lobbyFilesInputPos = 0
         lobbySettingsMode = ""
         if (idx === 0) lobbyRefreshNotes()
+        lobbyKeepFocus()
     }
 
     function lobbyRefreshNotes() {
@@ -320,10 +357,6 @@ Window {
         for (var i = 0; i < lobbyNotesModel.count; i++) {
             if (lobbyNotesModel.get(i).name === name) {
                 lobbyFilesIndex = i
-                if (typeof lobbyFilesList !== "undefined" && lobbyFilesList) {
-                    lobbyFilesList.currentIndex = i
-                    lobbyFilesList.positionViewAtIndex(i, ListView.Contain)
-                }
                 return true
             }
         }
@@ -672,25 +705,73 @@ Window {
             lobbyGoPage((lobbyPage + 1) % lobbyTabLabels.length)
             return true
         }
+        if (lobbyPage === 1) {
+            if (event.key === Qt.Key_U && event.modifiers === Qt.NoModifier) {
+                writerdeck.setKeyboardLayout("us"); return true }
+            if (event.key === Qt.Key_O && event.modifiers === Qt.NoModifier) {
+                writerdeck.setKeyboardLayout("no"); return true }
+        }
+        if (lobbyPage === 2) {
+            if ((event.key === Qt.Key_Return || event.key === Qt.Key_S)
+                    && event.modifiers === Qt.NoModifier) {
+                if (lobbySyncReady && !lobbySyncing) writerdeck.syncNow()
+                return true
+            }
+        }
         if (lobbyPage === 3 && lobbySettingsMode === "") {
             if (!lobbyEncryptionEnabled && event.key === Qt.Key_E && event.modifiers === Qt.NoModifier) {
                 vaultBeginSetup(); return true }
             if (lobbyEncryptionEnabled && event.key === Qt.Key_C && event.modifiers === Qt.NoModifier) {
                 vaultBeginChangePIN(); return true }
+            if (event.key === Qt.Key_F && event.modifiers === Qt.NoModifier) {
+                var fonts = ["Inter", "Literata", "EB Garamond", "DejaVu Sans"]
+                var fi = fonts.indexOf(readFont)
+                if (fi < 0) fi = 0
+                writerdeck.setReadFont(fonts[(fi + 1) % fonts.length])
+                return true
+            }
+            if (event.key === Qt.Key_P && event.modifiers === Qt.NoModifier) {
+                var pins = ["6", "4", "none"]
+                var pi = pins.indexOf(lobbyPinDigits)
+                if (pi < 0) pi = 0
+                writerdeck.setPinDigits(pins[(pi + 1) % pins.length])
+                return true
+            }
+            if (event.key === Qt.Key_T && event.modifiers === Qt.NoModifier) {
+                var rots = [0, 90, 180, 270]
+                var ri = rots.indexOf(root.rotation)
+                if (ri < 0) ri = 0
+                root.setScreenRotation(rots[(ri + 1) % rots.length])
+                return true
+            }
+            if (event.key === Qt.Key_X && event.modifiers === Qt.NoModifier) {
+                lobbySettingsBeginExit(); return true }
         }
         if (lobbyPage === 0 && lobbyFilesMode === "" && lobbyEncryptionEnabled) {
             if (event.key === Qt.Key_X && event.modifiers === Qt.NoModifier) {
                 lobbyEncryptSelected(); return true }
             if (event.key === Qt.Key_Y && event.modifiers === Qt.NoModifier) {
                 lobbyDecryptSelected(); return true }
+            if (event.key === Qt.Key_E && event.modifiers === Qt.NoModifier) {
+                lobbyFilesBeginNewEncrypted(); return true }
         }
         if (lobbyPage === 0) {
+            var ps = Math.max(1, lobbyFilesPageSize)
+            var last = Math.max(0, lobbyNotesModel.count - 1)
             if (event.key === Qt.Key_Up) {
                 lobbyFilesIndex = Math.max(0, lobbyFilesIndex - 1)
                 return true
             }
             if (event.key === Qt.Key_Down) {
-                lobbyFilesIndex = Math.min(Math.max(0, lobbyNotesModel.count - 1), lobbyFilesIndex + 1)
+                lobbyFilesIndex = Math.min(last, lobbyFilesIndex + 1)
+                return true
+            }
+            if (event.key === Qt.Key_PageUp) {
+                lobbyFilesIndex = Math.max(0, lobbyFilesIndex - ps)
+                return true
+            }
+            if (event.key === Qt.Key_PageDown) {
+                lobbyFilesIndex = Math.min(last, lobbyFilesIndex + ps)
                 return true
             }
             if (event.key === Qt.Key_Return) {
@@ -1987,6 +2068,15 @@ Window {
                     function onIsLobbyChanged() {
                         if (isLobby) Qt.callLater(function() { lobbyFocus.forceActiveFocus() })
                     }
+                    // Touch on tabs/buttons/Flickable can steal focus; keys must stay on Lobby.
+                    function onActiveFocusItemChanged() {
+                        if (!isLobby || isOmni) return
+                        if (root.activeFocusItem === lobbyFocus) return
+                        Qt.callLater(function() {
+                            if (isLobby && !isOmni)
+                                lobbyFocus.forceActiveFocus()
+                        })
+                    }
                 }
 
                 // ---- tab bar (touch + keyboard 1-6 / Tab / arrows) ----
@@ -2021,7 +2111,10 @@ Window {
 
                             MouseArea {
                                 anchors.fill: parent
-                                onClicked: root.lobbyGoPage(index)
+                                onClicked: {
+                                    root.lobbyGoPage(index)
+                                    root.lobbyKeepFocus()
+                                }
                             }
                         }
                     }
@@ -2105,8 +2198,10 @@ Window {
                             Text {
                                 visible: lobbyFilesMode === "new" || lobbyFilesMode === "rename"
                                          || lobbyFilesMode === "confirm-delete"
+                                         || lobbyFilesMode === "new-encrypted"
                                 text: lobbyFilesMode === "new" ? "New note name:"
                                      : lobbyFilesMode === "rename" ? "Rename to:"
+                                     : lobbyFilesMode === "new-encrypted" ? "New encrypted note name:"
                                      : lobbyFilesMode === "confirm-delete" ? "Delete this note? Enter=yes  Esc=no"
                                      : ""
                                 font.family: "Noto Sans"
@@ -2117,6 +2212,7 @@ Window {
 
                             Text {
                                 visible: lobbyFilesMode === "new" || lobbyFilesMode === "rename"
+                                         || lobbyFilesMode === "new-encrypted"
                                 text: lobbyFilesInputDisplay()
                                 font.family: "Noto Mono"
                                 font.pointSize: 12
@@ -2134,65 +2230,87 @@ Window {
                                 wrapMode: Text.WordWrap
                             }
 
-                            ListView {
+                            // Fixed page of rows — no flick scroll (e-ink).
+                            Item {
                                 id: lobbyFilesList
                                 width: parent.width
                                 height: {
                                     var reserved = lobbyFilesBar.height + lobby.contentSpacing * 2
                                     if (lobbyEncryptionEnabled && lobbyFilesMode === "" && lobbyNotesModel.count > 0)
                                         reserved += lobbyFilesVaultBar.height + lobby.contentSpacing
+                                    if (lobbyFilesPageLabel.visible)
+                                        reserved += lobbyFilesPageLabel.height + lobby.contentSpacing
                                     return Math.max(lobby.rowHeight * 2, parent.height - reserved)
                                 }
-                                clip: true
-                                model: lobbyNotesModel
-                                // Imperative currentIndex only — a binding breaks when ListView
-                                // clears the model (currentIndex=-1) and then ignores lobbyFilesIndex.
-                                spacing: 2
                                 visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
-                                // Selection marker — no full-row fill (less e-ink redraw).
-                                // One Text for marker+name: separate Texts would not share a baseline
-                                // reliably on this linuxfb Qt, and the ▶ looked a full row too low.
-                                delegate: Item {
-                                    width: lobbyFilesList.width
-                                    height: lobby.rowHeight
-                                    Text {
-                                        anchors.left: parent.left
-                                        anchors.leftMargin: 8
-                                        anchors.right: parent.right
-                                        anchors.rightMargin: 8
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: (index === lobbyFilesIndex ? "\u25B6  " : "   ")
-                                              + lobbyFilesStripSuffix(model.name)
-                                              + (model.encrypted ? " [private]" : "")
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 14
-                                        color: "black"
-                                        elide: Text.ElideRight
-                                    }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        onClicked: {
-                                            if (index === lobbyFilesIndex)
-                                                root.lobbyOpenSelected()
-                                            else {
-                                                lobbyFilesIndex = index
-                                                lobbyFilesList.currentIndex = index
+                                clip: true
+
+                                property int pageSize: Math.max(1, Math.floor(height / lobby.rowHeight))
+                                property int pageStart: root.lobbyFilesPageStart()
+                                property int visibleCount: {
+                                    var end = Math.min(lobbyNotesModel.count, pageStart + pageSize)
+                                    return Math.max(0, end - pageStart)
+                                }
+
+                                onPageSizeChanged: {
+                                    if (pageSize > 0 && lobbyFilesPageSize !== pageSize)
+                                        lobbyFilesPageSize = pageSize
+                                }
+                                Component.onCompleted: {
+                                    if (pageSize > 0)
+                                        lobbyFilesPageSize = pageSize
+                                }
+
+                                Column {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    Repeater {
+                                        model: lobbyFilesList.visibleCount
+                                        delegate: Item {
+                                            width: lobbyFilesList.width
+                                            height: lobby.rowHeight
+                                            property int noteIndex: lobbyFilesList.pageStart + index
+                                            property var noteRow: lobbyNotesModel.get(noteIndex)
+                                            Text {
+                                                anchors.left: parent.left
+                                                anchors.leftMargin: 8
+                                                anchors.right: parent.right
+                                                anchors.rightMargin: 8
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: (noteIndex === lobbyFilesIndex ? "\u25B6  " : "   ")
+                                                      + lobbyFilesStripSuffix(noteRow ? noteRow.name : "")
+                                                      + (noteRow && noteRow.encrypted ? " [private]" : "")
+                                                font.family: "Noto Sans"
+                                                font.pointSize: 14
+                                                color: "black"
+                                                elide: Text.ElideRight
+                                            }
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                onClicked: {
+                                                    if (noteIndex === lobbyFilesIndex)
+                                                        root.lobbyOpenSelected()
+                                                    else
+                                                        lobbyFilesIndex = noteIndex
+                                                    root.lobbyKeepFocus()
+                                                }
+                                                onDoubleClicked: root.lobbyOpenSelected()
                                             }
                                         }
-                                        onDoubleClicked: root.lobbyOpenSelected()
                                     }
                                 }
-                                Connections {
-                                    target: root
-                                    function onLobbyFilesIndexChanged() {
-                                        if (lobbyFilesList.currentIndex !== lobbyFilesIndex
-                                                && lobbyFilesIndex >= 0
-                                                && lobbyFilesIndex < lobbyNotesModel.count) {
-                                            lobbyFilesList.currentIndex = lobbyFilesIndex
-                                            lobbyFilesList.positionViewAtIndex(lobbyFilesIndex, ListView.Contain)
-                                        }
-                                    }
-                                }
+                            }
+
+                            Text {
+                                id: lobbyFilesPageLabel
+                                width: parent.width
+                                visible: lobbyFilesMode === "" && lobbyNotesModel.count > lobbyFilesPageSize
+                                text: "Page " + (root.lobbyFilesPageIndex() + 1)
+                                      + "/" + root.lobbyFilesPageCount()
+                                      + "  Up/Down  PgUp/PgDn"
+                                font.family: "Noto Mono"
+                                font.pointSize: 9
+                                color: "#888888"
                             }
 
                             Row {
@@ -2225,6 +2343,7 @@ Window {
                                                 else if (modelData === "Read") root.lobbyReadSelected()
                                                 else if (modelData === "Rename") root.lobbyFilesBeginRename()
                                                 else if (modelData === "Delete") root.lobbyFilesBeginDelete()
+                                                root.lobbyKeepFocus()
                                             }
                                         }
                                     }
@@ -2262,7 +2381,10 @@ Window {
                                     }
                                     MouseArea {
                                         anchors.fill: parent
-                                        onClicked: root.lobbyEncryptSelected()
+                                        onClicked: {
+                                            root.lobbyEncryptSelected()
+                                            root.lobbyKeepFocus()
+                                        }
                                     }
                                 }
                                 Rectangle {
@@ -2281,7 +2403,10 @@ Window {
                                     }
                                     MouseArea {
                                         anchors.fill: parent
-                                        onClicked: root.lobbyFilesBeginNewEncrypted()
+                                        onClicked: {
+                                            root.lobbyFilesBeginNewEncrypted()
+                                            root.lobbyKeepFocus()
+                                        }
                                     }
                                 }
                                 Rectangle {
@@ -2300,7 +2425,10 @@ Window {
                                     }
                                     MouseArea {
                                         anchors.fill: parent
-                                        onClicked: root.lobbyDecryptSelected()
+                                        onClicked: {
+                                            root.lobbyDecryptSelected()
+                                            root.lobbyKeepFocus()
+                                        }
                                     }
                                 }
                             }
@@ -2315,6 +2443,9 @@ Window {
                             contentWidth: width
                             contentHeight: kbCol.height
                             clip: true
+                            focus: false
+                            interactive: true
+                            flickableDirection: Flickable.VerticalFlick
                             Column {
                                 id: kbCol
                                 width: parent.width
@@ -2367,7 +2498,10 @@ Window {
                                             }
                                             MouseArea {
                                                 anchors.fill: parent
-                                                onClicked: writerdeck.setKeyboardLayout(modelData.id)
+                                                onClicked: {
+                                                    writerdeck.setKeyboardLayout(modelData.id)
+                                                    root.lobbyKeepFocus()
+                                                }
                                             }
                                         }
                                     }
@@ -2399,6 +2533,9 @@ Window {
                             contentWidth: width
                             contentHeight: syncCol.height
                             clip: true
+                            focus: false
+                            interactive: true
+                            flickableDirection: Flickable.VerticalFlick
                             Column {
                                 id: syncCol
                                 width: parent.width
@@ -2508,7 +2645,10 @@ Window {
                                     MouseArea {
                                         anchors.fill: parent
                                         enabled: lobbySyncReady && !lobbySyncing
-                                        onClicked: writerdeck.syncNow()
+                                        onClicked: {
+                                            writerdeck.syncNow()
+                                            root.lobbyKeepFocus()
+                                        }
                                     }
                                 }
                                 Text {
@@ -2531,6 +2671,9 @@ Window {
                             contentWidth: width
                             contentHeight: setCol.height
                             clip: true
+                            focus: false
+                            interactive: true
+                            flickableDirection: Flickable.VerticalFlick
                             Column {
                                 id: setCol
                                 width: parent.width
@@ -2587,7 +2730,10 @@ Window {
                                                 }
                                                 MouseArea {
                                                     anchors.fill: parent
-                                                    onClicked: writerdeck.setReadFont(modelData.id)
+                                                    onClicked: {
+                                                        writerdeck.setReadFont(modelData.id)
+                                                        root.lobbyKeepFocus()
+                                                    }
                                                 }
                                             }
                                         }
@@ -2629,7 +2775,10 @@ Window {
                                             }
                                             MouseArea {
                                                 anchors.fill: parent
-                                                onClicked: root.vaultBeginSetup()
+                                                onClicked: {
+                                                    root.vaultBeginSetup()
+                                                    root.lobbyKeepFocus()
+                                                }
                                             }
                                         }
                                     }
@@ -2652,7 +2801,10 @@ Window {
                                             }
                                             MouseArea {
                                                 anchors.fill: parent
-                                                onClicked: root.vaultBeginChangePIN()
+                                                onClicked: {
+                                                    root.vaultBeginChangePIN()
+                                                    root.lobbyKeepFocus()
+                                                }
                                             }
                                         }
                                     }
@@ -2716,7 +2868,10 @@ Window {
                                                 }
                                                 MouseArea {
                                                     anchors.fill: parent
-                                                    onClicked: writerdeck.setPinDigits(modelData.id)
+                                                    onClicked: {
+                                                        writerdeck.setPinDigits(modelData.id)
+                                                        root.lobbyKeepFocus()
+                                                    }
                                                 }
                                             }
                                         }
@@ -2764,7 +2919,10 @@ Window {
                                                 }
                                                 MouseArea {
                                                     anchors.fill: parent
-                                                    onClicked: root.setScreenRotation(modelData.deg)
+                                                    onClicked: {
+                                                        root.setScreenRotation(modelData.deg)
+                                                        root.lobbyKeepFocus()
+                                                    }
                                                 }
                                             }
                                         }
@@ -2800,7 +2958,10 @@ Window {
                                         }
                                         MouseArea {
                                             anchors.fill: parent
-                                            onClicked: root.lobbySettingsBeginExit()
+                                            onClicked: {
+                                                root.lobbySettingsBeginExit()
+                                                root.lobbyKeepFocus()
+                                            }
                                         }
                                     }
                                 }
@@ -2816,6 +2977,9 @@ Window {
                             contentWidth: width
                             contentHeight: scCol.height
                             clip: true
+                            focus: false
+                            interactive: true
+                            flickableDirection: Flickable.VerticalFlick
                             Column {
                                 id: scCol
                                 width: parent.width
@@ -2828,7 +2992,7 @@ Window {
                                     width: parent.width
                                 }
                                 Text {
-                                    text: "Lobby: Tab / arrows / 1-6 switch pages\nFiles: Up/Down select  Enter edit  v read  n d r\nStock UI: Esc (USB) or L+R page buttons → Lobby\nCtrl-K: quick file picker\nCtrl-C/X/V: copy cut paste\nCtrl-R: rotate  Ctrl-Q: quit\nHome: exit to reMarkable UI"
+                                    text: "Lobby: Tab / arrows / 1-6 switch pages\nFiles: Up/Down  PgUp/PgDn  Enter edit  v read  n d r\nFiles vault: e new encrypted  x encrypt  y decrypt\nKeyboard: u US  o Norwegian\nSync: Enter or s sync now\nSettings: f font  p phone PIN  t rotate  e/c vault  x exit\nStock UI: Esc (USB) or L+R page buttons → Lobby\nCtrl-K: quick file picker\nCtrl-C/X/V: copy cut paste\nCtrl-R: rotate  Ctrl-Q: quit\nHome: exit to reMarkable UI\nPrivate PIN: type digits on USB or phone keyboard"
                                     font.pointSize: 10
                                     font.family: "Noto Mono"
                                     color: "#555555"
@@ -2855,7 +3019,10 @@ Window {
                     font.family: "Noto Mono"
                     font.pointSize: 9
                     color: "#888888"
-                    text: "Tab next page  1-6 jump  Ctrl-K files"
+                    text: lobbyPage === 1 ? "u US  o Norwegian  Tab next page"
+                        : lobbyPage === 2 ? "Enter/s sync now  Tab next page"
+                        : lobbyPage === 3 ? "f font  p PIN  t rotate  e/c vault  x exit"
+                        : "Tab next page  1-6 jump  Ctrl-K files"
                 }
             }
         }
@@ -2921,7 +3088,10 @@ Window {
                             MouseArea {
                                 anchors.fill: parent
                                 enabled: modelData !== ""
-                                onClicked: vaultNumpadTap(modelData)
+                                onClicked: {
+                                    vaultNumpadTap(modelData)
+                                    root.lobbyKeepFocus()
+                                }
                             }
                         }
                     }
@@ -2942,7 +3112,10 @@ Window {
                     }
                     MouseArea {
                         anchors.fill: parent
-                        onClicked: vaultNumpadCancel()
+                        onClicked: {
+                            vaultNumpadCancel()
+                            root.lobbyKeepFocus()
+                        }
                     }
                 }
             }

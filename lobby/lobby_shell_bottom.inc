@@ -15,7 +15,10 @@
                     font.family: "Noto Mono"
                     font.pointSize: 9
                     color: "#888888"
-                    text: "Tab next page  1-6 jump  Ctrl-K files"
+                    text: lobbyPage === 1 ? "u US  o Norwegian  Tab next page"
+                        : lobbyPage === 2 ? "Enter/s sync now  Tab next page"
+                        : lobbyPage === 3 ? "f font  p PIN  t rotate  e/c vault  x exit"
+                        : "Tab next page  1-6 jump  Ctrl-K files"
                 }
             }
         }

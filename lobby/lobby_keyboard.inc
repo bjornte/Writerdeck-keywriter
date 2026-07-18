@@ -7,6 +7,9 @@
                             contentWidth: width
                             contentHeight: kbCol.height
                             clip: true
+                            focus: false
+                            interactive: true
+                            flickableDirection: Flickable.VerticalFlick
                             Column {
                                 id: kbCol
                                 width: parent.width
@@ -59,7 +62,10 @@
                                             }
                                             MouseArea {
                                                 anchors.fill: parent
-                                                onClicked: writerdeck.setKeyboardLayout(modelData.id)
+                                                onClicked: {
+                                                    writerdeck.setKeyboardLayout(modelData.id)
+                                                    root.lobbyKeepFocus()
+                                                }
                                             }
                                         }
                                     }

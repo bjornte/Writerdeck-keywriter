@@ -36,15 +36,27 @@ Window {
     property int lobbyPage: 0
     property var lobbyTabLabels: ["Files", "Keyboard", "Sync", "Settings", "Shortcuts", "Home"]
     property int lobbyFilesIndex: 0
+    // How many note rows fit on one Files page (set from list height; e-ink pages, no flick).
+    property int lobbyFilesPageSize: 6
     property string lobbyLastEditedFile: ""
     property string lobbyFilesMode: ""
-    onLobbyFilesModeChanged: writerdeck.notifyLobbyInput(lobbyFilesMode)
+    onLobbyFilesModeChanged: {
+        if (vaultOverlayMode === "")
+            writerdeck.notifyLobbyInput(lobbyFilesMode)
+    }
     property string lobbyFilesInput: ""
     property int lobbyFilesInputPos: 0
     property bool lobbyOpenInReadMode: false
     property bool lobbyEncryptionEnabled: false
     property string lobbyVaultError: ""
     property string vaultOverlayMode: ""
+    onVaultOverlayModeChanged: {
+        if (vaultOverlayMode !== "")
+            writerdeck.notifyLobbyInput("pin")
+        else
+            writerdeck.notifyLobbyInput(lobbyFilesMode)
+        lobbyKeepFocus()
+    }
     property string vaultOverlayReason: ""
     property string vaultPinInput: ""
     property string vaultPinPending: ""
@@ -55,6 +67,30 @@ Window {
     property string omniQuery: ""
     property string currentFile: ""
     property string folder: "file://%1/Writerdeck-user-documents/".arg(home_dir)
+
+    function lobbyKeepFocus() {
+        if (!isLobby || isOmni) return
+        Qt.callLater(function() {
+            if (isLobby && !isOmni && typeof lobbyFocus !== "undefined" && lobbyFocus)
+                lobbyFocus.forceActiveFocus()
+        })
+    }
+
+    function lobbyFilesPageCount() {
+        var ps = Math.max(1, lobbyFilesPageSize)
+        if (lobbyNotesModel.count <= 0) return 1
+        return Math.ceil(lobbyNotesModel.count / ps)
+    }
+
+    function lobbyFilesPageIndex() {
+        var ps = Math.max(1, lobbyFilesPageSize)
+        if (lobbyFilesIndex < 0) return 0
+        return Math.floor(lobbyFilesIndex / ps)
+    }
+
+    function lobbyFilesPageStart() {
+        return lobbyFilesPageIndex() * Math.max(1, lobbyFilesPageSize)
+    }
 
     function isHtmlPayload(t) {
         if (!t || t.length < 9) return false
@@ -274,6 +310,7 @@ Window {
         lobbyFilesInputPos = 0
         lobbySettingsMode = ""
         if (idx === 0) lobbyRefreshNotes()
+        lobbyKeepFocus()
     }
 
     function lobbyRefreshNotes() {
@@ -320,10 +357,6 @@ Window {
         for (var i = 0; i < lobbyNotesModel.count; i++) {
             if (lobbyNotesModel.get(i).name === name) {
                 lobbyFilesIndex = i
-                if (typeof lobbyFilesList !== "undefined" && lobbyFilesList) {
-                    lobbyFilesList.currentIndex = i
-                    lobbyFilesList.positionViewAtIndex(i, ListView.Contain)
-                }
                 return true
             }
         }
@@ -672,25 +705,73 @@ Window {
             lobbyGoPage((lobbyPage + 1) % lobbyTabLabels.length)
             return true
         }
+        if (lobbyPage === 1) {
+            if (event.key === Qt.Key_U && event.modifiers === Qt.NoModifier) {
+                writerdeck.setKeyboardLayout("us"); return true }
+            if (event.key === Qt.Key_O && event.modifiers === Qt.NoModifier) {
+                writerdeck.setKeyboardLayout("no"); return true }
+        }
+        if (lobbyPage === 2) {
+            if ((event.key === Qt.Key_Return || event.key === Qt.Key_S)
+                    && event.modifiers === Qt.NoModifier) {
+                if (lobbySyncReady && !lobbySyncing) writerdeck.syncNow()
+                return true
+            }
+        }
         if (lobbyPage === 3 && lobbySettingsMode === "") {
             if (!lobbyEncryptionEnabled && event.key === Qt.Key_E && event.modifiers === Qt.NoModifier) {
                 vaultBeginSetup(); return true }
             if (lobbyEncryptionEnabled && event.key === Qt.Key_C && event.modifiers === Qt.NoModifier) {
                 vaultBeginChangePIN(); return true }
+            if (event.key === Qt.Key_F && event.modifiers === Qt.NoModifier) {
+                var fonts = ["Inter", "Literata", "EB Garamond", "DejaVu Sans"]
+                var fi = fonts.indexOf(readFont)
+                if (fi < 0) fi = 0
+                writerdeck.setReadFont(fonts[(fi + 1) % fonts.length])
+                return true
+            }
+            if (event.key === Qt.Key_P && event.modifiers === Qt.NoModifier) {
+                var pins = ["6", "4", "none"]
+                var pi = pins.indexOf(lobbyPinDigits)
+                if (pi < 0) pi = 0
+                writerdeck.setPinDigits(pins[(pi + 1) % pins.length])
+                return true
+            }
+            if (event.key === Qt.Key_T && event.modifiers === Qt.NoModifier) {
+                var rots = [0, 90, 180, 270]
+                var ri = rots.indexOf(root.rotation)
+                if (ri < 0) ri = 0
+                root.setScreenRotation(rots[(ri + 1) % rots.length])
+                return true
+            }
+            if (event.key === Qt.Key_X && event.modifiers === Qt.NoModifier) {
+                lobbySettingsBeginExit(); return true }
         }
         if (lobbyPage === 0 && lobbyFilesMode === "" && lobbyEncryptionEnabled) {
             if (event.key === Qt.Key_X && event.modifiers === Qt.NoModifier) {
                 lobbyEncryptSelected(); return true }
             if (event.key === Qt.Key_Y && event.modifiers === Qt.NoModifier) {
                 lobbyDecryptSelected(); return true }
+            if (event.key === Qt.Key_E && event.modifiers === Qt.NoModifier) {
+                lobbyFilesBeginNewEncrypted(); return true }
         }
         if (lobbyPage === 0) {
+            var ps = Math.max(1, lobbyFilesPageSize)
+            var last = Math.max(0, lobbyNotesModel.count - 1)
             if (event.key === Qt.Key_Up) {
                 lobbyFilesIndex = Math.max(0, lobbyFilesIndex - 1)
                 return true
             }
             if (event.key === Qt.Key_Down) {
-                lobbyFilesIndex = Math.min(Math.max(0, lobbyNotesModel.count - 1), lobbyFilesIndex + 1)
+                lobbyFilesIndex = Math.min(last, lobbyFilesIndex + 1)
+                return true
+            }
+            if (event.key === Qt.Key_PageUp) {
+                lobbyFilesIndex = Math.max(0, lobbyFilesIndex - ps)
+                return true
+            }
+            if (event.key === Qt.Key_PageDown) {
+                lobbyFilesIndex = Math.min(last, lobbyFilesIndex + ps)
                 return true
             }
             if (event.key === Qt.Key_Return) {

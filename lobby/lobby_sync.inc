@@ -7,6 +7,9 @@
                             contentWidth: width
                             contentHeight: syncCol.height
                             clip: true
+                            focus: false
+                            interactive: true
+                            flickableDirection: Flickable.VerticalFlick
                             Column {
                                 id: syncCol
                                 width: parent.width
@@ -116,7 +119,10 @@
                                     MouseArea {
                                         anchors.fill: parent
                                         enabled: lobbySyncReady && !lobbySyncing
-                                        onClicked: writerdeck.syncNow()
+                                        onClicked: {
+                                            writerdeck.syncNow()
+                                            root.lobbyKeepFocus()
+                                        }
                                     }
                                 }
                                 Text {

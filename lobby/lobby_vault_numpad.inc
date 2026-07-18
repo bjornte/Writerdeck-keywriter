@@ -60,7 +60,10 @@
                             MouseArea {
                                 anchors.fill: parent
                                 enabled: modelData !== ""
-                                onClicked: vaultNumpadTap(modelData)
+                                onClicked: {
+                                    vaultNumpadTap(modelData)
+                                    root.lobbyKeepFocus()
+                                }
                             }
                         }
                     }
@@ -81,7 +84,10 @@
                     }
                     MouseArea {
                         anchors.fill: parent
-                        onClicked: vaultNumpadCancel()
+                        onClicked: {
+                            vaultNumpadCancel()
+                            root.lobbyKeepFocus()
+                        }
                     }
                 }
             }

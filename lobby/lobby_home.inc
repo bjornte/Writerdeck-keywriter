@@ -7,6 +7,9 @@
                             contentWidth: width
                             contentHeight: homeCol.height
                             clip: true
+                            focus: false
+                            interactive: true
+                            flickableDirection: Flickable.VerticalFlick
                             Column {
                                 id: homeCol
                                 width: parent.width

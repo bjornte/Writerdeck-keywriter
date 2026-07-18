@@ -7,6 +7,9 @@
                             contentWidth: width
                             contentHeight: setCol.height
                             clip: true
+                            focus: false
+                            interactive: true
+                            flickableDirection: Flickable.VerticalFlick
                             Column {
                                 id: setCol
                                 width: parent.width
@@ -63,7 +66,10 @@
                                                 }
                                                 MouseArea {
                                                     anchors.fill: parent
-                                                    onClicked: writerdeck.setReadFont(modelData.id)
+                                                    onClicked: {
+                                                        writerdeck.setReadFont(modelData.id)
+                                                        root.lobbyKeepFocus()
+                                                    }
                                                 }
                                             }
                                         }
@@ -105,7 +111,10 @@
                                             }
                                             MouseArea {
                                                 anchors.fill: parent
-                                                onClicked: root.vaultBeginSetup()
+                                                onClicked: {
+                                                    root.vaultBeginSetup()
+                                                    root.lobbyKeepFocus()
+                                                }
                                             }
                                         }
                                     }
@@ -128,7 +137,10 @@
                                             }
                                             MouseArea {
                                                 anchors.fill: parent
-                                                onClicked: root.vaultBeginChangePIN()
+                                                onClicked: {
+                                                    root.vaultBeginChangePIN()
+                                                    root.lobbyKeepFocus()
+                                                }
                                             }
                                         }
                                     }
@@ -192,7 +204,10 @@
                                                 }
                                                 MouseArea {
                                                     anchors.fill: parent
-                                                    onClicked: writerdeck.setPinDigits(modelData.id)
+                                                    onClicked: {
+                                                        writerdeck.setPinDigits(modelData.id)
+                                                        root.lobbyKeepFocus()
+                                                    }
                                                 }
                                             }
                                         }
@@ -240,7 +255,10 @@
                                                 }
                                                 MouseArea {
                                                     anchors.fill: parent
-                                                    onClicked: root.setScreenRotation(modelData.deg)
+                                                    onClicked: {
+                                                        root.setScreenRotation(modelData.deg)
+                                                        root.lobbyKeepFocus()
+                                                    }
                                                 }
                                             }
                                         }
@@ -276,7 +294,10 @@
                                         }
                                         MouseArea {
                                             anchors.fill: parent
-                                            onClicked: root.lobbySettingsBeginExit()
+                                            onClicked: {
+                                                root.lobbySettingsBeginExit()
+                                                root.lobbyKeepFocus()
+                                            }
                                         }
                                     }
                                 }

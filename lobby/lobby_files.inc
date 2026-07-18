@@ -10,8 +10,10 @@
                             Text {
                                 visible: lobbyFilesMode === "new" || lobbyFilesMode === "rename"
                                          || lobbyFilesMode === "confirm-delete"
+                                         || lobbyFilesMode === "new-encrypted"
                                 text: lobbyFilesMode === "new" ? "New note name:"
                                      : lobbyFilesMode === "rename" ? "Rename to:"
+                                     : lobbyFilesMode === "new-encrypted" ? "New encrypted note name:"
                                      : lobbyFilesMode === "confirm-delete" ? "Delete this note? Enter=yes  Esc=no"
                                      : ""
                                 font.family: "Noto Sans"
@@ -22,6 +24,7 @@
 
                             Text {
                                 visible: lobbyFilesMode === "new" || lobbyFilesMode === "rename"
+                                         || lobbyFilesMode === "new-encrypted"
                                 text: lobbyFilesInputDisplay()
                                 font.family: "Noto Mono"
                                 font.pointSize: 12
@@ -39,65 +42,87 @@
                                 wrapMode: Text.WordWrap
                             }
 
-                            ListView {
+                            // Fixed page of rows — no flick scroll (e-ink).
+                            Item {
                                 id: lobbyFilesList
                                 width: parent.width
                                 height: {
                                     var reserved = lobbyFilesBar.height + lobby.contentSpacing * 2
                                     if (lobbyEncryptionEnabled && lobbyFilesMode === "" && lobbyNotesModel.count > 0)
                                         reserved += lobbyFilesVaultBar.height + lobby.contentSpacing
+                                    if (lobbyFilesPageLabel.visible)
+                                        reserved += lobbyFilesPageLabel.height + lobby.contentSpacing
                                     return Math.max(lobby.rowHeight * 2, parent.height - reserved)
                                 }
-                                clip: true
-                                model: lobbyNotesModel
-                                // Imperative currentIndex only — a binding breaks when ListView
-                                // clears the model (currentIndex=-1) and then ignores lobbyFilesIndex.
-                                spacing: 2
                                 visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
-                                // Selection marker — no full-row fill (less e-ink redraw).
-                                // One Text for marker+name: separate Texts would not share a baseline
-                                // reliably on this linuxfb Qt, and the ▶ looked a full row too low.
-                                delegate: Item {
-                                    width: lobbyFilesList.width
-                                    height: lobby.rowHeight
-                                    Text {
-                                        anchors.left: parent.left
-                                        anchors.leftMargin: 8
-                                        anchors.right: parent.right
-                                        anchors.rightMargin: 8
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: (index === lobbyFilesIndex ? "\u25B6  " : "   ")
-                                              + lobbyFilesStripSuffix(model.name)
-                                              + (model.encrypted ? " [private]" : "")
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 14
-                                        color: "black"
-                                        elide: Text.ElideRight
-                                    }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        onClicked: {
-                                            if (index === lobbyFilesIndex)
-                                                root.lobbyOpenSelected()
-                                            else {
-                                                lobbyFilesIndex = index
-                                                lobbyFilesList.currentIndex = index
+                                clip: true
+
+                                property int pageSize: Math.max(1, Math.floor(height / lobby.rowHeight))
+                                property int pageStart: root.lobbyFilesPageStart()
+                                property int visibleCount: {
+                                    var end = Math.min(lobbyNotesModel.count, pageStart + pageSize)
+                                    return Math.max(0, end - pageStart)
+                                }
+
+                                onPageSizeChanged: {
+                                    if (pageSize > 0 && lobbyFilesPageSize !== pageSize)
+                                        lobbyFilesPageSize = pageSize
+                                }
+                                Component.onCompleted: {
+                                    if (pageSize > 0)
+                                        lobbyFilesPageSize = pageSize
+                                }
+
+                                Column {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    Repeater {
+                                        model: lobbyFilesList.visibleCount
+                                        delegate: Item {
+                                            width: lobbyFilesList.width
+                                            height: lobby.rowHeight
+                                            property int noteIndex: lobbyFilesList.pageStart + index
+                                            property var noteRow: lobbyNotesModel.get(noteIndex)
+                                            Text {
+                                                anchors.left: parent.left
+                                                anchors.leftMargin: 8
+                                                anchors.right: parent.right
+                                                anchors.rightMargin: 8
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: (noteIndex === lobbyFilesIndex ? "\u25B6  " : "   ")
+                                                      + lobbyFilesStripSuffix(noteRow ? noteRow.name : "")
+                                                      + (noteRow && noteRow.encrypted ? " [private]" : "")
+                                                font.family: "Noto Sans"
+                                                font.pointSize: 14
+                                                color: "black"
+                                                elide: Text.ElideRight
+                                            }
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                onClicked: {
+                                                    if (noteIndex === lobbyFilesIndex)
+                                                        root.lobbyOpenSelected()
+                                                    else
+                                                        lobbyFilesIndex = noteIndex
+                                                    root.lobbyKeepFocus()
+                                                }
+                                                onDoubleClicked: root.lobbyOpenSelected()
                                             }
                                         }
-                                        onDoubleClicked: root.lobbyOpenSelected()
                                     }
                                 }
-                                Connections {
-                                    target: root
-                                    function onLobbyFilesIndexChanged() {
-                                        if (lobbyFilesList.currentIndex !== lobbyFilesIndex
-                                                && lobbyFilesIndex >= 0
-                                                && lobbyFilesIndex < lobbyNotesModel.count) {
-                                            lobbyFilesList.currentIndex = lobbyFilesIndex
-                                            lobbyFilesList.positionViewAtIndex(lobbyFilesIndex, ListView.Contain)
-                                        }
-                                    }
-                                }
+                            }
+
+                            Text {
+                                id: lobbyFilesPageLabel
+                                width: parent.width
+                                visible: lobbyFilesMode === "" && lobbyNotesModel.count > lobbyFilesPageSize
+                                text: "Page " + (root.lobbyFilesPageIndex() + 1)
+                                      + "/" + root.lobbyFilesPageCount()
+                                      + "  Up/Down  PgUp/PgDn"
+                                font.family: "Noto Mono"
+                                font.pointSize: 9
+                                color: "#888888"
                             }
 
                             Row {
@@ -130,6 +155,7 @@
                                                 else if (modelData === "Read") root.lobbyReadSelected()
                                                 else if (modelData === "Rename") root.lobbyFilesBeginRename()
                                                 else if (modelData === "Delete") root.lobbyFilesBeginDelete()
+                                                root.lobbyKeepFocus()
                                             }
                                         }
                                     }
@@ -167,7 +193,10 @@
                                     }
                                     MouseArea {
                                         anchors.fill: parent
-                                        onClicked: root.lobbyEncryptSelected()
+                                        onClicked: {
+                                            root.lobbyEncryptSelected()
+                                            root.lobbyKeepFocus()
+                                        }
                                     }
                                 }
                                 Rectangle {
@@ -186,7 +215,10 @@
                                     }
                                     MouseArea {
                                         anchors.fill: parent
-                                        onClicked: root.lobbyFilesBeginNewEncrypted()
+                                        onClicked: {
+                                            root.lobbyFilesBeginNewEncrypted()
+                                            root.lobbyKeepFocus()
+                                        }
                                     }
                                 }
                                 Rectangle {
@@ -205,7 +237,10 @@
                                     }
                                     MouseArea {
                                         anchors.fill: parent
-                                        onClicked: root.lobbyDecryptSelected()
+                                        onClicked: {
+                                            root.lobbyDecryptSelected()
+                                            root.lobbyKeepFocus()
+                                        }
                                     }
                                 }
                             }
