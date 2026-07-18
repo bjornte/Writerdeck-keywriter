@@ -1223,11 +1223,13 @@ Window {
             else
                 setCaretAssoc(0)
         } else if (action === "shiftVert") {
-            setCaretAssoc(0)
             extendSelectionVertical(r.down)
-        } else if (action === "moveVert") {
             setCaretAssoc(0)
+        } else if (action === "moveVert") {
+            // Keep assoc through the step so Up/Down from a wrap-end stay on
+            // the visual row the caret is painted on; clear after landing.
             moveCursorVertical(r.down)
+            setCaretAssoc(0)
         } else {
             return false
         }
