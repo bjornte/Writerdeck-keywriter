@@ -2147,25 +2147,38 @@ Window {
                                 // clears the model (currentIndex=-1) and then ignores lobbyFilesIndex.
                                 spacing: 2
                                 visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
-                                // Selection marker is the big triangle — no full-row fill (less e-ink redraw).
-                                // Anchor each glyph to the row (not a Row): ▶ metrics differ from mono text,
-                                // so Row verticalCenter looks badly misaligned on e-ink.
+                                // Selection marker is a drawn triangle — no full-row fill (less e-ink redraw).
+                                // Do not use a ▶ glyph: Noto’s metrics park the ink between rows on this display.
                                 delegate: Item {
                                     width: lobbyFilesList.width
                                     height: lobby.rowHeight
-                                    Text {
+                                    Item {
                                         id: lobbyFilesMarker
                                         anchors.left: parent.left
                                         anchors.leftMargin: 4
                                         anchors.top: parent.top
                                         anchors.bottom: parent.bottom
                                         width: 36
-                                        horizontalAlignment: Text.AlignHCenter
-                                        verticalAlignment: Text.AlignVCenter
-                                        text: index === lobbyFilesIndex ? "\u25B6" : " "
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 18
-                                        color: "black"
+                                        Canvas {
+                                            id: lobbyFilesMarkerCanvas
+                                            anchors.centerIn: parent
+                                            width: 20
+                                            height: 24
+                                            visible: index === lobbyFilesIndex
+                                            onPaint: {
+                                                var ctx = getContext("2d")
+                                                ctx.clearRect(0, 0, width, height)
+                                                ctx.fillStyle = "#000000"
+                                                ctx.beginPath()
+                                                ctx.moveTo(2, 2)
+                                                ctx.lineTo(2, height - 2)
+                                                ctx.lineTo(width - 2, height / 2)
+                                                ctx.closePath()
+                                                ctx.fill()
+                                            }
+                                            Component.onCompleted: requestPaint()
+                                            onVisibleChanged: if (visible) requestPaint()
+                                        }
                                     }
                                     Text {
                                         anchors.left: lobbyFilesMarker.right
