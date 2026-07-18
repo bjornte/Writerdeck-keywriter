@@ -20,6 +20,12 @@ Window {
     property bool isSleeping: false
     property string lobbyIP: ""
     property string lobbyPIN: ""
+    property int lobbyPort: 8000
+    property bool lobbyPhoneConnected: false
+    property bool lobbyUsbKeyboard: false
+    property string lobbyQrPath: ""
+    property bool lobbyShowNoKeyboard: false
+    property string lobbyNoKeyboardPending: ""
     property int paraSpacing: 28
     property string readFont: "Inter"
     property bool lobbySyncOn: false
@@ -221,7 +227,7 @@ Window {
         Qt.quit()
     }
 
-    function setLobbyInfo(ip, pin, syncOn, syncRepo, noteCount, lastSync, syncReady, syncing, keyboardLayout, pinDigits) {
+    function setLobbyInfo(ip, pin, syncOn, syncRepo, noteCount, lastSync, syncReady, syncing, keyboardLayout, pinDigits, phoneConnected, usbKeyboard, port, qrPath) {
         lobbyIP = ip
         lobbyPIN = pin
         lobbySyncOn = !!syncOn
@@ -232,6 +238,57 @@ Window {
         lobbySyncing = !!syncing
         lobbyKeyboardLayout = keyboardLayout || "us"
         lobbyPinDigits = pinDigits || "6"
+        lobbyPhoneConnected = !!phoneConnected
+        lobbyUsbKeyboard = !!usbKeyboard
+        lobbyPort = port || 8000
+        lobbyQrPath = qrPath || ""
+        if (lobbyShowNoKeyboard && lobbyKeyboardReady())
+            lobbyContinueAfterKeyboard()
+    }
+
+    function lobbyPhoneUrl() {
+        if (lobbyIP === "") return "(no Wi-Fi address yet)"
+        return "http://" + lobbyIP + ":" + lobbyPort
+    }
+
+    function lobbyKeyboardReady() {
+        return lobbyPhoneConnected || lobbyUsbKeyboard
+    }
+
+    function lobbyEnsureKeyboard(pending) {
+        if (lobbyKeyboardReady()) return true
+        lobbyNoKeyboardPending = pending || ""
+        lobbyShowNoKeyboard = true
+        writerdeck.notifyLobbyInput("no-keyboard")
+        lobbyKeepFocus()
+        return false
+    }
+
+    function lobbyDismissNoKeyboard() {
+        lobbyShowNoKeyboard = false
+        lobbyNoKeyboardPending = ""
+        if (vaultOverlayMode === "")
+            writerdeck.notifyLobbyInput(lobbyFilesMode)
+        lobbyKeepFocus()
+    }
+
+    function lobbyContinueAfterKeyboard() {
+        var pending = lobbyNoKeyboardPending
+        lobbyShowNoKeyboard = false
+        lobbyNoKeyboardPending = ""
+        if (vaultOverlayMode === "")
+            writerdeck.notifyLobbyInput(lobbyFilesMode)
+        if (pending === "edit")
+            lobbyOpenSelected()
+        else if (pending === "new")
+            lobbyFilesBeginNew()
+        else if (pending === "rename")
+            lobbyFilesBeginRename()
+        else if (pending === "delete")
+            lobbyFilesBeginDelete()
+        else if (pending === "new-encrypted")
+            lobbyFilesBeginNewEncrypted()
+        lobbyKeepFocus()
     }
 
     function setEncryptionEnabled(enabled) {
@@ -374,6 +431,7 @@ Window {
     }
 
     function lobbyOpenSelected() {
+        if (!lobbyEnsureKeyboard("edit")) return
         if (lobbyNotesModel.count === 0) return
         var row = lobbyNotesModel.get(lobbyFilesIndex)
         if (!row || row.name === "") return
@@ -412,12 +470,14 @@ Window {
     }
 
     function lobbyFilesBeginNew() {
+        if (!lobbyEnsureKeyboard("new")) return
         lobbyFilesMode = "new"
         lobbyFilesInput = ""
         lobbyFilesInputPos = 0
     }
 
     function lobbyFilesBeginRename() {
+        if (!lobbyEnsureKeyboard("rename")) return
         if (lobbyNotesModel.count === 0) return
         var n = lobbyNotesModel.get(lobbyFilesIndex).name
         lobbyFilesInput = lobbyFilesStripSuffix(n)
@@ -426,6 +486,7 @@ Window {
     }
 
     function lobbyFilesBeginDelete() {
+        if (!lobbyEnsureKeyboard("delete")) return
         if (lobbyNotesModel.count === 0) return
         lobbyFilesMode = "confirm-delete"
     }
@@ -470,6 +531,7 @@ Window {
     }
 
     function lobbyFilesBeginNewEncrypted() {
+        if (!lobbyEnsureKeyboard("new-encrypted")) return
         vaultPendingAction = "new-encrypted"
         vaultBeginPIN("Enter PIN to create encrypted note", false)
     }
@@ -625,6 +687,16 @@ Window {
 
     function lobbyHandleKey(event) {
         if (isOmni) return false
+        if (lobbyShowNoKeyboard) {
+            if (event.key === Qt.Key_Escape) {
+                lobbyDismissNoKeyboard()
+                return true
+            }
+            // A keystroke means USB or phone path is live (info may still be catching up).
+            lobbyPhoneConnected = true
+            lobbyContinueAfterKeyboard()
+            return true
+        }
         if (vaultOverlayMode !== "") {
             return vaultConsumeKey(event)
         }
@@ -2517,7 +2589,7 @@ Window {
                                     width: parent.width
                                 }
                                 Text {
-                                    text: "Pair the keyboard to your phone, then open:\nhttp://" + lobbyIP + ":8000\nTyping is forwarded over Wi-Fi.\n" + (lobbyPIN !== "" ? ("PIN: " + lobbyPIN) : "PIN is not set")
+                                    text: "Pair the keyboard to your phone, then open:\nhttp://" + lobbyIP + ":" + lobbyPort + "\nTyping is forwarded over Wi-Fi.\n" + (lobbyPIN !== "" ? ("PIN: " + lobbyPIN) : "PIN is not set")
                                     font.pointSize: 11
                                     font.family: "Noto Sans"
                                     color: "#555555"
@@ -2557,7 +2629,7 @@ Window {
                                         ? (lobbyLastSync !== ""
                                             ? "Last sync was " + lobbyLastSync + ".\nNotes sync to github.com/" + lobbySyncRepo
                                             : "Notes sync to github.com/" + lobbySyncRepo)
-                                        : ("Sync not configured.\nSet up in phone Sync setup:\nhttp://" + lobbyIP + ":8000")
+                                        : ("Sync not configured.\nSet up in phone Sync setup:\nhttp://" + lobbyIP + ":" + lobbyPort)
                                     font.pointSize: 11
                                     font.family: "Noto Sans"
                                     color: lobbySyncOn && lobbySyncRepo !== "" ? "#1b5e20" : "#555555"
@@ -2618,7 +2690,7 @@ Window {
                                             width: parent.width
                                         }
                                         Text {
-                                            text: "GitHub token is not on the tablet.\nOpen phone Sync setup and tap Save:\nhttp://" + lobbyIP + ":8000\nRepo: github.com/" + lobbySyncRepo
+                                            text: "GitHub token is not on the tablet.\nOpen phone Sync setup and tap Save:\nhttp://" + lobbyIP + ":" + lobbyPort + "\nRepo: github.com/" + lobbySyncRepo
                                             font.pointSize: 13
                                             font.family: "Noto Sans"
                                             color: "black"
@@ -3129,6 +3201,102 @@ Window {
                         anchors.fill: parent
                         onClicked: {
                             vaultNumpadCancel()
+                            root.lobbyKeepFocus()
+                        }
+                    }
+                }
+            }
+        }
+        Rectangle {
+            id: noKeyboardOverlay
+            anchors.fill: parent
+            color: "#f8f8f8"
+            visible: lobbyShowNoKeyboard
+            z: 26
+
+            Column {
+                anchors.centerIn: parent
+                width: parent.width * 0.85
+                spacing: lobby.contentSpacing
+
+                Text {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.family: "Noto Sans"
+                    font.pointSize: 16
+                    color: "black"
+                    text: "Connect a keyboard"
+                }
+
+                Text {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.family: "Noto Sans"
+                    font.pointSize: 12
+                    color: "#333"
+                    text: "USB: plug in with an OTG cable.\n\nBluetooth: pair to your phone, then open the address below (or scan the code)."
+                }
+
+                Text {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.family: "Noto Mono"
+                    font.pointSize: 13
+                    color: "black"
+                    text: root.lobbyPhoneUrl()
+                }
+
+                Text {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.family: "Noto Sans"
+                    font.pointSize: 12
+                    color: "#333"
+                    visible: lobbyPIN !== ""
+                    text: "PIN: " + lobbyPIN
+                }
+
+                Image {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: Math.min(parent.width * 0.55, 280)
+                    height: width
+                    fillMode: Image.PreserveAspectFit
+                    visible: lobbyQrPath !== ""
+                    source: lobbyQrPath !== "" ? ("file://" + lobbyQrPath) : ""
+                    cache: false
+                }
+
+                Text {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.family: "Noto Sans"
+                    font.pointSize: 11
+                    color: "#555"
+                    text: "Esc or Cancel to close. Tip closes when a keyboard connects."
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: lobby.actionBtnHeight
+                    radius: 6
+                    color: "#f0f0f0"
+                    border.color: "#bbb"
+                    border.width: 1
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Cancel"
+                        font.family: "Noto Sans"
+                        font.pointSize: 12
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            root.lobbyDismissNoKeyboard()
                             root.lobbyKeepFocus()
                         }
                     }

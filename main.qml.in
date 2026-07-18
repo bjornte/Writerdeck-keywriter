@@ -20,6 +20,12 @@ Window {
     property bool isSleeping: false
     property string lobbyIP: ""
     property string lobbyPIN: ""
+    property int lobbyPort: 8000
+    property bool lobbyPhoneConnected: false
+    property bool lobbyUsbKeyboard: false
+    property string lobbyQrPath: ""
+    property bool lobbyShowNoKeyboard: false
+    property string lobbyNoKeyboardPending: ""
     property int paraSpacing: 28
     property string readFont: "Inter"
     property bool lobbySyncOn: false
@@ -221,7 +227,7 @@ Window {
         Qt.quit()
     }
 
-    function setLobbyInfo(ip, pin, syncOn, syncRepo, noteCount, lastSync, syncReady, syncing, keyboardLayout, pinDigits) {
+    function setLobbyInfo(ip, pin, syncOn, syncRepo, noteCount, lastSync, syncReady, syncing, keyboardLayout, pinDigits, phoneConnected, usbKeyboard, port, qrPath) {
         lobbyIP = ip
         lobbyPIN = pin
         lobbySyncOn = !!syncOn
@@ -232,6 +238,57 @@ Window {
         lobbySyncing = !!syncing
         lobbyKeyboardLayout = keyboardLayout || "us"
         lobbyPinDigits = pinDigits || "6"
+        lobbyPhoneConnected = !!phoneConnected
+        lobbyUsbKeyboard = !!usbKeyboard
+        lobbyPort = port || 8000
+        lobbyQrPath = qrPath || ""
+        if (lobbyShowNoKeyboard && lobbyKeyboardReady())
+            lobbyContinueAfterKeyboard()
+    }
+
+    function lobbyPhoneUrl() {
+        if (lobbyIP === "") return "(no Wi-Fi address yet)"
+        return "http://" + lobbyIP + ":" + lobbyPort
+    }
+
+    function lobbyKeyboardReady() {
+        return lobbyPhoneConnected || lobbyUsbKeyboard
+    }
+
+    function lobbyEnsureKeyboard(pending) {
+        if (lobbyKeyboardReady()) return true
+        lobbyNoKeyboardPending = pending || ""
+        lobbyShowNoKeyboard = true
+        writerdeck.notifyLobbyInput("no-keyboard")
+        lobbyKeepFocus()
+        return false
+    }
+
+    function lobbyDismissNoKeyboard() {
+        lobbyShowNoKeyboard = false
+        lobbyNoKeyboardPending = ""
+        if (vaultOverlayMode === "")
+            writerdeck.notifyLobbyInput(lobbyFilesMode)
+        lobbyKeepFocus()
+    }
+
+    function lobbyContinueAfterKeyboard() {
+        var pending = lobbyNoKeyboardPending
+        lobbyShowNoKeyboard = false
+        lobbyNoKeyboardPending = ""
+        if (vaultOverlayMode === "")
+            writerdeck.notifyLobbyInput(lobbyFilesMode)
+        if (pending === "edit")
+            lobbyOpenSelected()
+        else if (pending === "new")
+            lobbyFilesBeginNew()
+        else if (pending === "rename")
+            lobbyFilesBeginRename()
+        else if (pending === "delete")
+            lobbyFilesBeginDelete()
+        else if (pending === "new-encrypted")
+            lobbyFilesBeginNewEncrypted()
+        lobbyKeepFocus()
     }
 
     function setEncryptionEnabled(enabled) {
@@ -374,6 +431,7 @@ Window {
     }
 
     function lobbyOpenSelected() {
+        if (!lobbyEnsureKeyboard("edit")) return
         if (lobbyNotesModel.count === 0) return
         var row = lobbyNotesModel.get(lobbyFilesIndex)
         if (!row || row.name === "") return
@@ -412,12 +470,14 @@ Window {
     }
 
     function lobbyFilesBeginNew() {
+        if (!lobbyEnsureKeyboard("new")) return
         lobbyFilesMode = "new"
         lobbyFilesInput = ""
         lobbyFilesInputPos = 0
     }
 
     function lobbyFilesBeginRename() {
+        if (!lobbyEnsureKeyboard("rename")) return
         if (lobbyNotesModel.count === 0) return
         var n = lobbyNotesModel.get(lobbyFilesIndex).name
         lobbyFilesInput = lobbyFilesStripSuffix(n)
@@ -426,6 +486,7 @@ Window {
     }
 
     function lobbyFilesBeginDelete() {
+        if (!lobbyEnsureKeyboard("delete")) return
         if (lobbyNotesModel.count === 0) return
         lobbyFilesMode = "confirm-delete"
     }
@@ -470,6 +531,7 @@ Window {
     }
 
     function lobbyFilesBeginNewEncrypted() {
+        if (!lobbyEnsureKeyboard("new-encrypted")) return
         vaultPendingAction = "new-encrypted"
         vaultBeginPIN("Enter PIN to create encrypted note", false)
     }
@@ -625,6 +687,16 @@ Window {
 
     function lobbyHandleKey(event) {
         if (isOmni) return false
+        if (lobbyShowNoKeyboard) {
+            if (event.key === Qt.Key_Escape) {
+                lobbyDismissNoKeyboard()
+                return true
+            }
+            // A keystroke means USB or phone path is live (info may still be catching up).
+            lobbyPhoneConnected = true
+            lobbyContinueAfterKeyboard()
+            return true
+        }
         if (vaultOverlayMode !== "") {
             return vaultConsumeKey(event)
         }

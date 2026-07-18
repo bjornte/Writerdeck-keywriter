@@ -440,88 +440,56 @@ static void rmkbdInjectLine(const std::string &line)
                 g_rootObj->setProperty("rotation", (r + 90) % 360);
             }, Qt::QueuedConnection);
     } else if (line.find("\"t\":\"info\"") != std::string::npos) {
-        // {"t":"info","ip":"...","pin":"...","syncOn":...,"syncRepo":"...","noteCount":N,"lastSync":"...","keyboardLayout":"us|no","pinDigits":"6|4|none"}
-        // -> setLobbyInfo(...) + setLobbySyncStatus(syncError, wifi) in QML.
-        auto ip_p = line.find("\"ip\":\"");
-        auto pin_p = line.find("\"pin\":\"");
-        if (ip_p != std::string::npos && pin_p != std::string::npos && g_rootObj) {
-            ip_p += 6; auto ip_q = line.find('"', ip_p);
-            pin_p += 7; auto pin_q = line.find('"', pin_p);
-            if (ip_q != std::string::npos && pin_q != std::string::npos) {
-                std::string ip  = line.substr(ip_p,  ip_q  - ip_p);
-                std::string pin = line.substr(pin_p, pin_q - pin_p);
-                bool syncOn = line.find("\"syncOn\":true") != std::string::npos;
-                std::string syncRepo;
-                auto sr_p = line.find("\"syncRepo\":\"");
-                if (sr_p != std::string::npos) {
-                    sr_p += 12;
-                    auto sr_q = line.find('"', sr_p);
-                    if (sr_q != std::string::npos)
-                        syncRepo = line.substr(sr_p, sr_q - sr_p);
-                }
-                int noteCount = 0;
-                auto nc_p = line.find("\"noteCount\":");
-                if (nc_p != std::string::npos) {
-                    nc_p += 12;
-                    noteCount = std::atoi(line.c_str() + nc_p);
-                }
-                std::string lastSync;
-                auto ls_p = line.find("\"lastSync\":\"");
-                if (ls_p != std::string::npos) {
-                    ls_p += 12;
-                    auto ls_q = line.find('"', ls_p);
-                    if (ls_q != std::string::npos)
-                        lastSync = line.substr(ls_p, ls_q - ls_p);
-                }
-                bool syncReady = line.find("\"syncReady\":true") != std::string::npos;
-                bool syncing = line.find("\"syncing\":true") != std::string::npos;
-                std::string syncError;
-                auto se_p = line.find("\"syncError\":\"");
-                if (se_p != std::string::npos) {
-                    se_p += 13;
-                    auto se_q = line.find('"', se_p);
-                    if (se_q != std::string::npos)
-                        syncError = line.substr(se_p, se_q - se_p);
-                }
-                bool wifi = line.find("\"wifi\":true") != std::string::npos;
-                std::string keyboardLayout = "us";
-                auto kl_p = line.find("\"keyboardLayout\":\"");
-                if (kl_p != std::string::npos) {
-                    kl_p += 18;
-                    auto kl_q = line.find('"', kl_p);
-                    if (kl_q != std::string::npos)
-                        keyboardLayout = line.substr(kl_p, kl_q - kl_p);
-                }
-                std::string pinDigits = "6";
-                auto pd_p = line.find("\"pinDigits\":\"");
-                if (pd_p != std::string::npos) {
-                    pd_p += 13;
-                    auto pd_q = line.find('"', pd_p);
-                    if (pd_q != std::string::npos)
-                        pinDigits = line.substr(pd_p, pd_q - pd_p);
-                }
-                bool encryptionEnabled = line.find("\"encryptionEnabled\":true") != std::string::npos;
-                QMetaObject::invokeMethod(g_rootObj, "setLobbyInfo",
-                    Qt::QueuedConnection,
-                    Q_ARG(QVariant, QString::fromStdString(ip)),
-                    Q_ARG(QVariant, QString::fromStdString(pin)),
-                    Q_ARG(QVariant, syncOn),
-                    Q_ARG(QVariant, QString::fromStdString(syncRepo)),
-                    Q_ARG(QVariant, noteCount),
-                    Q_ARG(QVariant, QString::fromStdString(lastSync)),
-                    Q_ARG(QVariant, syncReady),
-                    Q_ARG(QVariant, syncing),
-                    Q_ARG(QVariant, QString::fromStdString(keyboardLayout)),
-                    Q_ARG(QVariant, QString::fromStdString(pinDigits)));
-                QMetaObject::invokeMethod(g_rootObj, "setEncryptionEnabled",
-                    Qt::QueuedConnection,
-                    Q_ARG(QVariant, encryptionEnabled));
-                QMetaObject::invokeMethod(g_rootObj, "setLobbySyncStatus",
-                    Qt::QueuedConnection,
-                    Q_ARG(QVariant, QString::fromStdString(syncError)),
-                    Q_ARG(QVariant, wifi));
-            }
-        }
+        // {"t":"info",...} -> setLobbyInfo(...) + setLobbySyncStatus + setEncryptionEnabled
+        QJsonDocument doc = QJsonDocument::fromJson(QByteArray::fromStdString(line));
+        if (!doc.isObject() || !g_rootObj) return;
+        QJsonObject o = doc.object();
+        QString ip = o.value(QStringLiteral("ip")).toString();
+        QString pin = o.value(QStringLiteral("pin")).toString();
+        bool syncOn = o.value(QStringLiteral("syncOn")).toBool();
+        QString syncRepo = o.value(QStringLiteral("syncRepo")).toString();
+        int noteCount = o.value(QStringLiteral("noteCount")).toInt();
+        QString lastSync = o.value(QStringLiteral("lastSync")).toString();
+        bool syncReady = o.value(QStringLiteral("syncReady")).toBool();
+        bool syncing = o.value(QStringLiteral("syncing")).toBool();
+        QString syncError = o.value(QStringLiteral("syncError")).toString();
+        bool wifi = o.value(QStringLiteral("wifi")).toBool();
+        QString keyboardLayout = o.value(QStringLiteral("keyboardLayout")).toString();
+        if (keyboardLayout.isEmpty())
+            keyboardLayout = QStringLiteral("us");
+        QString pinDigits = o.value(QStringLiteral("pinDigits")).toString();
+        if (pinDigits.isEmpty())
+            pinDigits = QStringLiteral("6");
+        bool encryptionEnabled = o.value(QStringLiteral("encryptionEnabled")).toBool();
+        bool phoneConnected = o.value(QStringLiteral("phoneConnected")).toBool();
+        bool usbKeyboard = o.value(QStringLiteral("usbKeyboard")).toBool();
+        int port = o.value(QStringLiteral("port")).toInt(8000);
+        if (port <= 0)
+            port = 8000;
+        QString qrPath = o.value(QStringLiteral("qrPath")).toString();
+        QMetaObject::invokeMethod(g_rootObj, "setLobbyInfo",
+            Qt::QueuedConnection,
+            Q_ARG(QVariant, ip),
+            Q_ARG(QVariant, pin),
+            Q_ARG(QVariant, syncOn),
+            Q_ARG(QVariant, syncRepo),
+            Q_ARG(QVariant, noteCount),
+            Q_ARG(QVariant, lastSync),
+            Q_ARG(QVariant, syncReady),
+            Q_ARG(QVariant, syncing),
+            Q_ARG(QVariant, keyboardLayout),
+            Q_ARG(QVariant, pinDigits),
+            Q_ARG(QVariant, phoneConnected),
+            Q_ARG(QVariant, usbKeyboard),
+            Q_ARG(QVariant, port),
+            Q_ARG(QVariant, qrPath));
+        QMetaObject::invokeMethod(g_rootObj, "setEncryptionEnabled",
+            Qt::QueuedConnection,
+            Q_ARG(QVariant, encryptionEnabled));
+        QMetaObject::invokeMethod(g_rootObj, "setLobbySyncStatus",
+            Qt::QueuedConnection,
+            Q_ARG(QVariant, syncError),
+            Q_ARG(QVariant, wifi));
     } else if (line.find("\"t\":\"notes\"") != std::string::npos) {
         // {"t":"notes","items":[{"name":"a.md","size":N,"modified":"..."},...]}
         QJsonDocument doc = QJsonDocument::fromJson(QByteArray::fromStdString(line));

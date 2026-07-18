@@ -78,7 +78,7 @@
                                     width: parent.width
                                 }
                                 Text {
-                                    text: "Pair the keyboard to your phone, then open:\nhttp://" + lobbyIP + ":8000\nTyping is forwarded over Wi-Fi.\n" + (lobbyPIN !== "" ? ("PIN: " + lobbyPIN) : "PIN is not set")
+                                    text: "Pair the keyboard to your phone, then open:\nhttp://" + lobbyIP + ":" + lobbyPort + "\nTyping is forwarded over Wi-Fi.\n" + (lobbyPIN !== "" ? ("PIN: " + lobbyPIN) : "PIN is not set")
                                     font.pointSize: 11
                                     font.family: "Noto Sans"
                                     color: "#555555"

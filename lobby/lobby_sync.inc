@@ -28,7 +28,7 @@
                                         ? (lobbyLastSync !== ""
                                             ? "Last sync was " + lobbyLastSync + ".\nNotes sync to github.com/" + lobbySyncRepo
                                             : "Notes sync to github.com/" + lobbySyncRepo)
-                                        : ("Sync not configured.\nSet up in phone Sync setup:\nhttp://" + lobbyIP + ":8000")
+                                        : ("Sync not configured.\nSet up in phone Sync setup:\nhttp://" + lobbyIP + ":" + lobbyPort)
                                     font.pointSize: 11
                                     font.family: "Noto Sans"
                                     color: lobbySyncOn && lobbySyncRepo !== "" ? "#1b5e20" : "#555555"
@@ -89,7 +89,7 @@
                                             width: parent.width
                                         }
                                         Text {
-                                            text: "GitHub token is not on the tablet.\nOpen phone Sync setup and tap Save:\nhttp://" + lobbyIP + ":8000\nRepo: github.com/" + lobbySyncRepo
+                                            text: "GitHub token is not on the tablet.\nOpen phone Sync setup and tap Save:\nhttp://" + lobbyIP + ":" + lobbyPort + "\nRepo: github.com/" + lobbySyncRepo
                                             font.pointSize: 13
                                             font.family: "Noto Sans"
                                             color: "black"
