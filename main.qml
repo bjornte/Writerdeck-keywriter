@@ -2147,47 +2147,33 @@ Window {
                                 // clears the model (currentIndex=-1) and then ignores lobbyFilesIndex.
                                 spacing: 2
                                 visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
-                                // Selection marker is a drawn triangle — no full-row fill (less e-ink redraw).
-                                // Do not use a ▶ glyph: Noto’s metrics park the ink between rows on this display.
+                                // Selection marker — no full-row fill (less e-ink redraw).
+                                // ▶ ink in Noto sits low in the em-box; offset lifts it onto the filename.
+                                // Avoid Canvas here: linuxfb/epaper does not paint delegate canvases reliably.
                                 delegate: Item {
                                     width: lobbyFilesList.width
                                     height: lobby.rowHeight
-                                    Item {
+                                    Text {
                                         id: lobbyFilesMarker
                                         anchors.left: parent.left
-                                        anchors.leftMargin: 4
-                                        anchors.top: parent.top
-                                        anchors.bottom: parent.bottom
-                                        width: 36
-                                        Canvas {
-                                            id: lobbyFilesMarkerCanvas
-                                            anchors.centerIn: parent
-                                            width: 20
-                                            height: 24
-                                            visible: index === lobbyFilesIndex
-                                            onPaint: {
-                                                var ctx = getContext("2d")
-                                                ctx.clearRect(0, 0, width, height)
-                                                ctx.fillStyle = "#000000"
-                                                ctx.beginPath()
-                                                ctx.moveTo(2, 2)
-                                                ctx.lineTo(2, height - 2)
-                                                ctx.lineTo(width - 2, height / 2)
-                                                ctx.closePath()
-                                                ctx.fill()
-                                            }
-                                            Component.onCompleted: requestPaint()
-                                            onVisibleChanged: if (visible) requestPaint()
-                                        }
+                                        anchors.leftMargin: 2
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.verticalCenterOffset: -14
+                                        width: 34
+                                        height: 34
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: index === lobbyFilesIndex ? "\u25B6" : ""
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 16
+                                        color: "black"
                                     }
                                     Text {
-                                        anchors.left: lobbyFilesMarker.right
-                                        anchors.leftMargin: 8
+                                        anchors.left: parent.left
+                                        anchors.leftMargin: 40
                                         anchors.right: parent.right
                                         anchors.rightMargin: 8
-                                        anchors.top: parent.top
-                                        anchors.bottom: parent.bottom
-                                        verticalAlignment: Text.AlignVCenter
+                                        anchors.verticalCenter: parent.verticalCenter
                                         text: lobbyFilesStripSuffix(model.name) + (model.encrypted ? " [private]" : "")
                                         font.family: "Noto Mono"
                                         font.pointSize: 11
