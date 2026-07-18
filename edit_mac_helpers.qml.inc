@@ -124,13 +124,15 @@
         if (!shift && cmd && !alt) {
             // Mac: Cmd+Left/Right = line; Cmd+Up/Down and Ctrl+Home/End = document.
             if (key === Qt.Key_Right) {
-                moveCursorTo(macLineEndPos(pos, text), false)
+                var lineEnd = macLineEndPos(pos, text)
                 setCaretAssoc(-1)
+                moveCursorTo(lineEnd, false)
                 return
             }
             if (key === Qt.Key_Left) {
-                moveCursorTo(macLineStartPos(pos, text), false)
+                var lineStart = macLineStartPos(pos, text)
                 setCaretAssoc(1)
+                moveCursorTo(lineStart, false)
                 return
             }
             if (key === Qt.Key_Up) { setCaretAssoc(0); moveCursorTo(0, false); return }
@@ -288,12 +290,16 @@
     }
 
     function rememberGoalX(pos) {
-        goalX = query.positionToRectangle(pos).x
+        // Soft-wrap exclusive end shares an index with the next row start.
+        // Probe the painted row so goalX is the right edge, not col 0 of the next.
+        syncEditHelperQuery()
+        goalX = query.positionToRectangle(editHelper.wrapProbePos(pos)).x
     }
 
     function goalXFor(pos) {
         if (goalX >= 0) return goalX
-        return query.positionToRectangle(pos).x
+        syncEditHelperQuery()
+        return query.positionToRectangle(editHelper.wrapProbePos(pos)).x
     }
 
     function deleteWordLeftPos(pos, text) {
@@ -433,17 +439,18 @@
                 moveCursorTo(r.pos, false, r.keepGoalColumn === true)
         } else if (action === "moveToResolved") {
             var p = resolveMacPosKind(r.posKind, r.extendKey)
-            if (r.extend)
-                extendSelectionHorizontal(p)
-            else
-                moveCursorTo(p, false)
-            // Soft-wrap End/Cmd+Right: assoc -1 so a repeat press stays at the wrap point.
+            // Set affinity before moveCursorTo so rememberGoalX / onCursorPositionChanged
+            // probe the painted visual row (not the next row's col 0 at a wrap point).
             if (r.posKind === "macLineEndCursor" || r.posKind === "macLineEndExtend")
                 setCaretAssoc(-1)
             else if (r.posKind === "macLineStartCursor" || r.posKind === "macLineStartExtend")
                 setCaretAssoc(1)
             else
                 setCaretAssoc(0)
+            if (r.extend)
+                extendSelectionHorizontal(p)
+            else
+                moveCursorTo(p, false)
         } else if (action === "shiftHorizDelta") {
             setCaretAssoc(0)
             // Drop stale heads before reading them (typing leaves shiftHead
@@ -610,7 +617,15 @@
             if (down) {
                 var gx = goalXFor(pos)
                 var vis = visualLineDownPos(pos, gx)
-                newPos = (vis > pos) ? vis : lineEndPos(pos, text)
+                if (vis > pos) {
+                    newPos = vis
+                } else if (onWrappedLine(pos, text)) {
+                    // Soft-wrap: never fall through to logical paragraph end
+                    // (that was End-then-Down jumping to EOF at the wrap point).
+                    newPos = pos
+                } else {
+                    newPos = lineEndPos(pos, text)
+                }
             } else {
                 newPos = macLineStartPos(pos, text)
             }
