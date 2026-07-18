@@ -1057,14 +1057,18 @@ Window {
     }
 
     function selectionExtendFrom(key) {
-        // Collapsed caret means any leftover shiftHead/shiftAnchor is stale
-        // (typing, touch, or note open moved the caret without clearShiftSelection).
-        if (query.selectionStart === query.selectionEnd) {
+        // If the caret is collapsed but shiftHead still points elsewhere, it is
+        // leftover from before typing/touch/note-open — drop it. While a
+        // selection is active, or shiftHead matches the caret, keep extending.
+        if (shiftHead >= 0) {
+            if (query.selectionStart !== query.selectionEnd)
+                return shiftHead
+            if (shiftHead === query.cursorPosition)
+                return shiftHead
             clearShiftSelection()
-            return query.cursorPosition
         }
-        if (shiftHead >= 0) return shiftHead
         var pos = query.cursorPosition
+        if (query.selectionStart === query.selectionEnd) return pos
         if (key === Qt.Key_Left || key === Qt.Key_Up)
             return Math.min(query.selectionStart, query.selectionEnd)
         if (key === Qt.Key_Right || key === Qt.Key_Down)
@@ -1115,8 +1119,6 @@ Window {
             else
                 moveCursorTo(p, false)
         } else if (action === "shiftHorizDelta") {
-            if (query.selectionStart === query.selectionEnd)
-                clearShiftSelection()
             var headH = (shiftHead >= 0) ? shiftHead : query.cursorPosition
             var newHead = (r.delta < 0)
                 ? Math.max(0, headH + r.delta)
@@ -1124,8 +1126,6 @@ Window {
             applyShiftSelection(newHead)
             lastShiftHorizKey = (r.eventKey !== undefined) ? r.eventKey : eventKey
         } else if (action === "shiftHorizTo") {
-            if (query.selectionStart === query.selectionEnd)
-                clearShiftSelection()
             if (shiftAnchor < 0)
                 shiftAnchor = (query.selectionStart === query.selectionEnd)
                     ? pos : ((r.posKind === "macLineEndShiftHead")
@@ -1133,8 +1133,6 @@ Window {
                         : Math.max(query.selectionStart, query.selectionEnd))
             applyShiftSelection(resolveMacPosKind(r.posKind, 0))
         } else if (action === "shiftVert") {
-            if (query.selectionStart === query.selectionEnd)
-                clearShiftSelection()
             extendSelectionVertical(r.down)
         } else if (action === "moveVert") {
             moveCursorVertical(r.down)
