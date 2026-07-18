@@ -123,31 +123,76 @@ int EditHelper::deleteLineLeftPos(int pos, const QString &text) const
     return lineStartPos(start - 1, text);
 }
 
-int EditHelper::paragraphUpPos(int pos, const QString &text) const
+// Paragraph breaks are blank lines (\n\n or longer). Mac Option+Up/Down:
+// first press snaps to the current paragraph boundary; next press crosses.
+static int paragraphStartAtOrBefore(int pos, const QString &text)
 {
-    const int lineStart = lineStartPos(pos, text);
-    if (lineStart == 0)
+    if (pos <= 0)
         return 0;
-    int i = lineStart - 1;
-    while (i > 0) {
-        if (text.at(i) == QLatin1Char('\n') && text.at(i - 1) == QLatin1Char('\n'))
-            return i + 1;
-        i--;
+    if (pos > text.length())
+        pos = text.length();
+    for (int i = pos - 1; i > 0; i--) {
+        if (text.at(i) == QLatin1Char('\n') && text.at(i - 1) == QLatin1Char('\n')) {
+            int r = i + 1;
+            while (r < text.length() && text.at(r) == QLatin1Char('\n'))
+                r++;
+            return r;
+        }
     }
     return 0;
+}
+
+static int paragraphEndAtOrAfter(int pos, const QString &text)
+{
+    const int len = text.length();
+    if (pos < 0)
+        pos = 0;
+    if (pos >= len)
+        return len;
+    for (int i = pos; i < len - 1; i++) {
+        if (text.at(i) == QLatin1Char('\n') && text.at(i + 1) == QLatin1Char('\n'))
+            return i;
+    }
+    return len;
+}
+
+int EditHelper::paragraphUpPos(int pos, const QString &text) const
+{
+    if (pos <= 0)
+        return 0;
+    if (pos > text.length())
+        pos = text.length();
+    const int curStart = paragraphStartAtOrBefore(pos, text);
+    if (pos > curStart)
+        return curStart;
+    // Already at paragraph start: skip the blank run and find the previous start.
+    if (curStart <= 0)
+        return 0;
+    int i = curStart - 1;
+    while (i >= 0 && text.at(i) == QLatin1Char('\n'))
+        i--;
+    if (i < 0)
+        return 0;
+    return paragraphStartAtOrBefore(i + 1, text);
 }
 
 int EditHelper::paragraphDownPos(int pos, const QString &text) const
 {
     const int len = text.length();
-    const int lineEnd = lineEndPos(pos, text);
-    if (lineEnd >= len)
+    if (pos < 0)
+        pos = 0;
+    if (pos >= len)
         return len;
-    for (int i = lineEnd; i < len - 1; i++) {
-        if (text.at(i) == QLatin1Char('\n') && text.at(i + 1) == QLatin1Char('\n'))
-            return i + 2;
-    }
-    return lineEnd + 1;
+    const int curEnd = paragraphEndAtOrAfter(pos, text);
+    if (pos < curEnd)
+        return curEnd;
+    // Already at paragraph end: skip blanks, then end of the next paragraph.
+    int i = curEnd;
+    while (i < len && text.at(i) == QLatin1Char('\n'))
+        i++;
+    if (i >= len)
+        return len;
+    return paragraphEndAtOrAfter(i, text);
 }
 
 QVariant EditHelper::insertTextDelta(const QString &prevText, const QString &curText) const
@@ -406,9 +451,10 @@ QVariantMap EditHelper::dispatchMacArrow(int key, int modifiers,
     } else if (key == Qt::Key_Left) {
         if (cmd && shift)
             return moveToResolvedResult(QStringLiteral("macLineStartExtend"), true, Qt::Key_Left);
+        // Mac Cmd+Left = line start (not document). Document is Cmd+Up / Ctrl+Home.
         if (cmd)
-            newPos = 0;
-        else if (alt)
+            return moveToResolvedResult(QStringLiteral("macLineStartCursor"), shift);
+        if (alt)
             newPos = wordLeftPos(selectionExtendFrom(Qt::Key_Left, cursor, selStart, selEnd, shiftHead), text);
         else
             newPos = lineStartPos(cursor, text);
@@ -416,8 +462,8 @@ QVariantMap EditHelper::dispatchMacArrow(int key, int modifiers,
         if (cmd && shift)
             return moveToResolvedResult(QStringLiteral("macLineEndExtend"), true, Qt::Key_Right);
         if (cmd)
-            newPos = len;
-        else if (alt)
+            return moveToResolvedResult(QStringLiteral("macLineEndCursor"), shift);
+        if (alt)
             newPos = wordRightPos(selectionExtendFrom(Qt::Key_Right, cursor, selStart, selEnd, shiftHead), text);
         else
             newPos = lineEndPos(cursor, text);

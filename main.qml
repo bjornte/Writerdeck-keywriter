@@ -867,9 +867,9 @@ Window {
         var text = query.text
         var pos = query.cursorPosition
         if (!shift && cmd && !alt) {
-            // Ctrl+arrows = document bounds (Mac Cmd mapping), same as Ctrl+Home/End.
-            if (key === Qt.Key_Right) { moveCursorTo(text.length, false); return }
-            if (key === Qt.Key_Left) { moveCursorTo(0, false); return }
+            // Mac: Cmd+Left/Right = line; Cmd+Up/Down and Ctrl+Home/End = document.
+            if (key === Qt.Key_Right) { moveCursorTo(macLineEndPos(pos, text), false); return }
+            if (key === Qt.Key_Left) { moveCursorTo(macLineStartPos(pos, text), false); return }
             if (key === Qt.Key_Up) { moveCursorTo(0, false); return }
             if (key === Qt.Key_Down) { moveCursorTo(text.length, false); return }
             if (key === Qt.Key_End) { moveCursorTo(text.length, false); return }
