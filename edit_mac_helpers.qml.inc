@@ -111,6 +111,7 @@
     function socketRouteKey(key, mods) {
         if (mode != 1 || isLobby) return
         query.forceActiveFocus()
+        syncEditHelperQuery()
         key = parseInt(key)
         mods = parseInt(mods)
         var cmd = (mods & Qt.ControlModifier) !== 0
@@ -120,14 +121,23 @@
         var pos = query.cursorPosition
         if (!shift && cmd && !alt) {
             // Mac: Cmd+Left/Right = line; Cmd+Up/Down and Ctrl+Home/End = document.
-            if (key === Qt.Key_Right) { moveCursorTo(macLineEndPos(pos, text), false); return }
-            if (key === Qt.Key_Left) { moveCursorTo(macLineStartPos(pos, text), false); return }
-            if (key === Qt.Key_Up) { moveCursorTo(0, false); return }
-            if (key === Qt.Key_Down) { moveCursorTo(text.length, false); return }
-            if (key === Qt.Key_End) { moveCursorTo(text.length, false); return }
-            if (key === Qt.Key_Home) { moveCursorTo(0, false); return }
+            if (key === Qt.Key_Right) {
+                moveCursorTo(macLineEndPos(pos, text), false)
+                editHelper.setCursorAssoc(-1)
+                return
+            }
+            if (key === Qt.Key_Left) {
+                moveCursorTo(macLineStartPos(pos, text), false)
+                editHelper.setCursorAssoc(1)
+                return
+            }
+            if (key === Qt.Key_Up) { editHelper.setCursorAssoc(0); moveCursorTo(0, false); return }
+            if (key === Qt.Key_Down) { editHelper.setCursorAssoc(0); moveCursorTo(text.length, false); return }
+            if (key === Qt.Key_End) { editHelper.setCursorAssoc(0); moveCursorTo(text.length, false); return }
+            if (key === Qt.Key_Home) { editHelper.setCursorAssoc(0); moveCursorTo(0, false); return }
         }
         if (!shift && !cmd && alt) {
+            editHelper.setCursorAssoc(0)
             if (key === Qt.Key_Right) { moveCursorTo(wordRightPos(pos, text), false); return }
             if (key === Qt.Key_Left) { moveCursorTo(wordLeftPos(pos, text), false); return }
             if (key === Qt.Key_Up) { moveCursorTo(paragraphUpPos(pos, text), false); return }
@@ -140,12 +150,15 @@
             cursorTimer.stop()
             if (key === Qt.Key_Right) {
                 extendSelectionHorizontal(macLineEndPos(selectionExtendFrom(Qt.Key_Right), text))
+                editHelper.setCursorAssoc(-1)
                 return
             }
             if (key === Qt.Key_Left) {
                 extendSelectionHorizontal(macLineStartPos(selectionExtendFrom(Qt.Key_Left), text))
+                editHelper.setCursorAssoc(1)
                 return
             }
+            editHelper.setCursorAssoc(0)
             if (key === Qt.Key_Down || key === Qt.Key_End) {
                 extendSelectionHorizontal(text.length)
                 return
@@ -156,6 +169,7 @@
             }
         }
         if (shift && alt && !cmd) {
+            editHelper.setCursorAssoc(0)
             var from = selectionExtendFrom(key)
             var ap = from
             if (key === Qt.Key_Left) ap = wordLeftPos(from, text)
@@ -174,6 +188,7 @@
         if (handleMacUndo(event)) return
         if (handleMacArrow(event)) return
         if (!shift && !cmd && !alt) {
+            editHelper.setCursorAssoc(0)
             if (key === Qt.Key_Right) { moveCursorTo(Math.min(pos + 1, query.text.length), false); return }
             if (key === Qt.Key_Left) { moveCursorTo(Math.max(0, pos - 1), false); return }
         }
@@ -361,6 +376,7 @@
         var pos = query.cursorPosition
         var action = r.action
         if (action === "collapseSel") {
+            editHelper.setCursorAssoc(0)
             var c = r.toMin
                 ? Math.min(query.selectionStart, query.selectionEnd)
                 : Math.max(query.selectionStart, query.selectionEnd)
@@ -368,6 +384,7 @@
             query.deselect()
             query.cursorPosition = c
         } else if (action === "moveTo") {
+            editHelper.setCursorAssoc(0)
             if (r.extend)
                 extendSelectionHorizontal(r.pos)
             else
@@ -378,7 +395,15 @@
                 extendSelectionHorizontal(p)
             else
                 moveCursorTo(p, false)
+            // Soft-wrap End/Cmd+Right: assoc -1 so a repeat press stays at the wrap point.
+            if (r.posKind === "macLineEndCursor" || r.posKind === "macLineEndExtend")
+                editHelper.setCursorAssoc(-1)
+            else if (r.posKind === "macLineStartCursor" || r.posKind === "macLineStartExtend")
+                editHelper.setCursorAssoc(1)
+            else
+                editHelper.setCursorAssoc(0)
         } else if (action === "shiftHorizDelta") {
+            editHelper.setCursorAssoc(0)
             // Drop stale heads before reading them (typing leaves shiftHead
             // pointing at the pre-replace range while the caret is collapsed).
             if (shiftAnchor > text.length)
@@ -393,6 +418,8 @@
             applyShiftSelection(newHead)
             lastShiftHorizKey = (r.eventKey !== undefined) ? r.eventKey : eventKey
         } else if (action === "shiftHorizTo") {
+            // Drop stale heads before reading them (typing leaves shiftHead
+            // pointing at the pre-replace range while the caret is collapsed).
             if (shiftAnchor > text.length)
                 clearShiftSelection()
             if (shiftHead >= 0 && query.selectionStart === query.selectionEnd
@@ -404,9 +431,17 @@
                         ? Math.min(query.selectionStart, query.selectionEnd)
                         : Math.max(query.selectionStart, query.selectionEnd))
             applyShiftSelection(resolveMacPosKind(r.posKind, 0))
+            if (r.posKind === "macLineEndShiftHead")
+                editHelper.setCursorAssoc(-1)
+            else if (r.posKind === "macLineStartShiftHead")
+                editHelper.setCursorAssoc(1)
+            else
+                editHelper.setCursorAssoc(0)
         } else if (action === "shiftVert") {
+            editHelper.setCursorAssoc(0)
             extendSelectionVertical(r.down)
         } else if (action === "moveVert") {
+            editHelper.setCursorAssoc(0)
             moveCursorVertical(r.down)
         } else {
             return false
@@ -418,6 +453,7 @@
 
     function applyMacBackspaceDispatch(r) {
         if (!r.handled) return false
+        editHelper.setCursorAssoc(0)
         if (r.action === "noop") {
             cursorStrong = true
             cursorTimer.stop()
@@ -495,10 +531,12 @@
     }
 
     function macLineStartPos(pos, text) {
+        syncEditHelperQuery()
         return editHelper.macLineStartPos(pos, text)
     }
 
     function macLineEndPos(pos, text) {
+        syncEditHelperQuery()
         return editHelper.macLineEndPos(pos, text)
     }
 
@@ -683,6 +721,7 @@
 
     function handleMacBackspace(event) {
         if (mode != 1) return false
+        syncEditHelperQuery()
         var r = editHelper.dispatchMacBackspace(event.key, event.modifiers, query.text,
             query.cursorPosition, query.selectionStart, query.selectionEnd)
         if (!applyMacBackspaceDispatch(r))

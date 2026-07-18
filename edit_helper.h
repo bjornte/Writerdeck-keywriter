@@ -28,6 +28,10 @@ public:
     Q_INVOKABLE int deleteLineLeftPos(int pos, const QString &text) const;
     Q_INVOKABLE int paragraphUpPos(int pos, const QString &text) const;
     Q_INVOKABLE int paragraphDownPos(int pos, const QString &text) const;
+    // Cursor affinity at soft-wrap boundaries (CodeMirror assoc / Cocoa):
+    // -1 = prefer previous visual line (after End / Cmd+Right), +1 = next, 0 = none.
+    Q_INVOKABLE void setCursorAssoc(int assoc);
+    Q_INVOKABLE int cursorAssoc() const;
     // Returns {pos, len} or an invalid QVariant (undefined/null in QML).
     Q_INVOKABLE QVariant insertTextDelta(const QString &prevText, const QString &curText) const;
     // Insert index, or -1 if not a single-character insert.
@@ -86,6 +90,7 @@ private:
     int queryTextLength() const;
 
     QObject *m_queryItem = nullptr;
+    int m_cursorAssoc = 0;
     static int selectionExtendFrom(int key, int cursor, int selStart, int selEnd, int shiftHead);
     static QVariantMap notHandled();
     static QVariantMap handledAction(const QString &action);

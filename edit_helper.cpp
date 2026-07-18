@@ -115,6 +115,16 @@ int EditHelper::deleteLineLeftPos(int pos, const QString &text) const
 {
     if (pos <= 0)
         return 0;
+    // Apple Cmd+Backspace / CM deleteLineBoundaryBackward: visual-line start
+    // when the logical line wraps; otherwise logical line start.
+    if (lineWrapsVisually(pos, text)) {
+        const int visStart = visualLineStartPos(pos);
+        if (pos > visStart)
+            return visStart;
+        // At start of a wrapped continuation row: delete the previous visual row.
+        if (visStart > lineStartPos(pos, text))
+            return visualLineStartPos(visStart - 1);
+    }
     const int start = lineStartPos(pos, text);
     if (pos > start)
         return start;
@@ -123,57 +133,34 @@ int EditHelper::deleteLineLeftPos(int pos, const QString &text) const
     return lineStartPos(start - 1, text);
 }
 
-// Paragraph breaks are blank lines (\n\n or longer). Mac Option+Up/Down:
-// first press snaps to the current paragraph boundary; next press crosses.
-static int paragraphStartAtOrBefore(int pos, const QString &text)
+void EditHelper::setCursorAssoc(int assoc)
 {
-    if (pos <= 0)
-        return 0;
-    if (pos > text.length())
-        pos = text.length();
-    for (int i = pos - 1; i > 0; i--) {
-        if (text.at(i) == QLatin1Char('\n') && text.at(i - 1) == QLatin1Char('\n')) {
-            int r = i + 1;
-            while (r < text.length() && text.at(r) == QLatin1Char('\n'))
-                r++;
-            return r;
-        }
-    }
-    return 0;
+    if (assoc < -1)
+        assoc = -1;
+    if (assoc > 1)
+        assoc = 1;
+    m_cursorAssoc = assoc;
 }
 
-static int paragraphEndAtOrAfter(int pos, const QString &text)
+int EditHelper::cursorAssoc() const
 {
-    const int len = text.length();
-    if (pos < 0)
-        pos = 0;
-    if (pos >= len)
-        return len;
-    for (int i = pos; i < len - 1; i++) {
-        if (text.at(i) == QLatin1Char('\n') && text.at(i + 1) == QLatin1Char('\n'))
-            return i;
-    }
-    return len;
+    return m_cursorAssoc;
 }
 
+// Apple paragraphRange: each \n-delimited segment, including empty lines.
+// Option+Up/Down = logical line starts/ends; blank lines are real stops.
 int EditHelper::paragraphUpPos(int pos, const QString &text) const
 {
     if (pos <= 0)
         return 0;
     if (pos > text.length())
         pos = text.length();
-    const int curStart = paragraphStartAtOrBefore(pos, text);
+    const int curStart = lineStartPos(pos, text);
     if (pos > curStart)
         return curStart;
-    // Already at paragraph start: skip the blank run and find the previous start.
     if (curStart <= 0)
         return 0;
-    int i = curStart - 1;
-    while (i >= 0 && text.at(i) == QLatin1Char('\n'))
-        i--;
-    if (i < 0)
-        return 0;
-    return paragraphStartAtOrBefore(i + 1, text);
+    return lineStartPos(curStart - 1, text);
 }
 
 int EditHelper::paragraphDownPos(int pos, const QString &text) const
@@ -183,16 +170,16 @@ int EditHelper::paragraphDownPos(int pos, const QString &text) const
         pos = 0;
     if (pos >= len)
         return len;
-    const int curEnd = paragraphEndAtOrAfter(pos, text);
+    const int curEnd = lineEndPos(pos, text);
     if (pos < curEnd)
         return curEnd;
-    // Already at paragraph end: skip blanks, then end of the next paragraph.
-    int i = curEnd;
-    while (i < len && text.at(i) == QLatin1Char('\n'))
-        i++;
-    if (i >= len)
-        return len;
-    return paragraphEndAtOrAfter(i, text);
+    // On the terminating newline: end of the next paragraph (may be empty).
+    if (curEnd < len && text.at(curEnd) == QLatin1Char('\n')) {
+        if (curEnd + 1 >= len)
+            return len;
+        return lineEndPos(curEnd + 1, text);
+    }
+    return len;
 }
 
 QVariant EditHelper::insertTextDelta(const QString &prevText, const QString &curText) const
@@ -679,18 +666,22 @@ int EditHelper::visualLineStartPos(int pos) const
 
 int EditHelper::visualLineEndPos(int pos) const
 {
+    // Exclusive end: first index of the next visual row (wrap point), or EOF.
+    // Matches CodeMirror moveToLineBoundary / harness wrapEndVisualRow*.
     const int len = queryTextLength();
     if (pos >= len)
         return len;
+    if (pos < 0)
+        pos = 0;
     const qreal curY = queryRectAt(pos).y;
-    int best = pos;
+    int lastSame = pos;
     for (int p = pos + 1; p <= len; p++) {
         if (qAbs(queryRectAt(p).y - curY) < 0.5)
-            best = p;
+            lastSame = p;
         else
-            break;
+            return lastSame + 1;
     }
-    return best;
+    return lastSame;
 }
 
 bool EditHelper::lineWrapsVisually(int pos, const QString &text) const
@@ -704,19 +695,26 @@ bool EditHelper::lineWrapsVisually(int pos, const QString &text) const
 
 bool EditHelper::onWrappedLine(int pos, const QString &text) const
 {
-    const int s = lineStartPos(pos, text);
-    const int nl = text.indexOf(QLatin1Char('\n'), s);
-    return nl == -1 || nl > lineEndPos(pos, text);
+    return lineWrapsVisually(pos, text);
 }
 
 int EditHelper::macLineStartPos(int pos, const QString &text) const
 {
-    return onWrappedLine(pos, text) ? visualLineStartPos(pos) : lineStartPos(pos, text);
+    return lineWrapsVisually(pos, text) ? visualLineStartPos(pos) : lineStartPos(pos, text);
 }
 
 int EditHelper::macLineEndPos(int pos, const QString &text) const
 {
-    return onWrappedLine(pos, text) ? visualLineEndPos(pos) : lineEndPos(pos, text);
+    if (!lineWrapsVisually(pos, text))
+        return lineEndPos(pos, text);
+    // After End/Cmd+Right, assoc -1 keeps the caret on the previous visual
+    // line so a repeat press stays at the wrap point (shared with next row).
+    int probe = pos;
+    if (m_cursorAssoc < 0 && pos > 0)
+        probe = pos - 1;
+    const int visEnd = visualLineEndPos(probe);
+    const int logEnd = lineEndPos(probe, text);
+    return qMin(visEnd, logEnd);
 }
 
 QVariantMap EditHelper::dispatchMacEditKeys(int key, int modifiers, const QString &text,
