@@ -2148,32 +2148,28 @@ Window {
                                 spacing: 2
                                 visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
                                 // Selection marker — no full-row fill (less e-ink redraw).
-                                // ▶ ink in Noto sits low in the em-box; offset lifts it onto the filename.
-                                // Avoid Canvas here: linuxfb/epaper does not paint delegate canvases reliably.
+                                // Baseline-align the name to the ▶ so different point sizes share one line.
                                 delegate: Item {
                                     width: lobbyFilesList.width
                                     height: lobby.rowHeight
                                     Text {
                                         id: lobbyFilesMarker
                                         anchors.left: parent.left
-                                        anchors.leftMargin: 2
+                                        anchors.leftMargin: 4
                                         anchors.verticalCenter: parent.verticalCenter
-                                        anchors.verticalCenterOffset: -14
                                         width: 34
-                                        height: 34
                                         horizontalAlignment: Text.AlignHCenter
-                                        verticalAlignment: Text.AlignVCenter
-                                        text: index === lobbyFilesIndex ? "\u25B6" : ""
+                                        text: index === lobbyFilesIndex ? "\u25B6" : " "
                                         font.family: "Noto Sans"
-                                        font.pointSize: 16
+                                        font.pointSize: 18
                                         color: "black"
                                     }
                                     Text {
-                                        anchors.left: parent.left
-                                        anchors.leftMargin: 40
+                                        anchors.left: lobbyFilesMarker.right
+                                        anchors.leftMargin: 6
                                         anchors.right: parent.right
                                         anchors.rightMargin: 8
-                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.baseline: lobbyFilesMarker.baseline
                                         text: lobbyFilesStripSuffix(model.name) + (model.encrypted ? " [private]" : "")
                                         font.family: "Noto Mono"
                                         font.pointSize: 11
