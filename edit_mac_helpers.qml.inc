@@ -379,6 +379,13 @@
             else
                 moveCursorTo(p, false)
         } else if (action === "shiftHorizDelta") {
+            // Drop stale heads before reading them (typing leaves shiftHead
+            // pointing at the pre-replace range while the caret is collapsed).
+            if (shiftAnchor > text.length)
+                clearShiftSelection()
+            if (shiftHead >= 0 && query.selectionStart === query.selectionEnd
+                    && shiftHead !== query.cursorPosition)
+                clearShiftSelection()
             var headH = (shiftHead >= 0) ? shiftHead : query.cursorPosition
             var newHead = (r.delta < 0)
                 ? Math.max(0, headH + r.delta)
@@ -386,6 +393,11 @@
             applyShiftSelection(newHead)
             lastShiftHorizKey = (r.eventKey !== undefined) ? r.eventKey : eventKey
         } else if (action === "shiftHorizTo") {
+            if (shiftAnchor > text.length)
+                clearShiftSelection()
+            if (shiftHead >= 0 && query.selectionStart === query.selectionEnd
+                    && shiftHead !== query.cursorPosition)
+                clearShiftSelection()
             if (shiftAnchor < 0)
                 shiftAnchor = (query.selectionStart === query.selectionEnd)
                     ? pos : ((r.posKind === "macLineEndShiftHead")
@@ -526,6 +538,11 @@
 
     function extendSelectionVertical(down) {
         var text = query.text
+        if (shiftAnchor > text.length)
+            clearShiftSelection()
+        if (shiftHead >= 0 && query.selectionStart === query.selectionEnd
+                && shiftHead !== query.cursorPosition)
+            clearShiftSelection()
         if (shiftAnchor < 0) {
             shiftAnchor = query.cursorPosition
             shiftHead = shiftAnchor
