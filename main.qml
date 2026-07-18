@@ -2140,6 +2140,9 @@ Window {
                             contentWidth: width
                             contentHeight: homeCol.height
                             clip: true
+                            focus: false
+                            interactive: true
+                            flickableDirection: Flickable.VerticalFlick
                             Column {
                                 id: homeCol
                                 width: parent.width
@@ -2992,12 +2995,45 @@ Window {
                                     width: parent.width
                                 }
                                 Text {
-                                    text: "Lobby: Tab / arrows / 1-6 switch pages\nFiles: Up/Down  PgUp/PgDn  Enter edit  v read  n d r\nFiles vault: e new encrypted  x encrypt  y decrypt\nKeyboard: u US  o Norwegian\nSync: Enter or s sync now\nSettings: f font  p phone PIN  t rotate  e/c vault  x exit\nStock UI: Esc (USB) or L+R page buttons → Lobby\nCtrl-K: quick file picker\nCtrl-C/X/V: copy cut paste\nCtrl-R: rotate  Ctrl-Q: quit\nHome: exit to reMarkable UI\nPrivate PIN: type digits on USB or phone keyboard"
-                                    font.pointSize: 10
-                                    font.family: "Noto Mono"
+                                    text: "Pages\n"
+                                          + "Tab or Left / Right — next or previous page\n"
+                                          + "1 to 6 — jump straight to a page\n"
+                                          + "\n"
+                                          + "Files\n"
+                                          + "Up / Down — move the selection\n"
+                                          + "Page Up / Page Down — previous or next page of notes\n"
+                                          + "Enter — edit the selected note\n"
+                                          + "v — read · n — new · r — rename · d — delete\n"
+                                          + "With private notes on: e — new encrypted · x — encrypt · y — decrypt\n"
+                                          + "\n"
+                                          + "Keyboard\n"
+                                          + "u — US layout · o — Norwegian\n"
+                                          + "\n"
+                                          + "Sync\n"
+                                          + "Enter or s — sync now\n"
+                                          + "\n"
+                                          + "Settings\n"
+                                          + "f — cycle reading font · p — cycle phone PIN length\n"
+                                          + "t — cycle rotation · e — enable private notes · c — change private PIN\n"
+                                          + "x — exit Writerdeck (then Enter to confirm)\n"
+                                          + "\n"
+                                          + "Anywhere\n"
+                                          + "Ctrl-K — quick file picker\n"
+                                          + "Ctrl-C / Ctrl-X / Ctrl-V — copy, cut, paste\n"
+                                          + "Ctrl-R — rotate · Ctrl-Q — quit\n"
+                                          + "Home — from a note, back to Files; from Lobby, quit to the stock UI\n"
+                                          + "\n"
+                                          + "Private PIN\n"
+                                          + "Type the six digits on a USB keyboard, or on the phone while it shows the PIN banner.\n"
+                                          + "\n"
+                                          + "Open Lobby from the stock UI\n"
+                                          + "Esc on a USB keyboard, or both page buttons together."
+                                    font.pointSize: 11
+                                    font.family: "Noto Sans"
                                     color: "#555555"
                                     width: parent.width
                                     wrapMode: Text.WordWrap
+                                    lineHeight: 1.25
                                 }
                             }
                         }
@@ -3019,10 +3055,10 @@ Window {
                     font.family: "Noto Mono"
                     font.pointSize: 9
                     color: "#888888"
-                    text: lobbyPage === 1 ? "u US  o Norwegian  Tab next page"
-                        : lobbyPage === 2 ? "Enter/s sync now  Tab next page"
-                        : lobbyPage === 3 ? "f font  p PIN  t rotate  e/c vault  x exit"
-                        : "Tab next page  1-6 jump  Ctrl-K files"
+                    text: lobbyPage === 1 ? "u = US · o = Norwegian · Tab = next page"
+                        : lobbyPage === 2 ? "Enter or s = Sync now · Tab = next page"
+                        : lobbyPage === 3 ? "f = font · p = phone PIN · t = rotate · e/c = vault · x = exit"
+                        : "Tab = next page · 1–6 = jump · Ctrl-K = files"
                 }
             }
         }
