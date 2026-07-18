@@ -2148,32 +2148,38 @@ Window {
                                 spacing: 2
                                 visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
                                 // Selection marker is the big triangle — no full-row fill (less e-ink redraw).
+                                // Anchor each glyph to the row (not a Row): ▶ metrics differ from mono text,
+                                // so Row verticalCenter looks badly misaligned on e-ink.
                                 delegate: Item {
                                     width: lobbyFilesList.width
                                     height: lobby.rowHeight
-                                    Row {
-                                        anchors.verticalCenter: parent.verticalCenter
+                                    Text {
+                                        id: lobbyFilesMarker
                                         anchors.left: parent.left
                                         anchors.leftMargin: 4
+                                        anchors.top: parent.top
+                                        anchors.bottom: parent.bottom
+                                        width: 36
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: index === lobbyFilesIndex ? "\u25B6" : " "
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 18
+                                        color: "black"
+                                    }
+                                    Text {
+                                        anchors.left: lobbyFilesMarker.right
+                                        anchors.leftMargin: 8
                                         anchors.right: parent.right
                                         anchors.rightMargin: 8
-                                        spacing: 10
-                                        Text {
-                                            width: 36
-                                            horizontalAlignment: Text.AlignHCenter
-                                            text: index === lobbyFilesIndex ? "\u25B6" : " "
-                                            font.family: "Noto Sans"
-                                            font.pointSize: 22
-                                            color: "black"
-                                        }
-                                        Text {
-                                            width: parent.width - 46
-                                            text: lobbyFilesStripSuffix(model.name) + (model.encrypted ? " [private]" : "")
-                                            font.family: "Noto Mono"
-                                            font.pointSize: 11
-                                            color: "black"
-                                            elide: Text.ElideRight
-                                        }
+                                        anchors.top: parent.top
+                                        anchors.bottom: parent.bottom
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: lobbyFilesStripSuffix(model.name) + (model.encrypted ? " [private]" : "")
+                                        font.family: "Noto Mono"
+                                        font.pointSize: 11
+                                        color: "black"
+                                        elide: Text.ElideRight
                                     }
                                     MouseArea {
                                         anchors.fill: parent
