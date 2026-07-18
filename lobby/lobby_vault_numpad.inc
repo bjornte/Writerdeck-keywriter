@@ -42,14 +42,15 @@
                     rowSpacing: 8
                     columnSpacing: 8
                     Repeater {
-                        model: ["1","2","3","4","5","6","7","8","9","Bksp","0","Done"]
+                        // Sixth digit auto-submits; a Done key was redundant (and a no-op under 6 digits).
+                        model: ["1","2","3","4","5","6","7","8","9","Bksp","0",""]
                         delegate: Rectangle {
                             width: (vaultPad.width - 16) / 3
                             height: lobby.actionBtnHeight
                             radius: 6
-                            color: "#f0f0f0"
-                            border.color: "#bbb"
-                            border.width: 1
+                            color: modelData === "" ? "transparent" : "#f0f0f0"
+                            border.color: modelData === "" ? "transparent" : "#bbb"
+                            border.width: modelData === "" ? 0 : 1
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData
@@ -58,6 +59,7 @@
                             }
                             MouseArea {
                                 anchors.fill: parent
+                                enabled: modelData !== ""
                                 onClicked: vaultNumpadTap(modelData)
                             }
                         }

@@ -204,29 +204,43 @@
                                         width: parent.width
                                     }
                                     Text {
-                                        text: root.rotation + " degrees. Ctrl-R or Ctrl+arrows to rotate."
+                                        text: "Ctrl-R or Ctrl+arrows also rotate."
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "#666666"
                                         width: parent.width
                                         wrapMode: Text.WordWrap
                                     }
-                                    Rectangle {
+                                    Row {
+                                        id: rotationRow
                                         width: parent.width
-                                        height: lobby.actionBtnHeight
-                                        radius: 6
-                                        color: "#f0f0f0"
-                                        border.color: "#bbb"
-                                        border.width: 1
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: "Rotate 90"
-                                            font.family: "Noto Sans"
-                                            font.pointSize: 12
-                                        }
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            onClicked: root.rotateScreen()
+                                        spacing: lobby.tabSpacing
+                                        Repeater {
+                                            model: [
+                                                { deg: 0, label: "0\u00B0" },
+                                                { deg: 90, label: "90\u00B0" },
+                                                { deg: 180, label: "180\u00B0" },
+                                                { deg: 270, label: "270\u00B0" }
+                                            ]
+                                            delegate: Rectangle {
+                                                width: (rotationRow.width - lobby.tabSpacing * 3) / 4
+                                                height: lobby.actionBtnHeight
+                                                radius: 6
+                                                property bool selected: root.rotation === modelData.deg
+                                                color: selected ? "#e8e8e8" : "#f0f0f0"
+                                                border.color: selected ? "black" : "#bbb"
+                                                border.width: selected ? 2 : 1
+                                                Text {
+                                                    anchors.centerIn: parent
+                                                    text: modelData.label
+                                                    font.family: "Noto Sans"
+                                                    font.pointSize: 12
+                                                }
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    onClicked: root.setScreenRotation(modelData.deg)
+                                                }
+                                            }
                                         }
                                     }
 

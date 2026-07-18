@@ -49,25 +49,35 @@
                                 clip: true
                                 model: lobbyNotesModel
                                 currentIndex: lobbyFilesIndex
-                                spacing: 4
+                                spacing: 2
                                 visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
-                                delegate: Rectangle {
+                                // Selection marker is the big triangle — no full-row fill (less e-ink redraw).
+                                delegate: Item {
                                     width: lobbyFilesList.width
                                     height: lobby.rowHeight
-                                    color: index === lobbyFilesIndex ? "#e8e8e8" : "white"
-                                    border.color: "#ddd"
-                                    border.width: 1
-                                    radius: 4
-                                    Text {
+                                    Row {
                                         anchors.verticalCenter: parent.verticalCenter
                                         anchors.left: parent.left
-                                        anchors.leftMargin: 16
-                                        text: lobbyFilesStripSuffix(model.name) + (model.encrypted ? " [private]" : "")
-                                        font.family: "Noto Mono"
-                                        font.pointSize: 11
-                                        color: "black"
-                                        elide: Text.ElideRight
-                                        width: parent.width - 32
+                                        anchors.leftMargin: 4
+                                        anchors.right: parent.right
+                                        anchors.rightMargin: 8
+                                        spacing: 10
+                                        Text {
+                                            width: 36
+                                            horizontalAlignment: Text.AlignHCenter
+                                            text: index === lobbyFilesIndex ? "\u25B6" : " "
+                                            font.family: "Noto Sans"
+                                            font.pointSize: 22
+                                            color: "black"
+                                        }
+                                        Text {
+                                            width: parent.width - 46
+                                            text: lobbyFilesStripSuffix(model.name) + (model.encrypted ? " [private]" : "")
+                                            font.family: "Noto Mono"
+                                            font.pointSize: 11
+                                            color: "black"
+                                            elide: Text.ElideRight
+                                        }
                                     }
                                     MouseArea {
                                         anchors.fill: parent
@@ -82,8 +92,10 @@
                                         onDoubleClicked: root.lobbyOpenSelected()
                                     }
                                 }
-                                onCurrentIndexChanged: lobbyFilesIndex = currentIndex
-                                highlight: Rectangle { color: "#d0d0d0"; radius: 4 }
+                                onCurrentIndexChanged: {
+                                    if (currentIndex >= 0)
+                                        lobbyFilesIndex = currentIndex
+                                }
                             }
 
                             Row {

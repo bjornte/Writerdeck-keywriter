@@ -281,8 +281,19 @@ Window {
     }
 
     function setNotesList(items) {
+        // Home save + refresh can deliver two noteslists. Keep the selected name across clear/rebuild
+        // so the second push does not wipe last-edited focus (ListView clear sets currentIndex to -1).
+        var prefer = lobbyLastEditedFile
+        var keepName = ""
+        if (prefer === "" && lobbyFilesIndex >= 0 && lobbyFilesIndex < lobbyNotesModel.count) {
+            var cur = lobbyNotesModel.get(lobbyFilesIndex)
+            if (cur && cur.name) keepName = cur.name
+        }
         lobbyNotesModel.clear()
-        if (!items) return
+        if (!items) {
+            lobbyFilesIndex = 0
+            return
+        }
         for (var i = 0; i < items.length; i++) {
             var it = items[i]
             lobbyNotesModel.append({
@@ -292,11 +303,13 @@ Window {
                 encrypted: !!it.encrypted
             })
         }
-        if (lobbyLastEditedFile !== "") {
-            if (!selectNoteByName(lobbyLastEditedFile))
+        var target = prefer !== "" ? prefer : keepName
+        if (target !== "") {
+            if (!selectNoteByName(target))
                 lobbyFilesIndex = Math.max(0, lobbyNotesModel.count - 1)
-            lobbyLastEditedFile = ""
-        } else if (lobbyFilesIndex >= lobbyNotesModel.count) {
+            if (prefer !== "")
+                lobbyLastEditedFile = ""
+        } else if (lobbyFilesIndex < 0 || lobbyFilesIndex >= lobbyNotesModel.count) {
             lobbyFilesIndex = Math.max(0, lobbyNotesModel.count - 1)
         }
     }
@@ -305,6 +318,13 @@ Window {
         for (var i = 0; i < lobbyNotesModel.count; i++) {
             if (lobbyNotesModel.get(i).name === name) {
                 lobbyFilesIndex = i
+                Qt.callLater(function() {
+                    if (typeof lobbyFilesList !== "undefined" && lobbyFilesList
+                            && lobbyFilesIndex >= 0 && lobbyFilesIndex < lobbyNotesModel.count) {
+                        lobbyFilesList.currentIndex = lobbyFilesIndex
+                        lobbyFilesList.positionViewAtIndex(lobbyFilesIndex, ListView.Contain)
+                    }
+                })
                 return true
             }
         }
@@ -792,6 +812,14 @@ Window {
 
     function rotateScreen() {
         root.rotation = (root.rotation + 90) % 360
+    }
+
+    function setScreenRotation(deg) {
+        var d = Math.round(Number(deg)) % 360
+        if (d < 0) d += 360
+        if (d !== 0 && d !== 90 && d !== 180 && d !== 270)
+            d = 0
+        root.rotation = d
     }
 
     function initFile(name) {

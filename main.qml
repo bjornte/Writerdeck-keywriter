@@ -281,8 +281,19 @@ Window {
     }
 
     function setNotesList(items) {
+        // Home save + refresh can deliver two noteslists. Keep the selected name across clear/rebuild
+        // so the second push does not wipe last-edited focus (ListView clear sets currentIndex to -1).
+        var prefer = lobbyLastEditedFile
+        var keepName = ""
+        if (prefer === "" && lobbyFilesIndex >= 0 && lobbyFilesIndex < lobbyNotesModel.count) {
+            var cur = lobbyNotesModel.get(lobbyFilesIndex)
+            if (cur && cur.name) keepName = cur.name
+        }
         lobbyNotesModel.clear()
-        if (!items) return
+        if (!items) {
+            lobbyFilesIndex = 0
+            return
+        }
         for (var i = 0; i < items.length; i++) {
             var it = items[i]
             lobbyNotesModel.append({
@@ -292,11 +303,13 @@ Window {
                 encrypted: !!it.encrypted
             })
         }
-        if (lobbyLastEditedFile !== "") {
-            if (!selectNoteByName(lobbyLastEditedFile))
+        var target = prefer !== "" ? prefer : keepName
+        if (target !== "") {
+            if (!selectNoteByName(target))
                 lobbyFilesIndex = Math.max(0, lobbyNotesModel.count - 1)
-            lobbyLastEditedFile = ""
-        } else if (lobbyFilesIndex >= lobbyNotesModel.count) {
+            if (prefer !== "")
+                lobbyLastEditedFile = ""
+        } else if (lobbyFilesIndex < 0 || lobbyFilesIndex >= lobbyNotesModel.count) {
             lobbyFilesIndex = Math.max(0, lobbyNotesModel.count - 1)
         }
     }
@@ -305,6 +318,13 @@ Window {
         for (var i = 0; i < lobbyNotesModel.count; i++) {
             if (lobbyNotesModel.get(i).name === name) {
                 lobbyFilesIndex = i
+                Qt.callLater(function() {
+                    if (typeof lobbyFilesList !== "undefined" && lobbyFilesList
+                            && lobbyFilesIndex >= 0 && lobbyFilesIndex < lobbyNotesModel.count) {
+                        lobbyFilesList.currentIndex = lobbyFilesIndex
+                        lobbyFilesList.positionViewAtIndex(lobbyFilesIndex, ListView.Contain)
+                    }
+                })
                 return true
             }
         }
@@ -1619,6 +1639,14 @@ Window {
         root.rotation = (root.rotation + 90) % 360
     }
 
+    function setScreenRotation(deg) {
+        var d = Math.round(Number(deg)) % 360
+        if (d < 0) d += 360
+        if (d !== 0 && d !== 90 && d !== 180 && d !== 270)
+            d = 0
+        root.rotation = d
+    }
+
     function initFile(name) {
         console.log("Init " + name)
         var fileUrl = folder + name + ".md"
@@ -2115,25 +2143,35 @@ Window {
                                 clip: true
                                 model: lobbyNotesModel
                                 currentIndex: lobbyFilesIndex
-                                spacing: 4
+                                spacing: 2
                                 visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
-                                delegate: Rectangle {
+                                // Selection marker is the big triangle — no full-row fill (less e-ink redraw).
+                                delegate: Item {
                                     width: lobbyFilesList.width
                                     height: lobby.rowHeight
-                                    color: index === lobbyFilesIndex ? "#e8e8e8" : "white"
-                                    border.color: "#ddd"
-                                    border.width: 1
-                                    radius: 4
-                                    Text {
+                                    Row {
                                         anchors.verticalCenter: parent.verticalCenter
                                         anchors.left: parent.left
-                                        anchors.leftMargin: 16
-                                        text: lobbyFilesStripSuffix(model.name) + (model.encrypted ? " [private]" : "")
-                                        font.family: "Noto Mono"
-                                        font.pointSize: 11
-                                        color: "black"
-                                        elide: Text.ElideRight
-                                        width: parent.width - 32
+                                        anchors.leftMargin: 4
+                                        anchors.right: parent.right
+                                        anchors.rightMargin: 8
+                                        spacing: 10
+                                        Text {
+                                            width: 36
+                                            horizontalAlignment: Text.AlignHCenter
+                                            text: index === lobbyFilesIndex ? "\u25B6" : " "
+                                            font.family: "Noto Sans"
+                                            font.pointSize: 22
+                                            color: "black"
+                                        }
+                                        Text {
+                                            width: parent.width - 46
+                                            text: lobbyFilesStripSuffix(model.name) + (model.encrypted ? " [private]" : "")
+                                            font.family: "Noto Mono"
+                                            font.pointSize: 11
+                                            color: "black"
+                                            elide: Text.ElideRight
+                                        }
                                     }
                                     MouseArea {
                                         anchors.fill: parent
@@ -2148,8 +2186,10 @@ Window {
                                         onDoubleClicked: root.lobbyOpenSelected()
                                     }
                                 }
-                                onCurrentIndexChanged: lobbyFilesIndex = currentIndex
-                                highlight: Rectangle { color: "#d0d0d0"; radius: 4 }
+                                onCurrentIndexChanged: {
+                                    if (currentIndex >= 0)
+                                        lobbyFilesIndex = currentIndex
+                                }
                             }
 
                             Row {
@@ -2683,29 +2723,43 @@ Window {
                                         width: parent.width
                                     }
                                     Text {
-                                        text: root.rotation + " degrees. Ctrl-R or Ctrl+arrows to rotate."
+                                        text: "Ctrl-R or Ctrl+arrows also rotate."
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "#666666"
                                         width: parent.width
                                         wrapMode: Text.WordWrap
                                     }
-                                    Rectangle {
+                                    Row {
+                                        id: rotationRow
                                         width: parent.width
-                                        height: lobby.actionBtnHeight
-                                        radius: 6
-                                        color: "#f0f0f0"
-                                        border.color: "#bbb"
-                                        border.width: 1
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: "Rotate 90"
-                                            font.family: "Noto Sans"
-                                            font.pointSize: 12
-                                        }
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            onClicked: root.rotateScreen()
+                                        spacing: lobby.tabSpacing
+                                        Repeater {
+                                            model: [
+                                                { deg: 0, label: "0\u00B0" },
+                                                { deg: 90, label: "90\u00B0" },
+                                                { deg: 180, label: "180\u00B0" },
+                                                { deg: 270, label: "270\u00B0" }
+                                            ]
+                                            delegate: Rectangle {
+                                                width: (rotationRow.width - lobby.tabSpacing * 3) / 4
+                                                height: lobby.actionBtnHeight
+                                                radius: 6
+                                                property bool selected: root.rotation === modelData.deg
+                                                color: selected ? "#e8e8e8" : "#f0f0f0"
+                                                border.color: selected ? "black" : "#bbb"
+                                                border.width: selected ? 2 : 1
+                                                Text {
+                                                    anchors.centerIn: parent
+                                                    text: modelData.label
+                                                    font.family: "Noto Sans"
+                                                    font.pointSize: 12
+                                                }
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    onClicked: root.setScreenRotation(modelData.deg)
+                                                }
+                                            }
                                         }
                                     }
 
@@ -2786,14 +2840,14 @@ Window {
                     anchors.leftMargin: lobby.pageMargin
                     anchors.rightMargin: lobby.pageMargin
                     anchors.bottomMargin: lobby.pageMargin
-                    height: 48
+                    // Files chords live on the buttons and Shortcuts tab — keep this line short so it
+                    // does not collide with the Files action row.
+                    height: 36
                     verticalAlignment: Text.AlignVCenter
                     font.family: "Noto Mono"
                     font.pointSize: 9
                     color: "#888888"
-                    text: lobbyPage === 0 && lobbyFilesMode === ""
-                        ? "n new  Enter edit  v read  r rename  d delete"
-                        : "Tab next page  1-6 jump  Ctrl-K files"
+                    text: "Tab next page  1-6 jump  Ctrl-K files"
                 }
             }
         }
@@ -2841,14 +2895,15 @@ Window {
                     rowSpacing: 8
                     columnSpacing: 8
                     Repeater {
-                        model: ["1","2","3","4","5","6","7","8","9","Bksp","0","Done"]
+                        // Sixth digit auto-submits; a Done key was redundant (and a no-op under 6 digits).
+                        model: ["1","2","3","4","5","6","7","8","9","Bksp","0",""]
                         delegate: Rectangle {
                             width: (vaultPad.width - 16) / 3
                             height: lobby.actionBtnHeight
                             radius: 6
-                            color: "#f0f0f0"
-                            border.color: "#bbb"
-                            border.width: 1
+                            color: modelData === "" ? "transparent" : "#f0f0f0"
+                            border.color: modelData === "" ? "transparent" : "#bbb"
+                            border.width: modelData === "" ? 0 : 1
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData
@@ -2857,6 +2912,7 @@ Window {
                             }
                             MouseArea {
                                 anchors.fill: parent
+                                enabled: modelData !== ""
                                 onClicked: vaultNumpadTap(modelData)
                             }
                         }

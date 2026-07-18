@@ -7,14 +7,14 @@
                     anchors.leftMargin: lobby.pageMargin
                     anchors.rightMargin: lobby.pageMargin
                     anchors.bottomMargin: lobby.pageMargin
-                    height: 48
+                    // Files chords live on the buttons and Shortcuts tab — keep this line short so it
+                    // does not collide with the Files action row.
+                    height: 36
                     verticalAlignment: Text.AlignVCenter
                     font.family: "Noto Mono"
                     font.pointSize: 9
                     color: "#888888"
-                    text: lobbyPage === 0 && lobbyFilesMode === ""
-                        ? "n new  Enter edit  v read  r rename  d delete"
-                        : "Tab next page  1-6 jump  Ctrl-K files"
+                    text: "Tab next page  1-6 jump  Ctrl-K files"
                 }
             }
         }
