@@ -478,7 +478,9 @@ static void rmkbdInjectLine(const std::string &line)
             Q_ARG(QVariant, syncReady),
             Q_ARG(QVariant, syncing),
             Q_ARG(QVariant, keyboardLayout),
-            Q_ARG(QVariant, pinDigits),
+            Q_ARG(QVariant, pinDigits));
+        QMetaObject::invokeMethod(g_rootObj, "setLobbyKeyboardPresence",
+            Qt::QueuedConnection,
             Q_ARG(QVariant, phoneConnected),
             Q_ARG(QVariant, usbKeyboard),
             Q_ARG(QVariant, port),

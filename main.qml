@@ -227,7 +227,7 @@ Window {
         Qt.quit()
     }
 
-    function setLobbyInfo(ip, pin, syncOn, syncRepo, noteCount, lastSync, syncReady, syncing, keyboardLayout, pinDigits, phoneConnected, usbKeyboard, port, qrPath) {
+    function setLobbyInfo(ip, pin, syncOn, syncRepo, noteCount, lastSync, syncReady, syncing, keyboardLayout, pinDigits) {
         lobbyIP = ip
         lobbyPIN = pin
         lobbySyncOn = !!syncOn
@@ -238,6 +238,9 @@ Window {
         lobbySyncing = !!syncing
         lobbyKeyboardLayout = keyboardLayout || "us"
         lobbyPinDigits = pinDigits || "6"
+    }
+
+    function setLobbyKeyboardPresence(phoneConnected, usbKeyboard, port, qrPath) {
         lobbyPhoneConnected = !!phoneConnected
         lobbyUsbKeyboard = !!usbKeyboard
         lobbyPort = port || 8000
