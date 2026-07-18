@@ -697,9 +697,6 @@
         }
         onTextChanged: {
             if (harnessPrepareLock || mode != 1 || isLobby) return
-            // Typing/paste must drop shift-selection anchors; otherwise the next
-            // Shift+Alt/Shift+arrow extends from a pre-edit caret (stale head).
-            clearShiftSelection()
             editHelper.notifyTextChanged(query.text, query.cursorPosition,
                                          query.selectionStart, query.selectionEnd)
             cursorStrong = false
