@@ -86,8 +86,8 @@
                     anchors.topMargin: lobby.contentSpacing
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.bottom: lobbyHint.top
-                    anchors.bottomMargin: lobby.contentSpacing
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: lobby.pageMargin
                     anchors.leftMargin: lobby.pageMargin
                     anchors.rightMargin: lobby.pageMargin
 
