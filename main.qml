@@ -305,10 +305,12 @@ Window {
         }
         var target = prefer !== "" ? prefer : keepName
         if (target !== "") {
-            if (!selectNoteByName(target))
+            if (selectNoteByName(target)) {
+                if (prefer !== "")
+                    lobbyLastEditedFile = ""
+            } else {
                 lobbyFilesIndex = Math.max(0, lobbyNotesModel.count - 1)
-            if (prefer !== "")
-                lobbyLastEditedFile = ""
+            }
         } else if (lobbyFilesIndex < 0 || lobbyFilesIndex >= lobbyNotesModel.count) {
             lobbyFilesIndex = Math.max(0, lobbyNotesModel.count - 1)
         }
@@ -318,13 +320,10 @@ Window {
         for (var i = 0; i < lobbyNotesModel.count; i++) {
             if (lobbyNotesModel.get(i).name === name) {
                 lobbyFilesIndex = i
-                Qt.callLater(function() {
-                    if (typeof lobbyFilesList !== "undefined" && lobbyFilesList
-                            && lobbyFilesIndex >= 0 && lobbyFilesIndex < lobbyNotesModel.count) {
-                        lobbyFilesList.currentIndex = lobbyFilesIndex
-                        lobbyFilesList.positionViewAtIndex(lobbyFilesIndex, ListView.Contain)
-                    }
-                })
+                if (typeof lobbyFilesList !== "undefined" && lobbyFilesList) {
+                    lobbyFilesList.currentIndex = i
+                    lobbyFilesList.positionViewAtIndex(i, ListView.Contain)
+                }
                 return true
             }
         }
@@ -731,8 +730,11 @@ Window {
         } else {
             harnessSetWidth(0)
             if (mode == 1) doc = query.text
-            saveFile()
+            // Remember before saveFile: sync XHR can re-enter the event loop and deliver
+            // noteslist before this function continues.
             var lastFile = currentFile
+            if (lastFile !== "") lobbyLastEditedFile = lastFile
+            saveFile()
             isLobby = true
             currentFile = ""
             doc = ""
@@ -740,7 +742,6 @@ Window {
             autosaveSnapshot = ""
             lobbyFilesMode = ""
             lobbyPage = 0
-            lobbyLastEditedFile = lastFile
             lobbyRefreshNotes()
         }
     }
@@ -1596,8 +1597,9 @@ Window {
         if (!isLobby) {
             harnessSetWidth(0)
             if (mode == 1) doc = query.text
-            saveFile()
             lastFile = currentFile
+            if (lastFile !== "") lobbyLastEditedFile = lastFile
+            saveFile()
             currentFile = ""
             doc = ""
             query.text = ""
@@ -1606,7 +1608,6 @@ Window {
         isLobby = true
         lobbyFilesMode = ""
         lobbyPage = 0
-        if (lastFile !== "") lobbyLastEditedFile = lastFile
         lobbyRefreshNotes()
     }
 
@@ -2142,7 +2143,8 @@ Window {
                                 }
                                 clip: true
                                 model: lobbyNotesModel
-                                currentIndex: lobbyFilesIndex
+                                // Imperative currentIndex only — a binding breaks when ListView
+                                // clears the model (currentIndex=-1) and then ignores lobbyFilesIndex.
                                 spacing: 2
                                 visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
                                 // Selection marker is the big triangle — no full-row fill (less e-ink redraw).
@@ -2186,9 +2188,16 @@ Window {
                                         onDoubleClicked: root.lobbyOpenSelected()
                                     }
                                 }
-                                onCurrentIndexChanged: {
-                                    if (currentIndex >= 0)
-                                        lobbyFilesIndex = currentIndex
+                                Connections {
+                                    target: root
+                                    function onLobbyFilesIndexChanged() {
+                                        if (lobbyFilesList.currentIndex !== lobbyFilesIndex
+                                                && lobbyFilesIndex >= 0
+                                                && lobbyFilesIndex < lobbyNotesModel.count) {
+                                            lobbyFilesList.currentIndex = lobbyFilesIndex
+                                            lobbyFilesList.positionViewAtIndex(lobbyFilesIndex, ListView.Contain)
+                                        }
+                                    }
                                 }
                             }
 
@@ -2237,8 +2246,10 @@ Window {
 
                                 property bool selectedEncrypted: {
                                     if (lobbyNotesModel.count === 0) return false
+                                    if (lobbyFilesIndex < 0 || lobbyFilesIndex >= lobbyNotesModel.count)
+                                        return false
                                     var row = lobbyNotesModel.get(lobbyFilesIndex)
-                                    return row && row.encrypted
+                                    return !!(row && row.encrypted)
                                 }
 
                                 Rectangle {

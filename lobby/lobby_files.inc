@@ -48,7 +48,8 @@
                                 }
                                 clip: true
                                 model: lobbyNotesModel
-                                currentIndex: lobbyFilesIndex
+                                // Imperative currentIndex only — a binding breaks when ListView
+                                // clears the model (currentIndex=-1) and then ignores lobbyFilesIndex.
                                 spacing: 2
                                 visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
                                 // Selection marker is the big triangle — no full-row fill (less e-ink redraw).
@@ -92,9 +93,16 @@
                                         onDoubleClicked: root.lobbyOpenSelected()
                                     }
                                 }
-                                onCurrentIndexChanged: {
-                                    if (currentIndex >= 0)
-                                        lobbyFilesIndex = currentIndex
+                                Connections {
+                                    target: root
+                                    function onLobbyFilesIndexChanged() {
+                                        if (lobbyFilesList.currentIndex !== lobbyFilesIndex
+                                                && lobbyFilesIndex >= 0
+                                                && lobbyFilesIndex < lobbyNotesModel.count) {
+                                            lobbyFilesList.currentIndex = lobbyFilesIndex
+                                            lobbyFilesList.positionViewAtIndex(lobbyFilesIndex, ListView.Contain)
+                                        }
+                                    }
                                 }
                             }
 
@@ -143,8 +151,10 @@
 
                                 property bool selectedEncrypted: {
                                     if (lobbyNotesModel.count === 0) return false
+                                    if (lobbyFilesIndex < 0 || lobbyFilesIndex >= lobbyNotesModel.count)
+                                        return false
                                     var row = lobbyNotesModel.get(lobbyFilesIndex)
-                                    return row && row.encrypted
+                                    return !!(row && row.encrypted)
                                 }
 
                                 Rectangle {
