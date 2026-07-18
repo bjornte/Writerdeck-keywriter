@@ -1360,6 +1360,9 @@ Window {
     function moveCursorVertical(down) {
         var pos = query.cursorPosition
         var text = query.text
+        // End / Cmd+Right leave assoc -1 at the exclusive wrap point. Down must
+        // land on the next visual row's end (same exclusivity), not the last glyph.
+        var fromVisualEnd = (caretAssoc < 0)
         var newPos = down ? lineDownPos(pos, text) : lineUpPos(pos, text)
         if (newPos === pos) {
             if (down) {
@@ -1378,6 +1381,8 @@ Window {
                 newPos = macLineStartPos(pos, text)
             }
         }
+        if (down && fromVisualEnd && newPos !== pos)
+            newPos = macLineEndPos(newPos, text)
         moveCursorTo(newPos, false, true)
     }
 
