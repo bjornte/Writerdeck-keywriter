@@ -2676,8 +2676,6 @@ Window {
                                         id: pinDigitsRow
                                         width: parent.width
                                         spacing: lobby.tabSpacing
-                                        // No PIN’s warn line sets the row height; all three match.
-                                        readonly property int btnHeight: lobby.actionBtnHeight + 28
                                         Repeater {
                                             model: [
                                                 { id: "6", label: "6 digits" },
@@ -2685,8 +2683,9 @@ Window {
                                                 { id: "none", label: "No PIN", warn: "Anyone on Wi-Fi can read and edit notes" }
                                             ]
                                             delegate: Rectangle {
+                                                // Same height for all three — No PIN warn line sets the size.
                                                 width: (pinDigitsRow.width - lobby.tabSpacing * 2) / 3
-                                                height: pinDigitsRow.btnHeight
+                                                height: lobby.actionBtnHeight + 36
                                                 radius: 6
                                                 property bool selected: lobbyPinDigits === modelData.id
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
