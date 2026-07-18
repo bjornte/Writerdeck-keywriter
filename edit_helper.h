@@ -32,6 +32,9 @@ public:
     // -1 = prefer previous visual line (after End / Cmd+Right), +1 = next, 0 = none.
     Q_INVOKABLE void setCursorAssoc(int assoc);
     Q_INVOKABLE int cursorAssoc() const;
+    // When assoc is -1 at a soft-wrap boundary, probe the previous index so
+    // line/Up/Down math stays on the visual row the user sees as "line end".
+    Q_INVOKABLE int wrapProbePos(int pos) const;
     // Returns {pos, len} or an invalid QVariant (undefined/null in QML).
     Q_INVOKABLE QVariant insertTextDelta(const QString &prevText, const QString &curText) const;
     // Insert index, or -1 if not a single-character insert.

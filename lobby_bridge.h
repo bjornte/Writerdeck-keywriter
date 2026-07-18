@@ -32,7 +32,8 @@ public slots:
     Q_INVOKABLE void createEncryptedNote(const QString &name);
     Q_INVOKABLE void publishState(int cursor, int selStart, int selEnd, int textLen, int mode, int isLobby,
                                   const QString &vaultOverlay, const QString &currentFile,
-                                  const QString &text = QString(), int contentY = 0);
+                                  const QString &text = QString(), int contentY = 0,
+                                  int assoc = 0, int caretY = -1);
 
     // Called from the socket thread when the server pushes a notes list.
     void deliverNotesList(const QVariantList &items);

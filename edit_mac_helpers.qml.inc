@@ -3,6 +3,8 @@
     // Phase B: chord -> action mapping in editHelper; QML applies layout effects
     // Phase C: visual-line math in editHelper; QML keeps goalX + cursor apply
     property bool cursorStrong: true
+    // Mirrors editHelper.cursorAssoc for caret paint + harness (soft-wrap stickiness).
+    property int caretAssoc: 0
     property string autosaveSnapshot: ""
     property int harnessTextWidth: 0
     property int harnessDefaultQueryWidth: 0
@@ -123,21 +125,21 @@
             // Mac: Cmd+Left/Right = line; Cmd+Up/Down and Ctrl+Home/End = document.
             if (key === Qt.Key_Right) {
                 moveCursorTo(macLineEndPos(pos, text), false)
-                editHelper.setCursorAssoc(-1)
+                setCaretAssoc(-1)
                 return
             }
             if (key === Qt.Key_Left) {
                 moveCursorTo(macLineStartPos(pos, text), false)
-                editHelper.setCursorAssoc(1)
+                setCaretAssoc(1)
                 return
             }
-            if (key === Qt.Key_Up) { editHelper.setCursorAssoc(0); moveCursorTo(0, false); return }
-            if (key === Qt.Key_Down) { editHelper.setCursorAssoc(0); moveCursorTo(text.length, false); return }
-            if (key === Qt.Key_End) { editHelper.setCursorAssoc(0); moveCursorTo(text.length, false); return }
-            if (key === Qt.Key_Home) { editHelper.setCursorAssoc(0); moveCursorTo(0, false); return }
+            if (key === Qt.Key_Up) { setCaretAssoc(0); moveCursorTo(0, false); return }
+            if (key === Qt.Key_Down) { setCaretAssoc(0); moveCursorTo(text.length, false); return }
+            if (key === Qt.Key_End) { setCaretAssoc(0); moveCursorTo(text.length, false); return }
+            if (key === Qt.Key_Home) { setCaretAssoc(0); moveCursorTo(0, false); return }
         }
         if (!shift && !cmd && alt) {
-            editHelper.setCursorAssoc(0)
+            setCaretAssoc(0)
             if (key === Qt.Key_Right) { moveCursorTo(wordRightPos(pos, text), false); return }
             if (key === Qt.Key_Left) { moveCursorTo(wordLeftPos(pos, text), false); return }
             if (key === Qt.Key_Up) { moveCursorTo(paragraphUpPos(pos, text), false); return }
@@ -150,15 +152,15 @@
             cursorTimer.stop()
             if (key === Qt.Key_Right) {
                 extendSelectionHorizontal(macLineEndPos(selectionExtendFrom(Qt.Key_Right), text))
-                editHelper.setCursorAssoc(-1)
+                setCaretAssoc(-1)
                 return
             }
             if (key === Qt.Key_Left) {
                 extendSelectionHorizontal(macLineStartPos(selectionExtendFrom(Qt.Key_Left), text))
-                editHelper.setCursorAssoc(1)
+                setCaretAssoc(1)
                 return
             }
-            editHelper.setCursorAssoc(0)
+            setCaretAssoc(0)
             if (key === Qt.Key_Down || key === Qt.Key_End) {
                 extendSelectionHorizontal(text.length)
                 return
@@ -169,7 +171,7 @@
             }
         }
         if (shift && alt && !cmd) {
-            editHelper.setCursorAssoc(0)
+            setCaretAssoc(0)
             var from = selectionExtendFrom(key)
             var ap = from
             if (key === Qt.Key_Left) ap = wordLeftPos(from, text)
@@ -188,7 +190,7 @@
         if (handleMacUndo(event)) return
         if (handleMacArrow(event)) return
         if (!shift && !cmd && !alt) {
-            editHelper.setCursorAssoc(0)
+            setCaretAssoc(0)
             if (key === Qt.Key_Right) { moveCursorTo(Math.min(pos + 1, query.text.length), false); return }
             if (key === Qt.Key_Left) { moveCursorTo(Math.max(0, pos - 1), false); return }
         }
@@ -199,7 +201,47 @@
         try { if (typeof flick !== "undefined") cy = Math.round(flick.contentY) } catch (e) {}
         writerdeck.publishState(query.cursorPosition, query.selectionStart,
             query.selectionEnd, query.text.length, mode, isLobby ? 1 : 0,
-            vaultOverlayMode, currentFile, query.text, cy)
+            vaultOverlayMode, currentFile, query.text, cy,
+            editHelper.cursorAssoc(), caretPaintY())
+    }
+
+    // Y where the caret should *look* (previous visual row when stuck at wrap end).
+    function caretPaintY() {
+        var pos = query.cursorPosition
+        var here = query.positionToRectangle(pos)
+        if (editHelper.cursorAssoc() < 0 && pos > 0) {
+            var prev = query.positionToRectangle(pos - 1)
+            if (Math.abs(here.y - prev.y) > 0.5)
+                return Math.round(prev.y)
+        }
+        return Math.round(here.y)
+    }
+
+    function caretStickyDx() {
+        var pos = query.cursorPosition
+        var here = query.positionToRectangle(pos)
+        if (editHelper.cursorAssoc() >= 0 || pos <= 0)
+            return 0
+        var prev = query.positionToRectangle(pos - 1)
+        if (Math.abs(here.y - prev.y) < 0.5)
+            return 0
+        return (prev.x + Math.max(prev.width, 1)) - here.x
+    }
+
+    function caretStickyDy() {
+        var pos = query.cursorPosition
+        var here = query.positionToRectangle(pos)
+        if (editHelper.cursorAssoc() >= 0 || pos <= 0)
+            return 0
+        var prev = query.positionToRectangle(pos - 1)
+        if (Math.abs(here.y - prev.y) < 0.5)
+            return 0
+        return prev.y - here.y
+    }
+
+    function setCaretAssoc(a) {
+        editHelper.setCursorAssoc(a)
+        caretAssoc = a
     }
 
     function pageLeft() {
@@ -376,7 +418,7 @@
         var pos = query.cursorPosition
         var action = r.action
         if (action === "collapseSel") {
-            editHelper.setCursorAssoc(0)
+            setCaretAssoc(0)
             var c = r.toMin
                 ? Math.min(query.selectionStart, query.selectionEnd)
                 : Math.max(query.selectionStart, query.selectionEnd)
@@ -384,7 +426,7 @@
             query.deselect()
             query.cursorPosition = c
         } else if (action === "moveTo") {
-            editHelper.setCursorAssoc(0)
+            setCaretAssoc(0)
             if (r.extend)
                 extendSelectionHorizontal(r.pos)
             else
@@ -397,13 +439,13 @@
                 moveCursorTo(p, false)
             // Soft-wrap End/Cmd+Right: assoc -1 so a repeat press stays at the wrap point.
             if (r.posKind === "macLineEndCursor" || r.posKind === "macLineEndExtend")
-                editHelper.setCursorAssoc(-1)
+                setCaretAssoc(-1)
             else if (r.posKind === "macLineStartCursor" || r.posKind === "macLineStartExtend")
-                editHelper.setCursorAssoc(1)
+                setCaretAssoc(1)
             else
-                editHelper.setCursorAssoc(0)
+                setCaretAssoc(0)
         } else if (action === "shiftHorizDelta") {
-            editHelper.setCursorAssoc(0)
+            setCaretAssoc(0)
             // Drop stale heads before reading them (typing leaves shiftHead
             // pointing at the pre-replace range while the caret is collapsed).
             if (shiftAnchor > text.length)
@@ -432,16 +474,16 @@
                         : Math.max(query.selectionStart, query.selectionEnd))
             applyShiftSelection(resolveMacPosKind(r.posKind, 0))
             if (r.posKind === "macLineEndShiftHead")
-                editHelper.setCursorAssoc(-1)
+                setCaretAssoc(-1)
             else if (r.posKind === "macLineStartShiftHead")
-                editHelper.setCursorAssoc(1)
+                setCaretAssoc(1)
             else
-                editHelper.setCursorAssoc(0)
+                setCaretAssoc(0)
         } else if (action === "shiftVert") {
-            editHelper.setCursorAssoc(0)
+            setCaretAssoc(0)
             extendSelectionVertical(r.down)
         } else if (action === "moveVert") {
-            editHelper.setCursorAssoc(0)
+            setCaretAssoc(0)
             moveCursorVertical(r.down)
         } else {
             return false
@@ -453,7 +495,7 @@
 
     function applyMacBackspaceDispatch(r) {
         if (!r.handled) return false
-        editHelper.setCursorAssoc(0)
+        setCaretAssoc(0)
         if (r.action === "noop") {
             cursorStrong = true
             cursorTimer.stop()

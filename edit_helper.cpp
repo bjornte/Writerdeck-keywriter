@@ -147,6 +147,17 @@ int EditHelper::cursorAssoc() const
     return m_cursorAssoc;
 }
 
+int EditHelper::wrapProbePos(int pos) const
+{
+    if (m_cursorAssoc >= 0 || pos <= 0)
+        return pos;
+    // Shared wrap index: end of visual row N == start of row N+1. Assoc -1
+    // means stick to the previous row (CodeMirror / Cocoa).
+    if (qAbs(queryRectAt(pos).y - queryRectAt(pos - 1).y) > 0.5)
+        return pos - 1;
+    return pos;
+}
+
 // Apple paragraphRange: each \n-delimited segment, including empty lines.
 // Option+Up/Down = logical line starts/ends; blank lines are real stops.
 int EditHelper::paragraphUpPos(int pos, const QString &text) const
@@ -591,6 +602,7 @@ int EditHelper::visualLineDownPos(int pos, qreal gx) const
     const int len = queryTextLength();
     if (pos >= len)
         return len;
+    pos = wrapProbePos(pos);
     const QueryRect curRect = queryRectAt(pos);
     const qreal goalXUse = (gx >= 0) ? gx : curRect.x;
     const qreal curY = curRect.y;
@@ -622,6 +634,7 @@ int EditHelper::visualLineUpPos(int pos, qreal gx) const
 {
     if (pos <= 0)
         return 0;
+    pos = wrapProbePos(pos);
     const QueryRect curRect = queryRectAt(pos);
     const qreal goalXUse = (gx >= 0) ? gx : curRect.x;
     const qreal curY = curRect.y;
@@ -700,18 +713,19 @@ bool EditHelper::onWrappedLine(int pos, const QString &text) const
 
 int EditHelper::macLineStartPos(int pos, const QString &text) const
 {
-    return lineWrapsVisually(pos, text) ? visualLineStartPos(pos) : lineStartPos(pos, text);
+    const int probe = wrapProbePos(pos);
+    if (!lineWrapsVisually(probe, text))
+        return lineStartPos(probe, text);
+    return visualLineStartPos(probe);
 }
 
 int EditHelper::macLineEndPos(int pos, const QString &text) const
 {
-    if (!lineWrapsVisually(pos, text))
-        return lineEndPos(pos, text);
-    // After End/Cmd+Right, assoc -1 keeps the caret on the previous visual
-    // line so a repeat press stays at the wrap point (shared with next row).
-    int probe = pos;
-    if (m_cursorAssoc < 0 && pos > 0)
-        probe = pos - 1;
+    const int probe = wrapProbePos(pos);
+    if (!lineWrapsVisually(probe, text))
+        return lineEndPos(probe, text);
+    // Exclusive wrap point (shared with next row start). Assoc -1 + wrapProbe
+    // keeps repeat End/Cmd+Right on this row; Ctrl+Left then returns to its start.
     const int visEnd = visualLineEndPos(probe);
     const int logEnd = lineEndPos(probe, text);
     return qMin(visEnd, logEnd);
