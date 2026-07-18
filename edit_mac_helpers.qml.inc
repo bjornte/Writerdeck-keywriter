@@ -370,6 +370,9 @@
             else
                 moveCursorTo(p, false)
         } else if (action === "shiftHorizDelta") {
+            if (query.selectionStart === query.selectionEnd
+                    && shiftHead >= 0 && shiftHead !== query.cursorPosition)
+                clearShiftSelection()
             var headH = (shiftHead >= 0) ? shiftHead : query.cursorPosition
             var newHead = (r.delta < 0)
                 ? Math.max(0, headH + r.delta)
@@ -377,6 +380,9 @@
             applyShiftSelection(newHead)
             lastShiftHorizKey = (r.eventKey !== undefined) ? r.eventKey : eventKey
         } else if (action === "shiftHorizTo") {
+            if (query.selectionStart === query.selectionEnd
+                    && shiftHead >= 0 && shiftHead !== query.cursorPosition)
+                clearShiftSelection()
             if (shiftAnchor < 0)
                 shiftAnchor = (query.selectionStart === query.selectionEnd)
                     ? pos : ((r.posKind === "macLineEndShiftHead")
@@ -384,6 +390,9 @@
                         : Math.max(query.selectionStart, query.selectionEnd))
             applyShiftSelection(resolveMacPosKind(r.posKind, 0))
         } else if (action === "shiftVert") {
+            if (query.selectionStart === query.selectionEnd
+                    && shiftHead >= 0 && shiftHead !== query.cursorPosition)
+                clearShiftSelection()
             extendSelectionVertical(r.down)
         } else if (action === "moveVert") {
             moveCursorVertical(r.down)
