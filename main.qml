@@ -34,8 +34,7 @@ Window {
     property string lobbyPinDigits: "6"
     property string lobbySettingsMode: ""
     property int lobbyPage: 0
-    property var lobbyTabLabels: ["Files", "Keyboard", "Sync", "Settings", "Shortcuts", "About"]
-    property string lobbyVersionText: ""
+    property var lobbyTabLabels: ["Files", "Keyboard", "Sync", "Settings", "Shortcuts", "Home"]
     property int lobbyFilesIndex: 0
     property string lobbyLastEditedFile: ""
     property string lobbyFilesMode: ""
@@ -275,43 +274,6 @@ Window {
         lobbyFilesInputPos = 0
         lobbySettingsMode = ""
         if (idx === 0) lobbyRefreshNotes()
-        if (idx === 5) lobbyRefreshVersion()
-    }
-
-    // About tab: show local stamp, then ask the server to compare with GitHub.
-    function lobbyRefreshVersion() {
-        lobbyVersionText = "Writerdeck version … (checking GitHub for updates…)"
-        var req = new XMLHttpRequest()
-        req.open("GET", "http://127.0.0.1:8000/api/version")
-        req.onreadystatechange = function() {
-            if (req.readyState !== XMLHttpRequest.DONE) return
-            var local = "unknown"
-            if (req.status === 200) {
-                try {
-                    var j = JSON.parse(req.responseText)
-                    if (j.version) local = j.version
-                } catch (e) {}
-            }
-            lobbyVersionText = "Writerdeck version " + local + " (checking GitHub for updates…)"
-            var chk = new XMLHttpRequest()
-            chk.open("GET", "http://127.0.0.1:8000/api/version/check")
-            chk.onreadystatechange = function() {
-                if (chk.readyState !== XMLHttpRequest.DONE) return
-                if (chk.status === 200) {
-                    try {
-                        var k = JSON.parse(chk.responseText)
-                        if (k.message) {
-                            lobbyVersionText = k.message
-                            return
-                        }
-                    } catch (e2) {}
-                }
-                lobbyVersionText = "Writerdeck version " + local
-                        + " (couldn't reach GitHub to check for updates)"
-            }
-            chk.send()
-        }
-        req.send()
     }
 
     function lobbyRefreshNotes() {
@@ -1194,8 +1156,20 @@ Window {
 
     function applyMacEditKeysDispatch(r) {
         if (!r.handled) return false
+        if (r.action === "noop") {
+            cursorStrong = true
+            cursorTimer.stop()
+            return true
+        }
         if (r.action === "selectAll") {
             query.select(0, r.len)
+            doc = query.text
+        } else if (r.action === "replaceText") {
+            if (r.beginEdit)
+                beginTextEdit()
+            query.text = r.text
+            query.cursorPosition = r.cursor
+            query.deselect()
             doc = query.text
         } else if (r.action === "insertNewline") {
             var text = query.text
@@ -1410,7 +1384,7 @@ Window {
     function handleMacEditKeys(event) {
         if (mode != 1) return false
         var r = editHelper.dispatchMacEditKeys(event.key, event.modifiers,
-            query.text, query.cursorPosition)
+            query.text, query.cursorPosition, query.selectionStart, query.selectionEnd)
         if (!applyMacEditKeysDispatch(r))
             return false
         event.accepted = true
@@ -1890,17 +1864,17 @@ Window {
                     anchors.leftMargin: lobby.pageMargin
                     anchors.rightMargin: lobby.pageMargin
 
-                    // 5 About
+                    // 0 Home
                     Item {
                         visible: lobbyPage === 5
                         anchors.fill: parent
                         Flickable {
                             anchors.fill: parent
                             contentWidth: width
-                            contentHeight: aboutCol.height
+                            contentHeight: homeCol.height
                             clip: true
                             Column {
-                                id: aboutCol
+                                id: homeCol
                                 width: parent.width
                                 spacing: lobby.contentSpacing
                                 Text {
@@ -1914,15 +1888,6 @@ Window {
                                     text: "A text editor for use with a physical keyboard.\nWith Markdown support."
                                     color: "#555555"
                                     font.pointSize: 12
-                                    font.family: "Noto Sans"
-                                    width: parent.width
-                                    wrapMode: Text.WordWrap
-                                }
-                                Text {
-                                    text: lobbyVersionText !== "" ? lobbyVersionText
-                                          : "Writerdeck version … (checking GitHub for updates…)"
-                                    color: "#333333"
-                                    font.pointSize: 11
                                     font.family: "Noto Sans"
                                     width: parent.width
                                     wrapMode: Text.WordWrap
@@ -2657,7 +2622,7 @@ Window {
                                     width: parent.width
                                 }
                                 Text {
-                                    text: "Lobby: Tab / arrows / 1-6 switch pages\nFiles: Up/Down select  Enter edit  v read  n d r\nStock UI: Esc (USB) or L+R page buttons → Lobby\nCtrl-K: quick file picker\nCtrl-R: rotate  Ctrl-Q: quit\nHome: exit to reMarkable UI"
+                                    text: "Lobby: Tab / arrows / 1-6 switch pages\nFiles: Up/Down select  Enter edit  v read  n d r\nStock UI: Esc (USB) or L+R page buttons → Lobby\nCtrl-K: quick file picker\nCtrl-C/X/V: copy cut paste\nCtrl-R: rotate  Ctrl-Q: quit\nHome: exit to reMarkable UI"
                                     font.pointSize: 10
                                     font.family: "Noto Mono"
                                     color: "#555555"

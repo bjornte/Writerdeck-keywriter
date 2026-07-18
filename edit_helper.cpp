@@ -666,14 +666,57 @@ int EditHelper::macLineEndPos(int pos, const QString &text) const
     return onWrappedLine(pos, text) ? visualLineEndPos(pos) : lineEndPos(pos, text);
 }
 
-QVariantMap EditHelper::dispatchMacEditKeys(int key, int modifiers, const QString &text, int cursor) const
+QVariantMap EditHelper::dispatchMacEditKeys(int key, int modifiers, const QString &text,
+                                            int cursor, int selStart, int selEnd)
 {
     const bool cmd = (modifiers & Qt::ControlModifier) != 0;
     const bool alt = (modifiers & Qt::AltModifier) != 0;
+    const int a = qMin(selStart, selEnd);
+    const int b = qMax(selStart, selEnd);
+    const bool hasSel = a != b;
 
     if (cmd && !alt && key == Qt::Key_A) {
         QVariantMap m = handledAction(QStringLiteral("selectAll"));
         m.insert(QStringLiteral("len"), text.length());
+        return m;
+    }
+
+    // Ctrl+C: copy selection into in-editor clipboard (no-op if nothing selected).
+    if (cmd && !alt && key == Qt::Key_C) {
+        if (hasSel)
+            m_clipboard = text.mid(a, b - a);
+        return handledAction(QStringLiteral("noop"));
+    }
+
+    // Ctrl+X: cut selection into clipboard (no-op if nothing selected).
+    if (cmd && !alt && key == Qt::Key_X) {
+        if (!hasSel)
+            return handledAction(QStringLiteral("noop"));
+        m_clipboard = text.mid(a, b - a);
+        QVariantMap m = handledAction(QStringLiteral("replaceText"));
+        m.insert(QStringLiteral("beginEdit"), true);
+        m.insert(QStringLiteral("text"), text.left(a) + text.mid(b));
+        m.insert(QStringLiteral("cursor"), a);
+        return m;
+    }
+
+    // Ctrl+V: paste clipboard at caret (replaces selection when present).
+    if (cmd && !alt && key == Qt::Key_V) {
+        if (m_clipboard.isEmpty())
+            return handledAction(QStringLiteral("noop"));
+        QString next;
+        int newCursor = 0;
+        if (hasSel) {
+            next = text.left(a) + m_clipboard + text.mid(b);
+            newCursor = a + m_clipboard.length();
+        } else {
+            next = text.left(cursor) + m_clipboard + text.mid(cursor);
+            newCursor = cursor + m_clipboard.length();
+        }
+        QVariantMap m = handledAction(QStringLiteral("replaceText"));
+        m.insert(QStringLiteral("beginEdit"), true);
+        m.insert(QStringLiteral("text"), next);
+        m.insert(QStringLiteral("cursor"), newCursor);
         return m;
     }
 

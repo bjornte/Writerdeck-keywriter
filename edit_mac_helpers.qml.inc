@@ -408,8 +408,20 @@
 
     function applyMacEditKeysDispatch(r) {
         if (!r.handled) return false
+        if (r.action === "noop") {
+            cursorStrong = true
+            cursorTimer.stop()
+            return true
+        }
         if (r.action === "selectAll") {
             query.select(0, r.len)
+            doc = query.text
+        } else if (r.action === "replaceText") {
+            if (r.beginEdit)
+                beginTextEdit()
+            query.text = r.text
+            query.cursorPosition = r.cursor
+            query.deselect()
             doc = query.text
         } else if (r.action === "insertNewline") {
             var text = query.text
@@ -624,7 +636,7 @@
     function handleMacEditKeys(event) {
         if (mode != 1) return false
         var r = editHelper.dispatchMacEditKeys(event.key, event.modifiers,
-            query.text, query.cursorPosition)
+            query.text, query.cursorPosition, query.selectionStart, query.selectionEnd)
         if (!applyMacEditKeysDispatch(r))
             return false
         event.accepted = true

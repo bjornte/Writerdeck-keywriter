@@ -57,8 +57,10 @@ public:
     Q_INVOKABLE QVariantMap dispatchMacBackspace(int key, int modifiers,
                                                  const QString &text, int cursor,
                                                  int selStart, int selEnd) const;
+    // Non-const: Ctrl+C/X update the in-editor clipboard buffer.
     Q_INVOKABLE QVariantMap dispatchMacEditKeys(int key, int modifiers,
-                                                const QString &text, int cursor) const;
+                                                const QString &text, int cursor,
+                                                int selStart, int selEnd);
 
     // Phase C: visual-line math (layout via query TextEdit; QML keeps goalX + apply).
     // Q_INVOKABLE so QML can re-bind after load/harness prepare.
@@ -103,6 +105,8 @@ private:
     bool m_undoCapture = false;
     bool m_skipTextUndoPush = false;
     EditState m_snapshot;
+    // In-editor clipboard (reMarkable has no useful system clipboard for us).
+    QString m_clipboard;
 };
 
 #endif
