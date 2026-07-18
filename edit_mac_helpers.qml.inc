@@ -308,9 +308,14 @@
     }
 
     function selectionExtendFrom(key) {
+        // Collapsed caret means any leftover shiftHead/shiftAnchor is stale
+        // (typing, touch, or note open moved the caret without clearShiftSelection).
+        if (query.selectionStart === query.selectionEnd) {
+            clearShiftSelection()
+            return query.cursorPosition
+        }
         if (shiftHead >= 0) return shiftHead
         var pos = query.cursorPosition
-        if (query.selectionStart === query.selectionEnd) return pos
         if (key === Qt.Key_Left || key === Qt.Key_Up)
             return Math.min(query.selectionStart, query.selectionEnd)
         if (key === Qt.Key_Right || key === Qt.Key_Down)
@@ -361,6 +366,8 @@
             else
                 moveCursorTo(p, false)
         } else if (action === "shiftHorizDelta") {
+            if (query.selectionStart === query.selectionEnd)
+                clearShiftSelection()
             var headH = (shiftHead >= 0) ? shiftHead : query.cursorPosition
             var newHead = (r.delta < 0)
                 ? Math.max(0, headH + r.delta)
@@ -368,6 +375,8 @@
             applyShiftSelection(newHead)
             lastShiftHorizKey = (r.eventKey !== undefined) ? r.eventKey : eventKey
         } else if (action === "shiftHorizTo") {
+            if (query.selectionStart === query.selectionEnd)
+                clearShiftSelection()
             if (shiftAnchor < 0)
                 shiftAnchor = (query.selectionStart === query.selectionEnd)
                     ? pos : ((r.posKind === "macLineEndShiftHead")
@@ -375,6 +384,8 @@
                         : Math.max(query.selectionStart, query.selectionEnd))
             applyShiftSelection(resolveMacPosKind(r.posKind, 0))
         } else if (action === "shiftVert") {
+            if (query.selectionStart === query.selectionEnd)
+                clearShiftSelection()
             extendSelectionVertical(r.down)
         } else if (action === "moveVert") {
             moveCursorVertical(r.down)
@@ -396,6 +407,7 @@
         if (r.action === "replaceText") {
             if (r.beginEdit)
                 beginTextEdit()
+            clearShiftSelection()
             query.text = r.text
             query.cursorPosition = r.cursor
             query.deselect()
@@ -419,6 +431,7 @@
         } else if (r.action === "replaceText") {
             if (r.beginEdit)
                 beginTextEdit()
+            clearShiftSelection()
             query.text = r.text
             query.cursorPosition = r.cursor
             query.deselect()
@@ -427,6 +440,7 @@
             var text = query.text
             var pos = r.pos
             beginTextEdit()
+            clearShiftSelection()
             query.text = text.slice(0, pos) + "\n" + text.slice(pos)
             query.cursorPosition = pos + 1
             query.deselect()
@@ -676,6 +690,9 @@
         }
         onTextChanged: {
             if (harnessPrepareLock || mode != 1 || isLobby) return
+            // Typing/paste must drop shift-selection anchors; otherwise the next
+            // Shift+Alt/Shift+arrow extends from a pre-edit caret (stale head).
+            clearShiftSelection()
             editHelper.notifyTextChanged(query.text, query.cursorPosition,
                                          query.selectionStart, query.selectionEnd)
             cursorStrong = false
