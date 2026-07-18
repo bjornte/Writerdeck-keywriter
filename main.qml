@@ -280,7 +280,7 @@ Window {
 
     // About tab: show local stamp, then ask the server to compare with GitHub.
     function lobbyRefreshVersion() {
-        lobbyVersionText = "Writerdeck version \u2026 (checking GitHub for updates\u2026)"
+        lobbyVersionText = "Writerdeck version … (checking GitHub for updates…)"
         var req = new XMLHttpRequest()
         req.open("GET", "http://127.0.0.1:8000/api/version")
         req.onreadystatechange = function() {
@@ -292,7 +292,7 @@ Window {
                     if (j.version) local = j.version
                 } catch (e) {}
             }
-            lobbyVersionText = "Writerdeck version " + local + " (checking GitHub for updates\u2026)"
+            lobbyVersionText = "Writerdeck version " + local + " (checking GitHub for updates…)"
             var chk = new XMLHttpRequest()
             chk.open("GET", "http://127.0.0.1:8000/api/version/check")
             chk.onreadystatechange = function() {
@@ -1920,7 +1920,7 @@ Window {
                                 }
                                 Text {
                                     text: lobbyVersionText !== "" ? lobbyVersionText
-                                          : "Writerdeck version \u2026 (checking GitHub for updates\u2026)"
+                                          : "Writerdeck version … (checking GitHub for updates…)"
                                     color: "#333333"
                                     font.pointSize: 11
                                     font.family: "Noto Sans"
