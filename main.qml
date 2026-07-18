@@ -122,7 +122,6 @@ Window {
                 currentFile = name
                 doc = response
                 autosaveSnapshot = response
-                clearShiftSelection()
                 if (lobbyOpenInReadMode) {
                     mode = 0
                     lobbyOpenInReadMode = false
@@ -1020,10 +1019,19 @@ Window {
     function applyShiftSelection(newHead) {
         var len = query.text.length
         newHead = Math.max(0, Math.min(newHead, len))
+        // Typing/replace can leave shiftAnchor past EOF or a mismatched
+        // shiftHead while the caret is collapsed — re-anchor at the caret.
+        if (shiftAnchor > len)
+            clearShiftSelection()
+        if (shiftHead >= 0 && query.selectionStart === query.selectionEnd
+                && shiftHead !== query.cursorPosition)
+            clearShiftSelection()
         if (shiftAnchor < 0) {
             shiftAnchor = query.cursorPosition
             shiftHead = shiftAnchor
         }
+        if (shiftAnchor > len)
+            shiftAnchor = len
         shiftHead = newHead
         query.select(Math.min(shiftAnchor, shiftHead), Math.max(shiftAnchor, shiftHead))
         if (shiftHead === shiftAnchor)
@@ -1621,15 +1629,11 @@ Window {
             }
 
             function scrollUp() {
-                // Step with the visible viewport, not a portrait-only constant.
-                // Landscape body.height is the short side; 1500px overshoots it.
-                var step = Math.max(200, Math.round(height * 0.85))
-                contentY -= step
+                contentY -= 1500
                 if (contentY < 0) contentY = 0
             }
             function scrollDown() {
-                var step = Math.max(200, Math.round(height * 0.85))
-                contentY += step
+                contentY += 1500
                 var maxY = Math.max(0, contentHeight - height)
                 if (contentY > maxY) contentY = maxY
             }

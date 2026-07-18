@@ -334,8 +334,15 @@ QVariantMap EditHelper::handledAction(const QString &action)
 
 int EditHelper::selectionExtendFrom(int key, int cursor, int selStart, int selEnd, int shiftHead)
 {
-    if (shiftHead >= 0)
-        return shiftHead;
+    // Match QML: ignore a leftover shiftHead when the caret is collapsed
+    // elsewhere (typical after typing replaced a selection).
+    if (shiftHead >= 0) {
+        if (selStart != selEnd)
+            return shiftHead;
+        if (shiftHead == cursor)
+            return shiftHead;
+        // Stale — fall through as if shiftHead were unset.
+    }
     if (selStart == selEnd)
         return cursor;
     if (key == Qt::Key_Left || key == Qt::Key_Up)
