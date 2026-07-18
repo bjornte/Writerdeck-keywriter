@@ -2148,31 +2148,22 @@ Window {
                                 spacing: 2
                                 visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
                                 // Selection marker — no full-row fill (less e-ink redraw).
-                                // Baseline-align the name to the ▶ so different point sizes share one line.
+                                // One Text for marker+name: separate Texts would not share a baseline
+                                // reliably on this linuxfb Qt, and the ▶ looked a full row too low.
                                 delegate: Item {
                                     width: lobbyFilesList.width
                                     height: lobby.rowHeight
                                     Text {
-                                        id: lobbyFilesMarker
                                         anchors.left: parent.left
-                                        anchors.leftMargin: 4
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: 34
-                                        horizontalAlignment: Text.AlignHCenter
-                                        text: index === lobbyFilesIndex ? "\u25B6" : " "
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 18
-                                        color: "black"
-                                    }
-                                    Text {
-                                        anchors.left: lobbyFilesMarker.right
-                                        anchors.leftMargin: 6
+                                        anchors.leftMargin: 8
                                         anchors.right: parent.right
                                         anchors.rightMargin: 8
-                                        anchors.baseline: lobbyFilesMarker.baseline
-                                        text: lobbyFilesStripSuffix(model.name) + (model.encrypted ? " [private]" : "")
-                                        font.family: "Noto Mono"
-                                        font.pointSize: 11
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: (index === lobbyFilesIndex ? "\u25B6  " : "   ")
+                                              + lobbyFilesStripSuffix(model.name)
+                                              + (model.encrypted ? " [private]" : "")
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 14
                                         color: "black"
                                         elide: Text.ElideRight
                                     }
