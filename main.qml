@@ -1629,11 +1629,15 @@ Window {
             }
 
             function scrollUp() {
-                contentY -= 1500
+                // Step with the visible viewport, not a portrait-only constant.
+                // Landscape body.height is the short side; 1500px overshoots it.
+                var step = Math.max(200, Math.round(height * 0.85))
+                contentY -= step
                 if (contentY < 0) contentY = 0
             }
             function scrollDown() {
-                contentY += 1500
+                var step = Math.max(200, Math.round(height * 0.85))
+                contentY += step
                 var maxY = Math.max(0, contentHeight - height)
                 if (contentY > maxY) contentY = maxY
             }
