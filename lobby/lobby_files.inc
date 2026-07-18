@@ -8,10 +8,12 @@
                             spacing: lobby.contentSpacing
 
                             Text {
+                                visible: lobbyFilesMode === "new" || lobbyFilesMode === "rename"
+                                         || lobbyFilesMode === "confirm-delete"
                                 text: lobbyFilesMode === "new" ? "New note name:"
                                      : lobbyFilesMode === "rename" ? "Rename to:"
                                      : lobbyFilesMode === "confirm-delete" ? "Delete this note? Enter=yes  Esc=no"
-                                     : "Notes"
+                                     : ""
                                 font.family: "Noto Sans"
                                 font.pointSize: 13
                                 color: "black"

@@ -2103,10 +2103,12 @@ Window {
                             spacing: lobby.contentSpacing
 
                             Text {
+                                visible: lobbyFilesMode === "new" || lobbyFilesMode === "rename"
+                                         || lobbyFilesMode === "confirm-delete"
                                 text: lobbyFilesMode === "new" ? "New note name:"
                                      : lobbyFilesMode === "rename" ? "Rename to:"
                                      : lobbyFilesMode === "confirm-delete" ? "Delete this note? Enter=yes  Esc=no"
-                                     : "Notes"
+                                     : ""
                                 font.family: "Noto Sans"
                                 font.pointSize: 13
                                 color: "black"
@@ -2843,9 +2845,10 @@ Window {
                     anchors.leftMargin: lobby.pageMargin
                     anchors.rightMargin: lobby.pageMargin
                     anchors.bottomMargin: lobby.pageMargin
-                    // Files chords live on the buttons and Shortcuts tab — keep this line short so it
-                    // does not collide with the Files action row.
-                    height: 36
+                    // Hide on Files: action buttons already cover those chords, and a hint line
+                    // was colliding with the bottom button row.
+                    visible: !(lobbyPage === 0 && lobbyFilesMode === "")
+                    height: visible ? 36 : 0
                     verticalAlignment: Text.AlignVCenter
                     font.family: "Noto Mono"
                     font.pointSize: 9
