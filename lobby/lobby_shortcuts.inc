@@ -59,7 +59,7 @@
                                           + "Esc on a USB keyboard, or both page buttons together."
                                     font.pointSize: 11
                                     font.family: "Noto Sans"
-                                    color: "#555555"
+                                    color: "black"
                                     width: parent.width
                                     wrapMode: Text.WordWrap
                                     lineHeight: 1.25

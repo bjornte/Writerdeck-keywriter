@@ -49,7 +49,7 @@
                                             text: "Pair the keyboard to your phone, then open the address below (or scan the code). Typing is forwarded over Wi-Fi."
                                             font.pointSize: 11
                                             font.family: "Noto Sans"
-                                            color: "#555555"
+                                            color: "black"
                                             width: parent.width
                                             wrapMode: Text.WordWrap
                                         }
@@ -110,7 +110,7 @@
                                             text: "Connect with a USB OTG cable.\nChanging layout restarts Writerdeck."
                                             font.pointSize: 11
                                             font.family: "Noto Sans"
-                                            color: "#555555"
+                                            color: "black"
                                             width: parent.width
                                             wrapMode: Text.WordWrap
                                         }
@@ -136,7 +136,7 @@
                                                     radius: 6
                                                     property bool selected: lobbyKeyboardLayout === modelData.id
                                                     color: selected ? "#e8e8e8" : "#f0f0f0"
-                                                    border.color: selected ? "black" : "#bbb"
+                                                    border.color: "black"
                                                     border.width: selected ? 2 : 1
                                                     Loader {
                                                         anchors.fill: parent

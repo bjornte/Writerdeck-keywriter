@@ -31,7 +31,7 @@
                     horizontalAlignment: Text.AlignHCenter
                     font.family: "Noto Mono"
                     font.pointSize: 18
-                    color: "#333"
+                    color: "black"
                     text: vaultPinDisplay()
                 }
 
@@ -74,7 +74,7 @@
                     height: lobby.actionBtnHeight
                     radius: 6
                     color: "#f0f0f0"
-                    border.color: "#bbb"
+                    border.color: "black"
                     border.width: 1
                     Text {
                         anchors.centerIn: parent

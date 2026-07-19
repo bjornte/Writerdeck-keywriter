@@ -31,7 +31,7 @@
                                         : ("Sync not configured.\nSet up in phone Sync setup:\nhttp://" + lobbyIP + ":" + lobbyPort)
                                     font.pointSize: 11
                                     font.family: "Noto Sans"
-                                    color: lobbySyncOn && lobbySyncRepo !== "" ? "#1b5e20" : "#555555"
+                                    color: "black"
                                     width: parent.width
                                     wrapMode: Text.WordWrap
                                 }
@@ -105,7 +105,7 @@
                                     height: lobby.actionBtnHeight
                                     radius: 6
                                     color: (lobbySyncReady && !lobbySyncing) ? "#f0f0f0" : "white"
-                                    border.color: lobbySyncReady ? "#bbb" : "black"
+                                    border.color: "black"
                                     border.width: lobbySyncReady ? 1 : 2
                                     Loader {
                                         anchors.fill: parent
@@ -114,7 +114,7 @@
                                         property string shortcutKey: (lobbySyncReady && !lobbySyncing) ? "s" : ""
                                         property int pointSize: !lobbySyncReady ? 14 : 12
                                         property bool labelBold: !lobbySyncReady
-                                        property color labelColor: (lobbySyncReady && !lobbySyncing) ? "black" : (lobbySyncReady ? "#888888" : "black")
+                                        property color labelColor: "black"
                                         sourceComponent: lobbyBtnLabelComp
                                     }
                                     MouseArea {
@@ -130,7 +130,7 @@
                                     text: "Sync also runs automatically on save, Home, and every few minutes."
                                     font.pointSize: 10
                                     font.family: "Noto Sans"
-                                    color: "#888888"
+                                    color: "black"
                                     width: parent.width
                                     wrapMode: Text.WordWrap
                                 }

@@ -36,6 +36,14 @@
                                         color: "black"
                                         width: parent.width
                                     }
+                                    Text {
+                                        text: "f or Ctrl-F — cycle through fonts."
+                                        font.pointSize: 10
+                                        font.family: "Noto Sans"
+                                        color: "black"
+                                        width: parent.width
+                                        wrapMode: Text.WordWrap
+                                    }
                                     Grid {
                                         id: fontGrid
                                         width: parent.width
@@ -56,13 +64,14 @@
                                                 radius: 6
                                                 property bool selected: readFont === modelData.id
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
-                                                border.color: selected ? "black" : "#bbb"
+                                                border.color: "black"
                                                 border.width: selected ? 2 : 1
                                                 Text {
                                                     anchors.centerIn: parent
                                                     text: modelData.label
-                                                    font.family: "Noto Sans"
+                                                    font.family: modelData.id
                                                     font.pointSize: 11
+                                                    color: "black"
                                                 }
                                                 MouseArea {
                                                     anchors.fill: parent
@@ -88,7 +97,7 @@
                                             : "Off — optional encryption with a separate 6-digit PIN. Recovery via GitHub secret/pin when sync is on."
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
-                                        color: "#666666"
+                                        color: "black"
                                         width: parent.width
                                         wrapMode: Text.WordWrap
                                     }
@@ -101,7 +110,7 @@
                                             height: lobby.actionBtnHeight
                                             radius: 6
                                             color: "#f0f0f0"
-                                            border.color: "#bbb"
+                                            border.color: "black"
                                             border.width: 1
                                             Loader {
                                                 anchors.fill: parent
@@ -128,7 +137,7 @@
                                             height: lobby.actionBtnHeight
                                             radius: 6
                                             color: "#f0f0f0"
-                                            border.color: "#bbb"
+                                            border.color: "black"
                                             border.width: 1
                                             Loader {
                                                 anchors.fill: parent
@@ -155,10 +164,10 @@
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "Adding a PIN ensures that only intended devices can access your notes"
+                                        text: "p or Ctrl-P — cycle PIN length. Adding a PIN ensures that only intended devices can access your notes."
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
-                                        color: "#666666"
+                                        color: "black"
                                         width: parent.width
                                         wrapMode: Text.WordWrap
                                     }
@@ -179,7 +188,7 @@
                                                 radius: 6
                                                 property bool selected: lobbyPinDigits === modelData.id
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
-                                                border.color: selected ? "black" : "#bbb"
+                                                border.color: "black"
                                                 border.width: selected ? 2 : 1
                                                 Column {
                                                     anchors.centerIn: parent
@@ -198,7 +207,7 @@
                                                         text: modelData.warn || ""
                                                         font.family: "Noto Sans"
                                                         font.pointSize: 8
-                                                        color: "#666666"
+                                                        color: "black"
                                                         horizontalAlignment: Text.AlignHCenter
                                                         wrapMode: Text.WordWrap
                                                         width: parent.width
@@ -223,10 +232,10 @@
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "Ctrl-R or Ctrl+arrows also rotate."
+                                        text: "t or Ctrl-T — cycle. Ctrl-R or Ctrl+arrows also rotate."
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
-                                        color: "#666666"
+                                        color: "black"
                                         width: parent.width
                                         wrapMode: Text.WordWrap
                                     }
@@ -247,13 +256,14 @@
                                                 radius: 6
                                                 property bool selected: root.rotation === modelData.deg
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
-                                                border.color: selected ? "black" : "#bbb"
+                                                border.color: "black"
                                                 border.width: selected ? 2 : 1
                                                 Text {
                                                     anchors.centerIn: parent
                                                     text: modelData.label
                                                     font.family: "Noto Sans"
                                                     font.pointSize: 12
+                                                    color: "black"
                                                 }
                                                 MouseArea {
                                                     anchors.fill: parent
@@ -277,7 +287,7 @@
                                         text: "Stop Writerdeck and return the tablet to the stock reMarkable UI. Reconnect later via SSH or reboot."
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
-                                        color: "#666666"
+                                        color: "black"
                                         width: parent.width
                                         wrapMode: Text.WordWrap
                                     }
@@ -286,7 +296,7 @@
                                         height: lobby.actionBtnHeight
                                         radius: 6
                                         color: "#f0f0f0"
-                                        border.color: "#bbb"
+                                        border.color: "black"
                                         border.width: 1
                                         Loader {
                                             anchors.fill: parent

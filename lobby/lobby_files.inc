@@ -52,7 +52,7 @@
                                         horizontalAlignment: Text.AlignHCenter
                                         font.family: "Noto Sans"
                                         font.pointSize: 11
-                                        color: "#555555"
+                                        color: "black"
                                         text: "Tap to dismiss"
                                     }
                                 }
@@ -92,7 +92,7 @@
                                     height: 48
                                     radius: 6
                                     color: "#f0f0f0"
-                                    border.color: lobbyFilesPageStrip.canPrev ? "#bbb" : "#ddd"
+                                    border.color: "black"
                                     border.width: 1
                                     opacity: lobbyFilesPageStrip.canPrev ? 1 : 0.45
                                     Text {
@@ -129,7 +129,7 @@
                                     height: 48
                                     radius: 6
                                     color: "#f0f0f0"
-                                    border.color: lobbyFilesPageStrip.canNext ? "#bbb" : "#ddd"
+                                    border.color: "black"
                                     border.width: 1
                                     opacity: lobbyFilesPageStrip.canNext ? 1 : 0.45
                                     Text {
@@ -156,7 +156,7 @@
                                 id: lobbyFilesPageSep
                                 width: parent.width
                                 height: visible ? 1 : 0
-                                color: "#999"
+                                color: "black"
                                 visible: lobbyFilesPageStrip.visible
                             }
 
@@ -181,7 +181,7 @@
                                         height: lobby.actionBtnHeight
                                         radius: 6
                                         color: "#f0f0f0"
-                                        border.color: "#bbb"
+                                        border.color: "black"
                                         border.width: 1
                                         Loader {
                                             anchors.fill: parent
@@ -227,7 +227,7 @@
                                     height: lobby.actionBtnHeight
                                     radius: 6
                                     color: "#f0f0f0"
-                                    border.color: "#bbb"
+                                    border.color: "black"
                                     border.width: 1
                                     Loader {
                                         anchors.fill: parent
@@ -250,7 +250,7 @@
                                     height: lobby.actionBtnHeight
                                     radius: 6
                                     color: "#f0f0f0"
-                                    border.color: "#bbb"
+                                    border.color: "black"
                                     border.width: 1
                                     Loader {
                                         anchors.fill: parent
@@ -273,7 +273,7 @@
                                     height: lobby.actionBtnHeight
                                     radius: 6
                                     color: "#f0f0f0"
-                                    border.color: "#bbb"
+                                    border.color: "black"
                                     border.width: 1
                                     Loader {
                                         anchors.fill: parent

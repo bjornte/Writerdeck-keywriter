@@ -23,7 +23,7 @@
                                 }
                                 Text {
                                     text: "A text editor for use with a physical keyboard.\nWith Markdown support."
-                                    color: "#555555"
+                                    color: "black"
                                     font.pointSize: 12
                                     font.family: "Noto Sans"
                                     width: parent.width
@@ -31,7 +31,7 @@
                                 }
                                 Text {
                                     text: (lobbyNoteCount === 1 ? "1 note" : lobbyNoteCount + " notes") + " on this device."
-                                    color: "#555555"
+                                    color: "black"
                                     font.pointSize: 11
                                     font.family: "Noto Sans"
                                     width: parent.width
@@ -39,7 +39,7 @@
                                 }
                                 Text {
                                     text: "Open the Files tab (1) or press Ctrl-K.\nUse Tab / arrows / 1-6 to switch pages."
-                                    color: "#888888"
+                                    color: "black"
                                     font.pointSize: 10
                                     font.family: "Noto Sans"
                                     width: parent.width
@@ -47,7 +47,7 @@
                                 }
                                 Text {
                                     text: "Open sourced at github.com/bjornte/Writerdeck-for-reMarkable"
-                                    color: "#888888"
+                                    color: "black"
                                     font.pointSize: 9
                                     font.family: "Noto Mono"
                                     width: parent.width

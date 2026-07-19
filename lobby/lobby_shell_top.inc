@@ -54,7 +54,7 @@
                         width: showBadge ? height : 0
                         radius: 3
                         color: "white"
-                        border.color: "#888888"
+                        border.color: "black"
                         border.width: showBadge ? 1 : 0
                         // Keep layout width when keyboard drops; only fade the keycap.
                         opacity: (showBadge && root.lobbyKeyboardReady()) ? 1 : 0
@@ -66,7 +66,7 @@
                             // Quieter than the button label — never bolder.
                             font.pointSize: Math.max(8, pointSize - 2)
                             font.bold: false
-                            color: "#555555"
+                            color: "black"
                         }
                     }
                 }
@@ -122,8 +122,8 @@
                             height: lobby.tabBtnHeight
                             radius: 6
                             color: lobbyPage === index ? "#e0e0e0" : "#f5f5f5"
-                            border.color: lobbyPage === index ? "#999" : "#ccc"
-                            border.width: 1
+                            border.color: "black"
+                            border.width: lobbyPage === index ? 2 : 1
 
                             Loader {
                                 anchors.fill: parent
