@@ -474,7 +474,9 @@ Window {
     }
 
     function lobbyOpenSelected() {
-        if (!lobbyEnsureKeyboard("edit")) return
+        // Optional fromKey: key chord already proves a keyboard path (USB or phone).
+        var fromKey = (arguments.length > 0) ? !!arguments[0] : false
+        if (!fromKey && !lobbyEnsureKeyboard("edit")) return
         if (lobbyNotesModel.count === 0) return
         var row = lobbyNotesModel.get(lobbyFilesIndex)
         if (!row || row.name === "") return
@@ -513,14 +515,16 @@ Window {
     }
 
     function lobbyFilesBeginNew() {
-        if (!lobbyEnsureKeyboard("new")) return
+        var fromKey = (arguments.length > 0) ? !!arguments[0] : false
+        if (!fromKey && !lobbyEnsureKeyboard("new")) return
         lobbyFilesMode = "new"
         lobbyFilesInput = ""
         lobbyFilesInputPos = 0
     }
 
     function lobbyFilesBeginRename() {
-        if (!lobbyEnsureKeyboard("rename")) return
+        var fromKey = (arguments.length > 0) ? !!arguments[0] : false
+        if (!fromKey && !lobbyEnsureKeyboard("rename")) return
         if (lobbyNotesModel.count === 0) return
         var n = lobbyNotesModel.get(lobbyFilesIndex).name
         lobbyFilesInput = lobbyFilesStripSuffix(n)
@@ -573,7 +577,8 @@ Window {
     }
 
     function lobbyFilesBeginNewEncrypted() {
-        if (!lobbyEnsureKeyboard("new-encrypted")) return
+        var fromKey = (arguments.length > 0) ? !!arguments[0] : false
+        if (!fromKey && !lobbyEnsureKeyboard("new-encrypted")) return
         vaultPendingAction = "new-encrypted"
         vaultBeginPIN("Enter PIN to create encrypted note", false)
     }
@@ -866,7 +871,7 @@ Window {
             if (event.key === Qt.Key_Y && event.modifiers === Qt.NoModifier) {
                 lobbyDecryptSelected(); return true }
             if (event.key === Qt.Key_E && event.modifiers === Qt.NoModifier) {
-                lobbyFilesBeginNewEncrypted(); return true }
+                lobbyFilesBeginNewEncrypted(true); return true }
         }
         if (lobbyPage === 0) {
             var ps = Math.max(1, lobbyFilesPageSize)
@@ -888,11 +893,11 @@ Window {
                 return true
             }
             if (event.key === Qt.Key_Return) {
-                lobbyOpenSelected()
+                lobbyOpenSelected(true)
                 return true
             }
             if (event.key === Qt.Key_N) {
-                lobbyFilesBeginNew()
+                lobbyFilesBeginNew(true)
                 return true
             }
             if (event.key === Qt.Key_D) {
@@ -900,7 +905,7 @@ Window {
                 return true
             }
             if (event.key === Qt.Key_R && !(event.modifiers & Qt.ControlModifier)) {
-                lobbyFilesBeginRename()
+                lobbyFilesBeginRename(true)
                 return true
             }
             if (event.key === Qt.Key_V && !(event.modifiers & Qt.ControlModifier)) {
