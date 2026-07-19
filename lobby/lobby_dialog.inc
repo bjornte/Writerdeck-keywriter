@@ -63,6 +63,21 @@
                         text: root.lobbyFilesInputDisplay()
                     }
 
+                    Text {
+                        width: parent.width
+                        visible: !lobbyShowNoKeyboard
+                                 && lobbyFilesInputError !== ""
+                                 && (lobbyFilesMode === "new"
+                                     || lobbyFilesMode === "rename"
+                                     || lobbyFilesMode === "new-encrypted")
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        font.family: "Noto Sans"
+                        font.pointSize: 12
+                        color: "black"
+                        text: lobbyFilesInputError
+                    }
+
                     // ---- no-keyboard body ----
                     Text {
                         width: parent.width
@@ -184,6 +199,9 @@
                             MouseArea {
                                 anchors.fill: parent
                                 onClicked: {
+                                    lobbyFilesInputError = ""
+                                    lobbyFilesPendingMode = ""
+                                    lobbyFilesPendingInput = ""
                                     lobbyFilesMode = ""
                                     lobbyFilesInput = ""
                                     lobbyFilesInputPos = 0

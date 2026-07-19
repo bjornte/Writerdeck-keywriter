@@ -52,9 +52,16 @@ Window {
     onLobbyFilesModeChanged: {
         if (vaultOverlayMode === "")
             writerdeck.notifyLobbyInput(lobbyFilesMode)
+        if (lobbyFilesMode === "")
+            lobbyFilesInputError = ""
     }
     property string lobbyFilesInput: ""
     property int lobbyFilesInputPos: 0
+    // Shown inside New / Rename / New-encrypted dialog (not the Files header box).
+    property string lobbyFilesInputError: ""
+    // Set while a create/rename request is in flight so vaultopfailed can reopen the dialog.
+    property string lobbyFilesPendingMode: ""
+    property string lobbyFilesPendingInput: ""
     property bool lobbyOpenInReadMode: false
     property bool lobbyEncryptionEnabled: false
     property string lobbyVaultError: ""
@@ -356,6 +363,26 @@ Window {
             lobbyKeepFocus()
             return
         }
+        // Create/rename failures belong in the name dialog, not the Files header.
+        if (lobbyFilesMode === "new" || lobbyFilesMode === "rename" || lobbyFilesMode === "new-encrypted") {
+            lobbyFilesInputError = msg || "Operation failed"
+            lobbyKeepFocus()
+            return
+        }
+        if (lobbyFilesPendingMode === "new" || lobbyFilesPendingMode === "rename"
+                || lobbyFilesPendingMode === "new-encrypted") {
+            var mode = lobbyFilesPendingMode
+            var input = lobbyFilesPendingInput
+            lobbyFilesPendingMode = ""
+            lobbyFilesPendingInput = ""
+            lobbyPage = 0
+            lobbyFilesMode = mode
+            lobbyFilesInput = input
+            lobbyFilesInputPos = input.length
+            lobbyFilesInputError = msg || "Operation failed"
+            lobbyKeepFocus()
+            return
+        }
         lobbyGoPage(0)
         lobbyVaultError = msg || "Operation failed"
     }
@@ -388,6 +415,9 @@ Window {
         }
         if (vaultPendingAction === "new-encrypted") {
             vaultPendingAction = ""
+            lobbyFilesInputError = ""
+            lobbyFilesPendingMode = ""
+            lobbyFilesPendingInput = ""
             lobbyFilesMode = "new-encrypted"
             lobbyFilesInput = ""
             lobbyFilesInputPos = 0
@@ -429,6 +459,9 @@ Window {
         lobbyFilesMode = ""
         lobbyFilesInput = ""
         lobbyFilesInputPos = 0
+        lobbyFilesInputError = ""
+        lobbyFilesPendingMode = ""
+        lobbyFilesPendingInput = ""
         lobbySettingsMode = ""
         lobbyOpenAfterCreate = ""
         if (lobbyShowNoKeyboard)
@@ -457,6 +490,8 @@ Window {
             lobbyFilesSetIndex(0)
             if (openAfter !== "")
                 lobbyOpenAfterCreate = ""
+            lobbyFilesPendingMode = ""
+            lobbyFilesPendingInput = ""
             return
         }
         for (var i = 0; i < items.length; i++) {
@@ -467,6 +502,11 @@ Window {
                 modified: it.modified !== undefined ? it.modified : "",
                 encrypted: !!it.encrypted
             })
+        }
+        // Successful create/rename pushes a notes list — drop in-flight dialog restore state.
+        if (lobbyFilesPendingMode !== "") {
+            lobbyFilesPendingMode = ""
+            lobbyFilesPendingInput = ""
         }
         if (openAfter !== "") {
             if (selectNoteByName(openAfter)) {
@@ -557,6 +597,9 @@ Window {
 
     function lobbyFilesBeginNew(fromKey) {
         if (!fromKey && !lobbyEnsureKeyboard("new")) return
+        lobbyFilesInputError = ""
+        lobbyFilesPendingMode = ""
+        lobbyFilesPendingInput = ""
         lobbyFilesMode = "new"
         lobbyFilesInput = ""
         lobbyFilesInputPos = 0
@@ -566,6 +609,9 @@ Window {
         if (!fromKey && !lobbyEnsureKeyboard("rename")) return
         if (lobbyNotesModel.count === 0) return
         var n = lobbyNotesModel.get(lobbyFilesIndex).name
+        lobbyFilesInputError = ""
+        lobbyFilesPendingMode = ""
+        lobbyFilesPendingInput = ""
         lobbyFilesInput = lobbyFilesStripSuffix(n)
         lobbyFilesInputPos = lobbyFilesInput.length
         lobbyFilesMode = "rename"
@@ -619,12 +665,12 @@ Window {
             var newTarget = lobbyFilesNormalizedName(name, false)
             if (lobbyFilesNameTaken(newTarget, "")) {
                 lobbyOpenAfterCreate = ""
-                lobbyVaultError = "A note with that name already exists."
-                lobbyFilesMode = ""
-                lobbyFilesInput = ""
-                lobbyFilesInputPos = 0
+                lobbyFilesInputError = "A note with that name already exists."
                 return
             }
+            lobbyFilesInputError = ""
+            lobbyFilesPendingMode = "new"
+            lobbyFilesPendingInput = lobbyFilesInput
             lobbyOpenAfterCreate = newTarget
             writerdeck.createNote(name)
             lobbyFilesMode = ""
@@ -637,12 +683,12 @@ Window {
             else newName = lobbyFilesNormalizedName(name, false)
             if (newName !== oldName && lobbyFilesNameTaken(newName, oldName)) {
                 lobbyOpenAfterCreate = ""
-                lobbyVaultError = "A note with that name already exists."
-                lobbyFilesMode = ""
-                lobbyFilesInput = ""
-                lobbyFilesInputPos = 0
+                lobbyFilesInputError = "A note with that name already exists."
                 return
             }
+            lobbyFilesInputError = ""
+            lobbyFilesPendingMode = "rename"
+            lobbyFilesPendingInput = lobbyFilesInput
             writerdeck.renameNote(oldName, newName)
             lobbyFilesMode = ""
             lobbyFilesInput = ""
@@ -651,12 +697,12 @@ Window {
             var encTarget = lobbyFilesNormalizedName(name, true)
             if (lobbyFilesNameTaken(encTarget, "")) {
                 lobbyOpenAfterCreate = ""
-                lobbyVaultError = "A note with that name already exists."
-                lobbyFilesMode = ""
-                lobbyFilesInput = ""
-                lobbyFilesInputPos = 0
+                lobbyFilesInputError = "A note with that name already exists."
                 return
             }
+            lobbyFilesInputError = ""
+            lobbyFilesPendingMode = "new-encrypted"
+            lobbyFilesPendingInput = lobbyFilesInput
             lobbyOpenAfterCreate = encTarget
             writerdeck.createEncryptedNote(name)
             lobbyFilesMode = ""
@@ -861,6 +907,9 @@ Window {
         }
         if (lobbyFilesMode === "new" || lobbyFilesMode === "rename" || lobbyFilesMode === "new-encrypted") {
             if (event.key === Qt.Key_Escape) {
+                lobbyFilesInputError = ""
+                lobbyFilesPendingMode = ""
+                lobbyFilesPendingInput = ""
                 lobbyFilesMode = ""
                 lobbyFilesInput = ""
                 lobbyFilesInputPos = 0
@@ -873,6 +922,7 @@ Window {
             if (event.key === Qt.Key_Backspace) {
                 if (lobbyFilesInputPos > 0) {
                     var bp = lobbyFilesInputPos
+                    lobbyFilesInputError = ""
                     lobbyFilesInput = lobbyFilesInput.slice(0, bp - 1) + lobbyFilesInput.slice(bp)
                     lobbyFilesInputPos = bp - 1
                 }
@@ -897,6 +947,7 @@ Window {
             var ch = lobbyKeyChar(event)
             if (ch !== "") {
                 var ip = lobbyFilesInputPos
+                lobbyFilesInputError = ""
                 lobbyFilesInput = lobbyFilesInput.slice(0, ip) + ch + lobbyFilesInput.slice(ip)
                 lobbyFilesInputPos = ip + 1
                 return true
@@ -3595,6 +3646,21 @@ Window {
                         text: root.lobbyFilesInputDisplay()
                     }
 
+                    Text {
+                        width: parent.width
+                        visible: !lobbyShowNoKeyboard
+                                 && lobbyFilesInputError !== ""
+                                 && (lobbyFilesMode === "new"
+                                     || lobbyFilesMode === "rename"
+                                     || lobbyFilesMode === "new-encrypted")
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        font.family: "Noto Sans"
+                        font.pointSize: 12
+                        color: "black"
+                        text: lobbyFilesInputError
+                    }
+
                     // ---- no-keyboard body ----
                     Text {
                         width: parent.width
@@ -3716,6 +3782,9 @@ Window {
                             MouseArea {
                                 anchors.fill: parent
                                 onClicked: {
+                                    lobbyFilesInputError = ""
+                                    lobbyFilesPendingMode = ""
+                                    lobbyFilesPendingInput = ""
                                     lobbyFilesMode = ""
                                     lobbyFilesInput = ""
                                     lobbyFilesInputPos = 0
