@@ -242,18 +242,14 @@ Window {
     }
 
     function setLobbyKeyboardPresence(phoneConnected, usbKeyboard, port, qrPath) {
-        var wasUsb = lobbyUsbKeyboard
-        var wasPhone = lobbyPhoneConnected
         lobbyPhoneConnected = !!phoneConnected
         lobbyUsbKeyboard = !!usbKeyboard
         lobbyPort = port || 8000
         lobbyQrPath = qrPath || ""
-        // Auto-continue only when USB or phone path newly appears — not when a
-        // phone tab was already open (that still shows the tip + Continue).
-        if (lobbyShowNoKeyboard) {
-            if ((lobbyUsbKeyboard && !wasUsb) || (lobbyPhoneConnected && !wasPhone))
-                lobbyContinueAfterKeyboard()
-        }
+        if (lobbyUsbKeyboard || lobbyPhoneConnected)
+            lobbyKeyboardOverride = false
+        if (lobbyShowNoKeyboard && lobbyKeyboardReady())
+            lobbyContinueAfterKeyboard()
     }
 
     function lobbyPhoneUrl() {
@@ -261,10 +257,10 @@ Window {
         return "http://" + lobbyIP + ":" + lobbyPort
     }
 
-    // Typing actions need a USB keyboard unless the user Continues past the tip
-    // (phone page open) or types a key while the tip is up.
+    // USB keyboard or phone page open (Bluetooth bridge). Touch actions show the
+    // tip only when neither is present. Key chords skip the tip (fromKey).
     function lobbyKeyboardReady() {
-        return lobbyUsbKeyboard || lobbyKeyboardOverride
+        return lobbyUsbKeyboard || lobbyPhoneConnected || lobbyKeyboardOverride
     }
 
     function lobbyDialogIsOpen() {
@@ -292,10 +288,8 @@ Window {
     }
 
     function lobbyEnsureKeyboard(pending) {
-        if (lobbyKeyboardReady()) {
-            lobbyKeyboardOverride = false
+        if (lobbyKeyboardReady())
             return true
-        }
         lobbyNoKeyboardPending = pending || ""
         lobbyShowNoKeyboard = true
         writerdeck.notifyLobbyInput("no-keyboard")
@@ -316,6 +310,7 @@ Window {
         var pending = lobbyNoKeyboardPending
         lobbyShowNoKeyboard = false
         lobbyNoKeyboardPending = ""
+        // Brief override until the next presence push marks phone/USB ready.
         lobbyKeyboardOverride = true
         if (vaultOverlayMode === "")
             writerdeck.notifyLobbyInput(lobbyFilesMode)
@@ -3302,11 +3297,7 @@ Window {
                         font.family: "Noto Sans"
                         font.pointSize: 12
                         color: "black"
-                        text: lobbyUsbKeyboard
-                              ? "USB keyboard detected."
-                              : (lobbyPhoneConnected
-                                 ? "Phone page is open — tap Continue to type from the phone, or plug in USB."
-                                 : "USB: plug in with an OTG cable.\n\nBluetooth: pair to your phone, then open the address below (or scan the code).")
+                        text: "USB: plug in with an OTG cable.\n\nBluetooth: pair to your phone, then open the address below (or scan the code)."
                     }
 
                     Text {
@@ -3455,9 +3446,7 @@ Window {
                         visible: lobbyShowNoKeyboard
 
                         Rectangle {
-                            width: lobbyPhoneConnected
-                                   ? ((parent.width - lobby.tabSpacing) / 2)
-                                   : parent.width
+                            width: parent.width
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: "white"
@@ -3474,29 +3463,6 @@ Window {
                                 anchors.fill: parent
                                 onClicked: {
                                     root.lobbyDismissNoKeyboard()
-                                    root.lobbyKeepFocus()
-                                }
-                            }
-                        }
-                        Rectangle {
-                            visible: lobbyPhoneConnected
-                            width: (parent.width - lobby.tabSpacing) / 2
-                            height: lobby.actionBtnHeight
-                            radius: 6
-                            color: "white"
-                            border.color: "black"
-                            border.width: 2
-                            Text {
-                                anchors.centerIn: parent
-                                text: "Continue"
-                                font.family: "Noto Sans"
-                                font.pointSize: 12
-                                color: "black"
-                            }
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    root.lobbyContinueAfterKeyboard()
                                     root.lobbyKeepFocus()
                                 }
                             }

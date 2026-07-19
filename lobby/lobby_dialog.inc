@@ -72,11 +72,7 @@
                         font.family: "Noto Sans"
                         font.pointSize: 12
                         color: "black"
-                        text: lobbyUsbKeyboard
-                              ? "USB keyboard detected."
-                              : (lobbyPhoneConnected
-                                 ? "Phone page is open — tap Continue to type from the phone, or plug in USB."
-                                 : "USB: plug in with an OTG cable.\n\nBluetooth: pair to your phone, then open the address below (or scan the code).")
+                        text: "USB: plug in with an OTG cable.\n\nBluetooth: pair to your phone, then open the address below (or scan the code)."
                     }
 
                     Text {
@@ -225,9 +221,7 @@
                         visible: lobbyShowNoKeyboard
 
                         Rectangle {
-                            width: lobbyPhoneConnected
-                                   ? ((parent.width - lobby.tabSpacing) / 2)
-                                   : parent.width
+                            width: parent.width
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: "white"
@@ -244,29 +238,6 @@
                                 anchors.fill: parent
                                 onClicked: {
                                     root.lobbyDismissNoKeyboard()
-                                    root.lobbyKeepFocus()
-                                }
-                            }
-                        }
-                        Rectangle {
-                            visible: lobbyPhoneConnected
-                            width: (parent.width - lobby.tabSpacing) / 2
-                            height: lobby.actionBtnHeight
-                            radius: 6
-                            color: "white"
-                            border.color: "black"
-                            border.width: 2
-                            Text {
-                                anchors.centerIn: parent
-                                text: "Continue"
-                                font.family: "Noto Sans"
-                                font.pointSize: 12
-                                color: "black"
-                            }
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    root.lobbyContinueAfterKeyboard()
                                     root.lobbyKeepFocus()
                                 }
                             }

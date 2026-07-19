@@ -242,18 +242,14 @@ Window {
     }
 
     function setLobbyKeyboardPresence(phoneConnected, usbKeyboard, port, qrPath) {
-        var wasUsb = lobbyUsbKeyboard
-        var wasPhone = lobbyPhoneConnected
         lobbyPhoneConnected = !!phoneConnected
         lobbyUsbKeyboard = !!usbKeyboard
         lobbyPort = port || 8000
         lobbyQrPath = qrPath || ""
-        // Auto-continue only when USB or phone path newly appears — not when a
-        // phone tab was already open (that still shows the tip + Continue).
-        if (lobbyShowNoKeyboard) {
-            if ((lobbyUsbKeyboard && !wasUsb) || (lobbyPhoneConnected && !wasPhone))
-                lobbyContinueAfterKeyboard()
-        }
+        if (lobbyUsbKeyboard || lobbyPhoneConnected)
+            lobbyKeyboardOverride = false
+        if (lobbyShowNoKeyboard && lobbyKeyboardReady())
+            lobbyContinueAfterKeyboard()
     }
 
     function lobbyPhoneUrl() {
@@ -261,10 +257,10 @@ Window {
         return "http://" + lobbyIP + ":" + lobbyPort
     }
 
-    // Typing actions need a USB keyboard unless the user Continues past the tip
-    // (phone page open) or types a key while the tip is up.
+    // USB keyboard or phone page open (Bluetooth bridge). Touch actions show the
+    // tip only when neither is present. Key chords skip the tip (fromKey).
     function lobbyKeyboardReady() {
-        return lobbyUsbKeyboard || lobbyKeyboardOverride
+        return lobbyUsbKeyboard || lobbyPhoneConnected || lobbyKeyboardOverride
     }
 
     function lobbyDialogIsOpen() {
@@ -292,10 +288,8 @@ Window {
     }
 
     function lobbyEnsureKeyboard(pending) {
-        if (lobbyKeyboardReady()) {
-            lobbyKeyboardOverride = false
+        if (lobbyKeyboardReady())
             return true
-        }
         lobbyNoKeyboardPending = pending || ""
         lobbyShowNoKeyboard = true
         writerdeck.notifyLobbyInput("no-keyboard")
@@ -316,6 +310,7 @@ Window {
         var pending = lobbyNoKeyboardPending
         lobbyShowNoKeyboard = false
         lobbyNoKeyboardPending = ""
+        // Brief override until the next presence push marks phone/USB ready.
         lobbyKeyboardOverride = true
         if (vaultOverlayMode === "")
             writerdeck.notifyLobbyInput(lobbyFilesMode)
