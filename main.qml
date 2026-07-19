@@ -348,6 +348,7 @@ Window {
     function vaultOpFailed(msg) {
         // Wrong PIN (or other verify failure) while encrypt/decrypt/open is pending:
         // keep the pad up with a clear message instead of dumping to Files.
+        lobbyOpenAfterCreate = ""
         if (vaultPendingAction !== "" || vaultPendingLoad !== "") {
             vaultOverlayMode = "pin"
             vaultPinInput = ""
@@ -600,11 +601,31 @@ Window {
         writerdeck.exitWriterdeck()
     }
 
+    function lobbyFilesNameTaken(targetName, ignoreName) {
+        if (!targetName) return false
+        for (var i = 0; i < lobbyNotesModel.count; i++) {
+            var row = lobbyNotesModel.get(i)
+            if (!row || !row.name) continue
+            if (ignoreName && row.name === ignoreName) continue
+            if (row.name === targetName) return true
+        }
+        return false
+    }
+
     function lobbyFilesSubmitInput() {
         var name = lobbyFilesInput.trim()
         if (name === "") { lobbyFilesMode = ""; return }
         if (lobbyFilesMode === "new") {
-            lobbyOpenAfterCreate = lobbyFilesNormalizedName(name, false)
+            var newTarget = lobbyFilesNormalizedName(name, false)
+            if (lobbyFilesNameTaken(newTarget, "")) {
+                lobbyOpenAfterCreate = ""
+                lobbyVaultError = "A note with that name already exists."
+                lobbyFilesMode = ""
+                lobbyFilesInput = ""
+                lobbyFilesInputPos = 0
+                return
+            }
+            lobbyOpenAfterCreate = newTarget
             writerdeck.createNote(name)
             lobbyFilesMode = ""
             lobbyFilesInput = ""
@@ -613,12 +634,30 @@ Window {
             var oldName = lobbyNotesModel.get(lobbyFilesIndex).name
             var newName = name
             if (oldName.endsWith(".md.enc")) newName = name + ".md.enc"
+            else newName = lobbyFilesNormalizedName(name, false)
+            if (newName !== oldName && lobbyFilesNameTaken(newName, oldName)) {
+                lobbyOpenAfterCreate = ""
+                lobbyVaultError = "A note with that name already exists."
+                lobbyFilesMode = ""
+                lobbyFilesInput = ""
+                lobbyFilesInputPos = 0
+                return
+            }
             writerdeck.renameNote(oldName, newName)
             lobbyFilesMode = ""
             lobbyFilesInput = ""
             lobbyFilesInputPos = 0
         } else if (lobbyFilesMode === "new-encrypted") {
-            lobbyOpenAfterCreate = lobbyFilesNormalizedName(name, true)
+            var encTarget = lobbyFilesNormalizedName(name, true)
+            if (lobbyFilesNameTaken(encTarget, "")) {
+                lobbyOpenAfterCreate = ""
+                lobbyVaultError = "A note with that name already exists."
+                lobbyFilesMode = ""
+                lobbyFilesInput = ""
+                lobbyFilesInputPos = 0
+                return
+            }
+            lobbyOpenAfterCreate = encTarget
             writerdeck.createEncryptedNote(name)
             lobbyFilesMode = ""
             lobbyFilesInput = ""
