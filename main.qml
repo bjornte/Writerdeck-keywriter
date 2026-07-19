@@ -254,11 +254,11 @@ Window {
         return "http://" + lobbyIP + ":" + lobbyPort
     }
 
-    // USB keyboard or phone page open (Bluetooth bridge). Touch actions show the
-    // tip only when neither is present. Key chords skip the tip (fromKey).
-    // Continue / a key while the tip is up uses fromKey once — never a sticky flag.
+    // Tip gate is USB only. An open phone page is not a keyboard — people leave
+    // that tab open for sync/download. Key chords skip the tip (fromKey). A key
+    // while the tip is up (phone Type or USB) continues once via fromKey.
     function lobbyKeyboardReady() {
-        return lobbyUsbKeyboard || lobbyPhoneConnected
+        return lobbyUsbKeyboard
     }
 
     function lobbyDialogIsOpen() {
