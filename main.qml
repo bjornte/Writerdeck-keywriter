@@ -865,23 +865,21 @@ Window {
     }
 
     // Phone keys arrive as text codepoints (event.key == 0); USB sends Qt::Key_A..Z.
-    // Lobby action letter: bare key, phone text inject, or Ctrl/Cmd+letter.
-    // Ctrl-K / Ctrl-R / Ctrl-Q stay global (picker / rotate / quit).
+    // Lobby action letter: Ctrl/Cmd+letter only (not the bare key).
+    // Ctrl-K / Ctrl-Q stay global. Ctrl-R renames on Files; rotates on other Lobby pages.
     function lobbyChordLetter(event) {
         if (event.modifiers & Qt.AltModifier)
             return ""
         var ctrl = !!(event.modifiers & (Qt.ControlModifier | Qt.MetaModifier)) || !!ctrlPressed
-        var letter = ""
-        if (event.key >= Qt.Key_A && event.key <= Qt.Key_Z)
-            letter = String.fromCharCode(event.key).toLowerCase()
-        else if (!ctrl && event.text && event.text.length === 1) {
-            var c = event.text.toLowerCase()
-            if (c >= "a" && c <= "z")
-                letter = c
-        }
-        if (letter === "")
+        if (!ctrl)
             return ""
-        if (ctrl && (letter === "k" || letter === "r" || letter === "q"))
+        if (event.key < Qt.Key_A || event.key > Qt.Key_Z)
+            return ""
+        var letter = String.fromCharCode(event.key).toLowerCase()
+        if (letter === "k" || letter === "q")
+            return ""
+        // Files: Ctrl-R is rename (below). Elsewhere Ctrl-R rotates in handleKeyDown.
+        if (letter === "r" && !(lobbyPage === 0 && lobbyFilesMode === ""))
             return ""
         return letter
     }
@@ -2038,7 +2036,8 @@ Window {
             } else isOmni = !isOmni
             event.accepted = true
         } else if (event.key === Qt.Key_R && (ctrlPressed || (event.modifiers & Qt.ControlModifier))) {
-            if (isLobby) {
+            // Lobby Files uses Ctrl-R for rename; elsewhere in Lobby it rotates.
+            if (isLobby && !(lobbyPage === 0 && lobbyFilesMode === "")) {
                 rotateScreen()
                 event.accepted = true
             }
@@ -3244,7 +3243,7 @@ Window {
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "f or Ctrl-F — cycle through fonts."
+                                        text: "Ctrl-F — cycle through fonts."
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -3371,7 +3370,7 @@ Window {
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "p or Ctrl-P — cycle PIN length. Adding a PIN ensures that only intended devices can access your notes."
+                                        text: "Ctrl-P — cycle PIN length. Adding a PIN ensures that only intended devices can access your notes."
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -3439,7 +3438,7 @@ Window {
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "t or Ctrl-T — cycle. Ctrl-R or Ctrl+arrows also rotate."
+                                        text: "Ctrl-T — cycle. Ctrl-R or Ctrl+arrows also rotate."
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -3556,26 +3555,25 @@ Window {
                                           + "Up / Down — move the selection (turns the page at the edge)\n"
                                           + "Page Up / Page Down — previous or next page of notes\n"
                                           + "Enter or \u21B5 — edit the selected note\n"
-                                          + "v or Ctrl-V — read · n or Ctrl-N — new · r — rename · d or Ctrl-D — delete\n"
-                                          + "g or Ctrl-G — download to phone\n"
-                                          + "With private notes on: e / Ctrl-E — new encrypted · x / Ctrl-X — encrypt · y / Ctrl-Y — decrypt\n"
-                                          + "(Ctrl-R still rotates; Ctrl-K opens the quick picker; Ctrl-Q quits.)\n"
+                                          + "Ctrl-V — read · Ctrl-N — new · Ctrl-R — rename · Ctrl-D — delete\n"
+                                          + "Ctrl-G — download to phone\n"
+                                          + "With private notes on: Ctrl-E — new encrypted · Ctrl-X — encrypt · Ctrl-Y — decrypt\n"
                                           + "\n"
                                           + "Keyboard\n"
-                                          + "u or Ctrl-U — US layout · o or Ctrl-O — Norwegian\n"
+                                          + "Ctrl-U — US layout · Ctrl-O — Norwegian\n"
                                           + "\n"
                                           + "Sync\n"
-                                          + "Enter or s / Ctrl-S — sync now\n"
+                                          + "Enter or Ctrl-S — sync now\n"
                                           + "\n"
                                           + "Settings\n"
-                                          + "f / Ctrl-F — cycle reading font · p / Ctrl-P — cycle phone PIN length\n"
-                                          + "t / Ctrl-T — cycle rotation · e / Ctrl-E — enable private notes · c / Ctrl-C — change private PIN\n"
-                                          + "x / Ctrl-X — exit Writerdeck (then Enter to confirm)\n"
+                                          + "Ctrl-F — cycle reading font · Ctrl-P — cycle phone PIN length\n"
+                                          + "Ctrl-T — cycle rotation · Ctrl-E — enable private notes · Ctrl-C — change private PIN\n"
+                                          + "Ctrl-X — exit Writerdeck (then Enter to confirm)\n"
                                           + "\n"
                                           + "Anywhere\n"
                                           + "Ctrl-K — quick file picker\n"
-                                          + "Ctrl-C / Ctrl-X / Ctrl-V — copy, cut, paste\n"
-                                          + "Ctrl-R — rotate · Ctrl-Q — quit\n"
+                                          + "Ctrl-C / Ctrl-X / Ctrl-V — copy, cut, paste (while editing a note)\n"
+                                          + "Ctrl-R — rotate (Lobby pages other than Files) · Ctrl-Q — quit\n"
                                           + "Home — from a note, back to Files; from Lobby, quit to the stock UI\n"
                                           + "\n"
                                           + "Private PIN\n"

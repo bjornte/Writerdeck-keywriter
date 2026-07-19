@@ -865,23 +865,21 @@ Window {
     }
 
     // Phone keys arrive as text codepoints (event.key == 0); USB sends Qt::Key_A..Z.
-    // Lobby action letter: bare key, phone text inject, or Ctrl/Cmd+letter.
-    // Ctrl-K / Ctrl-R / Ctrl-Q stay global (picker / rotate / quit).
+    // Lobby action letter: Ctrl/Cmd+letter only (not the bare key).
+    // Ctrl-K / Ctrl-Q stay global. Ctrl-R renames on Files; rotates on other Lobby pages.
     function lobbyChordLetter(event) {
         if (event.modifiers & Qt.AltModifier)
             return ""
         var ctrl = !!(event.modifiers & (Qt.ControlModifier | Qt.MetaModifier)) || !!ctrlPressed
-        var letter = ""
-        if (event.key >= Qt.Key_A && event.key <= Qt.Key_Z)
-            letter = String.fromCharCode(event.key).toLowerCase()
-        else if (!ctrl && event.text && event.text.length === 1) {
-            var c = event.text.toLowerCase()
-            if (c >= "a" && c <= "z")
-                letter = c
-        }
-        if (letter === "")
+        if (!ctrl)
             return ""
-        if (ctrl && (letter === "k" || letter === "r" || letter === "q"))
+        if (event.key < Qt.Key_A || event.key > Qt.Key_Z)
+            return ""
+        var letter = String.fromCharCode(event.key).toLowerCase()
+        if (letter === "k" || letter === "q")
+            return ""
+        // Files: Ctrl-R is rename (below). Elsewhere Ctrl-R rotates in handleKeyDown.
+        if (letter === "r" && !(lobbyPage === 0 && lobbyFilesMode === ""))
             return ""
         return letter
     }
@@ -1213,7 +1211,8 @@ Window {
             } else isOmni = !isOmni
             event.accepted = true
         } else if (event.key === Qt.Key_R && (ctrlPressed || (event.modifiers & Qt.ControlModifier))) {
-            if (isLobby) {
+            // Lobby Files uses Ctrl-R for rename; elsewhere in Lobby it rotates.
+            if (isLobby && !(lobbyPage === 0 && lobbyFilesMode === "")) {
                 rotateScreen()
                 event.accepted = true
             }

@@ -37,7 +37,7 @@
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "f or Ctrl-F — cycle through fonts."
+                                        text: "Ctrl-F — cycle through fonts."
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -164,7 +164,7 @@
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "p or Ctrl-P — cycle PIN length. Adding a PIN ensures that only intended devices can access your notes."
+                                        text: "Ctrl-P — cycle PIN length. Adding a PIN ensures that only intended devices can access your notes."
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -232,7 +232,7 @@
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "t or Ctrl-T — cycle. Ctrl-R or Ctrl+arrows also rotate."
+                                        text: "Ctrl-T — cycle. Ctrl-R or Ctrl+arrows also rotate."
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
