@@ -89,16 +89,46 @@ void LobbyUiConfig::setPath(const QString &path)
 
 void LobbyUiConfig::reload()
 {
-    applyDefaults();
     const QJsonDocument embedded = QJsonDocument::fromJson(QByteArray(kDefaultJson));
+
+    // Prefer on-disk JSON. Corrupt/missing after a good load keeps the last good
+    // values so a bad SSH edit does not blank the Lobby.
+    if (!m_path.isEmpty()) {
+        QFile f(m_path);
+        if (f.open(QIODevice::ReadOnly)) {
+            const QByteArray raw = f.readAll();
+            f.close();
+            QJsonParseError err;
+            const QJsonDocument doc = QJsonDocument::fromJson(raw, &err);
+            if (err.error == QJsonParseError::NoError && doc.isObject()) {
+                applyDefaults();
+                if (embedded.isObject())
+                    parseObject(embedded.object());
+                parseObject(doc.object());
+                watchPath();
+                ++m_revision;
+                qDebug("lobby-ui: loaded %s (rev %d)", qPrintable(m_path), m_revision);
+                emit changed();
+                return;
+            }
+            qWarning("lobby-ui.json parse error: %s", qPrintable(err.errorString()));
+            if (m_revision > 0) {
+                watchPath();
+                return;
+            }
+        } else if (m_revision > 0) {
+            qWarning("lobby-ui: keep last good load (%s unreadable)", qPrintable(m_path));
+            watchPath();
+            return;
+        }
+    }
+
+    applyDefaults();
     if (embedded.isObject())
         parseObject(embedded.object());
-    if (!m_path.isEmpty() && !loadFromDisk()) {
+    if (!m_path.isEmpty())
         qWarning("lobby-ui: using embedded defaults (%s missing or invalid)",
                  qPrintable(m_path));
-    } else if (!m_path.isEmpty()) {
-        qDebug("lobby-ui: loaded %s (rev %d)", qPrintable(m_path), m_revision + 1);
-    }
     watchPath();
     ++m_revision;
     emit changed();
