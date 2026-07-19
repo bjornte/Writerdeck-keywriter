@@ -2644,19 +2644,9 @@ Window {
                                         anchors.margins: 12
                                         spacing: 10
                                         Text {
-                                            text: "Bluetooth keyboard"
+                                            text: "Bluetooth keyboard" + (lobbyPhoneConnected ? " (connected)" : " (not connected)")
                                             font.pointSize: 14
                                             font.family: "Noto Sans"
-                                            color: "black"
-                                            width: parent.width
-                                        }
-                                        Text {
-                                            text: lobbyPhoneConnected
-                                                   ? "Status: Phone page connected — keys reach the tablet."
-                                                   : "Status: No phone page open yet."
-                                            font.pointSize: 12
-                                            font.family: "Noto Sans"
-                                            font.bold: true
                                             color: "black"
                                             width: parent.width
                                             wrapMode: Text.WordWrap
@@ -2715,19 +2705,9 @@ Window {
                                         anchors.margins: 12
                                         spacing: 10
                                         Text {
-                                            text: "USB keyboard"
+                                            text: "USB keyboard" + (lobbyUsbKeyboard ? " (connected)" : " (not connected)")
                                             font.pointSize: 14
                                             font.family: "Noto Sans"
-                                            color: "black"
-                                            width: parent.width
-                                        }
-                                        Text {
-                                            text: lobbyUsbKeyboard
-                                                   ? "Status: USB keyboard connected."
-                                                   : "Status: No USB keyboard plugged in."
-                                            font.pointSize: 12
-                                            font.family: "Noto Sans"
-                                            font.bold: true
                                             color: "black"
                                             width: parent.width
                                             wrapMode: Text.WordWrap
