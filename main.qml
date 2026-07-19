@@ -2476,7 +2476,7 @@ Window {
                             }
                         }
 
-                        // ---- footer: page label + action bars (pinned to bottom) ----
+                        // ---- footer: pagination strip + action bars (pinned to bottom) ----
                         Column {
                             id: lobbyFilesFooter
                             anchors.left: parent.left
@@ -2485,21 +2485,88 @@ Window {
                             spacing: lobby.contentSpacing
                             z: 2
 
-                            Item {
+                            // Prev / Page N/M / Next — only when notes spill one screen.
+                            Row {
+                                id: lobbyFilesPageStrip
                                 width: parent.width
-                                height: lobbyFilesPageLabel.visible ? lobbyFilesPageLabel.implicitHeight : 0
+                                height: visible ? 48 : 0
+                                spacing: lobby.tabSpacing
+                                visible: lobbyFilesMode === "" && lobbyNotesModel.count > lobbyFilesPageSize
 
-                                Text {
-                                    id: lobbyFilesPageLabel
-                                    width: parent.width
-                                    visible: lobbyFilesMode === "" && lobbyNotesModel.count > lobbyFilesPageSize
-                                    text: "Page " + (root.lobbyFilesPageIndex() + 1)
-                                          + "/" + root.lobbyFilesPageCount()
-                                          + "  Up/Down  PgUp/PgDn"
-                                    font.family: "Noto Mono"
-                                    font.pointSize: 9
-                                    color: "#888888"
+                                property bool canPrev: root.lobbyFilesPageIndex() > 0
+                                property bool canNext: root.lobbyFilesPageIndex() + 1 < root.lobbyFilesPageCount()
+
+                                Rectangle {
+                                    width: (lobbyFilesPageStrip.width - lobby.tabSpacing * 2) / 4
+                                    height: 48
+                                    radius: 6
+                                    color: "#f0f0f0"
+                                    border.color: lobbyFilesPageStrip.canPrev ? "#bbb" : "#ddd"
+                                    border.width: 1
+                                    opacity: lobbyFilesPageStrip.canPrev ? 1 : 0.45
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Prev"
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 11
+                                        color: "black"
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        enabled: lobbyFilesPageStrip.canPrev
+                                        onClicked: {
+                                            var ps = Math.max(1, lobbyFilesPageSize)
+                                            root.lobbyFilesSetIndex(lobbyFilesIndex - ps)
+                                            root.lobbyKeepFocus()
+                                        }
+                                    }
                                 }
+                                Item {
+                                    width: (lobbyFilesPageStrip.width - lobby.tabSpacing * 2) / 2
+                                    height: 48
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Page " + (root.lobbyFilesPageIndex() + 1)
+                                              + "/" + root.lobbyFilesPageCount()
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 11
+                                        color: "black"
+                                    }
+                                }
+                                Rectangle {
+                                    width: (lobbyFilesPageStrip.width - lobby.tabSpacing * 2) / 4
+                                    height: 48
+                                    radius: 6
+                                    color: "#f0f0f0"
+                                    border.color: lobbyFilesPageStrip.canNext ? "#bbb" : "#ddd"
+                                    border.width: 1
+                                    opacity: lobbyFilesPageStrip.canNext ? 1 : 0.45
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Next"
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 11
+                                        color: "black"
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        enabled: lobbyFilesPageStrip.canNext
+                                        onClicked: {
+                                            var ps = Math.max(1, lobbyFilesPageSize)
+                                            var last = Math.max(0, lobbyNotesModel.count - 1)
+                                            root.lobbyFilesSetIndex(Math.min(last, lobbyFilesIndex + ps))
+                                            root.lobbyKeepFocus()
+                                        }
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                id: lobbyFilesPageSep
+                                width: parent.width
+                                height: visible ? 1 : 0
+                                color: "#999"
+                                visible: lobbyFilesPageStrip.visible
                             }
 
                             Row {
