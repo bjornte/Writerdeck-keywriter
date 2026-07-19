@@ -44,6 +44,10 @@ Window {
     property int lobbyFilesIndex: 0
     // How many note rows fit on one Files page (set from list height; e-ink pages, no flick).
     property int lobbyFilesPageSize: 6
+    // Sliding window start so Up/Down move one row (not a whole page flip).
+    property int lobbyFilesWindowStart: 0
+    // After New / New encrypted, open this file once it appears in the notes list.
+    property string lobbyOpenAfterCreate: ""
     property string lobbyLastEditedFile: ""
     property string lobbyFilesMode: ""
     onLobbyFilesModeChanged: {
@@ -90,12 +94,47 @@ Window {
 
     function lobbyFilesPageIndex() {
         var ps = Math.max(1, lobbyFilesPageSize)
-        if (lobbyFilesIndex < 0) return 0
-        return Math.floor(lobbyFilesIndex / ps)
+        return Math.floor(Math.max(0, lobbyFilesWindowStart) / ps)
     }
 
     function lobbyFilesPageStart() {
-        return lobbyFilesPageIndex() * Math.max(1, lobbyFilesPageSize)
+        return Math.max(0, lobbyFilesWindowStart)
+    }
+
+    function lobbyFilesClampWindow() {
+        var ps = Math.max(1, lobbyFilesPageSize)
+        var count = lobbyNotesModel.count
+        if (count <= 0) {
+            lobbyFilesWindowStart = 0
+            return
+        }
+        var maxStart = Math.max(0, count - ps)
+        if (lobbyFilesIndex < lobbyFilesWindowStart)
+            lobbyFilesWindowStart = lobbyFilesIndex
+        else if (lobbyFilesIndex >= lobbyFilesWindowStart + ps)
+            lobbyFilesWindowStart = lobbyFilesIndex - ps + 1
+        if (lobbyFilesWindowStart < 0)
+            lobbyFilesWindowStart = 0
+        if (lobbyFilesWindowStart > maxStart)
+            lobbyFilesWindowStart = maxStart
+    }
+
+    function lobbyFilesSetIndex(i) {
+        var last = Math.max(0, lobbyNotesModel.count - 1)
+        lobbyFilesIndex = Math.max(0, Math.min(last, i))
+        lobbyFilesClampWindow()
+    }
+
+    function lobbyFilesNormalizedName(name, encrypted) {
+        name = (name || "").trim()
+        if (name === "") return ""
+        if (encrypted) {
+            if (name.endsWith(".md.enc")) return name
+            if (name.endsWith(".md")) return name + ".enc"
+            return name + ".md.enc"
+        }
+        if (name.endsWith(".md") || name.endsWith(".md.enc")) return name
+        return name + ".md"
     }
 
     function isHtmlPayload(t) {
@@ -409,6 +448,7 @@ Window {
         lobbyFilesInput = ""
         lobbyFilesInputPos = 0
         lobbySettingsMode = ""
+        lobbyOpenAfterCreate = ""
         if (lobbyShowNoKeyboard)
             lobbyDismissNoKeyboard()
         if (idx === 0) lobbyRefreshNotes()
@@ -423,15 +463,18 @@ Window {
     function setNotesList(items) {
         // Home save + refresh can deliver two noteslists. Keep the selected name across clear/rebuild
         // so the second push does not wipe last-edited focus (ListView clear sets currentIndex to -1).
+        var openAfter = lobbyOpenAfterCreate
         var prefer = lobbyLastEditedFile
         var keepName = ""
-        if (prefer === "" && lobbyFilesIndex >= 0 && lobbyFilesIndex < lobbyNotesModel.count) {
+        if (prefer === "" && openAfter === "" && lobbyFilesIndex >= 0 && lobbyFilesIndex < lobbyNotesModel.count) {
             var cur = lobbyNotesModel.get(lobbyFilesIndex)
             if (cur && cur.name) keepName = cur.name
         }
         lobbyNotesModel.clear()
         if (!items) {
-            lobbyFilesIndex = 0
+            lobbyFilesSetIndex(0)
+            if (openAfter !== "")
+                lobbyOpenAfterCreate = ""
             return
         }
         for (var i = 0; i < items.length; i++) {
@@ -443,23 +486,39 @@ Window {
                 encrypted: !!it.encrypted
             })
         }
+        if (openAfter !== "") {
+            if (selectNoteByName(openAfter)) {
+                lobbyOpenAfterCreate = ""
+                Qt.callLater(function() {
+                    if (isLobby)
+                        lobbyOpenSelected(true)
+                })
+            } else {
+                // Create failed or name missing — do not open a later match by accident.
+                lobbyOpenAfterCreate = ""
+                lobbyFilesSetIndex(Math.max(0, lobbyNotesModel.count - 1))
+            }
+            return
+        }
         var target = prefer !== "" ? prefer : keepName
         if (target !== "") {
             if (selectNoteByName(target)) {
                 if (prefer !== "")
                     lobbyLastEditedFile = ""
             } else {
-                lobbyFilesIndex = Math.max(0, lobbyNotesModel.count - 1)
+                lobbyFilesSetIndex(Math.max(0, lobbyNotesModel.count - 1))
             }
         } else if (lobbyFilesIndex < 0 || lobbyFilesIndex >= lobbyNotesModel.count) {
-            lobbyFilesIndex = Math.max(0, lobbyNotesModel.count - 1)
+            lobbyFilesSetIndex(Math.max(0, lobbyNotesModel.count - 1))
+        } else {
+            lobbyFilesClampWindow()
         }
     }
 
     function selectNoteByName(name) {
         for (var i = 0; i < lobbyNotesModel.count; i++) {
             if (lobbyNotesModel.get(i).name === name) {
-                lobbyFilesIndex = i
+                lobbyFilesSetIndex(i)
                 return true
             }
         }
@@ -566,6 +625,7 @@ Window {
         var name = lobbyFilesInput.trim()
         if (name === "") { lobbyFilesMode = ""; return }
         if (lobbyFilesMode === "new") {
+            lobbyOpenAfterCreate = lobbyFilesNormalizedName(name, false)
             writerdeck.createNote(name)
             lobbyFilesMode = ""
             lobbyFilesInput = ""
@@ -579,6 +639,7 @@ Window {
             lobbyFilesInput = ""
             lobbyFilesInputPos = 0
         } else if (lobbyFilesMode === "new-encrypted") {
+            lobbyOpenAfterCreate = lobbyFilesNormalizedName(name, true)
             writerdeck.createEncryptedNote(name)
             lobbyFilesMode = ""
             lobbyFilesInput = ""
@@ -884,19 +945,19 @@ Window {
             var ps = Math.max(1, lobbyFilesPageSize)
             var last = Math.max(0, lobbyNotesModel.count - 1)
             if (event.key === Qt.Key_Up) {
-                lobbyFilesIndex = Math.max(0, lobbyFilesIndex - 1)
+                lobbyFilesSetIndex(lobbyFilesIndex - 1)
                 return true
             }
             if (event.key === Qt.Key_Down) {
-                lobbyFilesIndex = Math.min(last, lobbyFilesIndex + 1)
+                lobbyFilesSetIndex(lobbyFilesIndex + 1)
                 return true
             }
             if (event.key === Qt.Key_PageUp) {
-                lobbyFilesIndex = Math.max(0, lobbyFilesIndex - ps)
+                lobbyFilesSetIndex(lobbyFilesIndex - ps)
                 return true
             }
             if (event.key === Qt.Key_PageDown) {
-                lobbyFilesIndex = Math.min(last, lobbyFilesIndex + ps)
+                lobbyFilesSetIndex(Math.min(last, lobbyFilesIndex + ps))
                 return true
             }
             if (event.key === Qt.Key_Return) {
@@ -1079,18 +1140,12 @@ Window {
             event.accepted = true
             return
         }
-        if (vaultOverlayMode !== "") {
-            if (vaultConsumeKey(event)) { event.accepted = true; return }
-        }
         if (isLobby && !isOmni) {
-            if (lobbyHandleKey(event)) {
-                event.accepted = true
-                return
-            }
-            if (!(event.modifiers & Qt.ControlModifier)) {
-                event.accepted = true
-                return
-            }
+            // Lobby chords (including vault PIN) run on Keys.onPressed via
+            // lobbyHandleKey. Accept releases so they do not fall through to
+            // edit/preview Escape toggle.
+            event.accepted = true
+            return
         }
         if (event.key === Qt.Key_Escape) {
             if (isOmni) {

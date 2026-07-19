@@ -17,7 +17,11 @@
                 anchors.fill: parent
                 focus: isLobby && !isOmni
                 Keys.enabled: isLobby && !isOmni
-                Keys.onPressed: handleKeyDown(event)
+                Keys.onPressed: {
+                    handleKeyDown(event)
+                    if (lobbyHandleKey(event))
+                        event.accepted = true
+                }
                 Keys.onReleased: {
                     handleKeyUp(event)
                     handleKey(event)

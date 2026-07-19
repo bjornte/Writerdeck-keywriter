@@ -238,10 +238,12 @@
                             onPageSizeChanged: {
                                 if (pageSize > 0 && lobbyFilesPageSize !== pageSize)
                                     lobbyFilesPageSize = pageSize
+                                root.lobbyFilesClampWindow()
                             }
                             Component.onCompleted: {
                                 if (pageSize > 0)
                                     lobbyFilesPageSize = pageSize
+                                root.lobbyFilesClampWindow()
                             }
 
                             Column {
@@ -274,7 +276,7 @@
                                                 if (noteIndex === lobbyFilesIndex)
                                                     root.lobbyOpenSelected()
                                                 else
-                                                    lobbyFilesIndex = noteIndex
+                                                    root.lobbyFilesSetIndex(noteIndex)
                                                 root.lobbyKeepFocus()
                                             }
                                             onDoubleClicked: root.lobbyOpenSelected()
