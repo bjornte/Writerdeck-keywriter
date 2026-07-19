@@ -77,6 +77,8 @@ LobbyUiConfig::LobbyUiConfig(QObject *parent)
     applyDefaults();
     connect(&m_watch, &QFileSystemWatcher::fileChanged,
             this, &LobbyUiConfig::onFileChanged);
+    connect(&m_watch, &QFileSystemWatcher::directoryChanged,
+            this, &LobbyUiConfig::onFileChanged);
 }
 
 void LobbyUiConfig::setPath(const QString &path)
@@ -94,6 +96,8 @@ void LobbyUiConfig::reload()
     if (!m_path.isEmpty() && !loadFromDisk()) {
         qWarning("lobby-ui: using embedded defaults (%s missing or invalid)",
                  qPrintable(m_path));
+    } else if (!m_path.isEmpty()) {
+        qDebug("lobby-ui: loaded %s (rev %d)", qPrintable(m_path), m_revision + 1);
     }
     watchPath();
     ++m_revision;
