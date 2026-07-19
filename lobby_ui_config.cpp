@@ -79,6 +79,9 @@ LobbyUiConfig::LobbyUiConfig(QObject *parent)
             this, &LobbyUiConfig::onFileChanged);
     connect(&m_watch, &QFileSystemWatcher::directoryChanged,
             this, &LobbyUiConfig::onFileChanged);
+    m_poll.setInterval(1500);
+    connect(&m_poll, &QTimer::timeout, this, &LobbyUiConfig::pollDisk);
+    m_poll.start();
 }
 
 void LobbyUiConfig::setPath(const QString &path)
@@ -105,19 +108,22 @@ void LobbyUiConfig::reload()
                 if (embedded.isObject())
                     parseObject(embedded.object());
                 parseObject(doc.object());
+                noteDiskStamp();
                 watchPath();
                 ++m_revision;
-                qDebug("lobby-ui: loaded %s (rev %d)", qPrintable(m_path), m_revision);
+                qWarning("lobby-ui: loaded %s (rev %d)", qPrintable(m_path), m_revision);
                 emit changed();
                 return;
             }
             qWarning("lobby-ui.json parse error: %s", qPrintable(err.errorString()));
             if (m_revision > 0) {
+                noteDiskStamp();
                 watchPath();
                 return;
             }
         } else if (m_revision > 0) {
             qWarning("lobby-ui: keep last good load (%s unreadable)", qPrintable(m_path));
+            noteDiskStamp();
             watchPath();
             return;
         }
@@ -129,6 +135,7 @@ void LobbyUiConfig::reload()
     if (!m_path.isEmpty())
         qWarning("lobby-ui: using embedded defaults (%s missing or invalid)",
                  qPrintable(m_path));
+    noteDiskStamp();
     watchPath();
     ++m_revision;
     emit changed();
@@ -246,8 +253,46 @@ void LobbyUiConfig::watchPath()
 void LobbyUiConfig::onFileChanged(const QString &path)
 {
     Q_UNUSED(path);
-    // Editors often replace via rename; re-add watch after a short delay.
-    QTimer::singleShot(200, this, [this]() { reload(); });
+    // Rename replaces drop the file watch; re-arm immediately, then reload.
+    watchPath();
+    if (m_reloadPending)
+        return;
+    m_reloadPending = true;
+    QTimer::singleShot(250, this, [this]() {
+        m_reloadPending = false;
+        reload();
+    });
+}
+
+void LobbyUiConfig::noteDiskStamp()
+{
+    if (m_path.isEmpty()) {
+        m_diskMtimeMs = -1;
+        m_diskSize = -1;
+        return;
+    }
+    const QFileInfo fi(m_path);
+    if (!fi.exists()) {
+        m_diskMtimeMs = -1;
+        m_diskSize = -1;
+        return;
+    }
+    m_diskMtimeMs = fi.lastModified().toMSecsSinceEpoch();
+    m_diskSize = fi.size();
+}
+
+void LobbyUiConfig::pollDisk()
+{
+    if (m_path.isEmpty() || m_reloadPending)
+        return;
+    const QFileInfo fi(m_path);
+    if (!fi.exists())
+        return;
+    const qint64 m = fi.lastModified().toMSecsSinceEpoch();
+    const qint64 sz = fi.size();
+    if (m == m_diskMtimeMs && sz == m_diskSize)
+        return;
+    reload();
 }
 
 QVariantMap LobbyUiConfig::shortcutsMap() const

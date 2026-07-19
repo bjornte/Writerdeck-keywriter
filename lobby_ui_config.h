@@ -4,11 +4,13 @@
 #include <QHash>
 #include <QObject>
 #include <QString>
+#include <QTimer>
 #include <QVariantMap>
 #include <QFileSystemWatcher>
 
 // On-disk Lobby look / copy / Ctrl-letter chords (/home/root/.Writerdeck/lobby-ui.json).
-// Not compiled into resources -- edit on the tablet; hot-reloads via QFileSystemWatcher.
+// Not compiled into resources -- edit on the tablet; hot-reloads via QFileSystemWatcher
+// plus a short mtime poll (reMarkable inotify often misses rename replaces).
 class LobbyUiConfig : public QObject
 {
     Q_OBJECT
@@ -63,6 +65,7 @@ signals:
 
 private slots:
     void onFileChanged(const QString &path);
+    void pollDisk();
 
 private:
     void applyDefaults();
@@ -70,10 +73,15 @@ private:
     void parseObject(const QJsonObject &root);
     void rebuildLetterIndex();
     void watchPath();
+    void noteDiskStamp();
 
     QFileSystemWatcher m_watch;
+    QTimer m_poll;
     QString m_path;
     int m_revision = 0;
+    qint64 m_diskMtimeMs = -1;
+    qint64 m_diskSize = -1;
+    bool m_reloadPending = false;
 
     int m_btnBorder = 2;
     int m_btnBorderSelected = 4;
