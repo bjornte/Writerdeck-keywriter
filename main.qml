@@ -125,6 +125,14 @@ Window {
         return name + ".md"
     }
 
+    // Case-insensitive stem; plain and encrypted share a key ("Doc.md" / "doc.md.enc" → "doc").
+    function lobbyFilesTitleKey(name) {
+        name = name || ""
+        if (name.endsWith(".md.enc")) name = name.slice(0, -7)
+        else if (name.endsWith(".md")) name = name.slice(0, -3)
+        return name.toLowerCase()
+    }
+
     function isHtmlPayload(t) {
         if (!t || t.length < 9) return false
         var head = t.substring(0, Math.min(256, t.length)).toLowerCase()
@@ -648,12 +656,13 @@ Window {
     }
 
     function lobbyFilesNameTaken(targetName, ignoreName) {
-        if (!targetName) return false
+        var key = lobbyFilesTitleKey(targetName)
+        if (!key) return false
         for (var i = 0; i < lobbyNotesModel.count; i++) {
             var row = lobbyNotesModel.get(i)
             if (!row || !row.name) continue
             if (ignoreName && row.name === ignoreName) continue
-            if (row.name === targetName) return true
+            if (lobbyFilesTitleKey(row.name) === key) return true
         }
         return false
     }
