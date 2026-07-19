@@ -961,8 +961,15 @@ Window {
                 lobbyGoPage((lobbyPage + 1) % lobbyTabLabels.length)
             return true
         }
+        // Digits: USB sends Qt.Key_1..6; phone injects printable text "1".."6".
         if (event.key >= Qt.Key_1 && event.key <= Qt.Key_6) {
             lobbyGoPage(event.key - Qt.Key_1)
+            return true
+        }
+        if (!(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))
+                && event.text && event.text.length === 1
+                && event.text >= "1" && event.text <= "6") {
+            lobbyGoPage(parseInt(event.text, 10) - 1)
             return true
         }
         if (event.key === Qt.Key_Left && event.modifiers === Qt.NoModifier) {
