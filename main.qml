@@ -287,8 +287,6 @@ Window {
             lobbyFilesBeginNew()
         else if (pending === "rename")
             lobbyFilesBeginRename()
-        else if (pending === "delete")
-            lobbyFilesBeginDelete()
         else if (pending === "new-encrypted")
             lobbyFilesBeginNewEncrypted()
         lobbyKeepFocus()
@@ -369,6 +367,8 @@ Window {
         lobbyFilesInput = ""
         lobbyFilesInputPos = 0
         lobbySettingsMode = ""
+        if (lobbyShowNoKeyboard)
+            lobbyDismissNoKeyboard()
         if (idx === 0) lobbyRefreshNotes()
         lobbyKeepFocus()
     }
@@ -489,7 +489,6 @@ Window {
     }
 
     function lobbyFilesBeginDelete() {
-        if (!lobbyEnsureKeyboard("delete")) return
         if (lobbyNotesModel.count === 0) return
         lobbyFilesMode = "confirm-delete"
     }
@@ -2280,7 +2279,7 @@ Window {
                                 text: lobbyFilesMode === "new" ? "New note name:"
                                      : lobbyFilesMode === "rename" ? "Rename to:"
                                      : lobbyFilesMode === "new-encrypted" ? "New encrypted note name:"
-                                     : lobbyFilesMode === "confirm-delete" ? "Delete this note? Enter=yes  Esc=no"
+                                     : lobbyFilesMode === "confirm-delete" ? "Delete this note?"
                                      : ""
                                 font.family: "Noto Sans"
                                 font.pointSize: 13
@@ -2314,6 +2313,8 @@ Window {
                                 width: parent.width
                                 height: {
                                     var reserved = lobbyFilesBar.height + lobby.contentSpacing * 2
+                                    if (lobbyFilesMode === "confirm-delete")
+                                        reserved = lobbyFilesDeleteBar.height + lobby.contentSpacing * 2
                                     if (lobbyEncryptionEnabled && lobbyFilesMode === "" && lobbyNotesModel.count > 0)
                                         reserved += lobbyFilesVaultBar.height + lobby.contentSpacing
                                     if (lobbyFilesPageLabel.visible)
@@ -2423,6 +2424,57 @@ Window {
                                                 else if (modelData === "Delete") root.lobbyFilesBeginDelete()
                                                 root.lobbyKeepFocus()
                                             }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Row {
+                                id: lobbyFilesDeleteBar
+                                width: parent.width
+                                height: lobby.actionBtnHeight + 8
+                                spacing: lobby.tabSpacing
+                                visible: lobbyFilesMode === "confirm-delete"
+
+                                Rectangle {
+                                    width: (lobbyFilesDeleteBar.width - lobby.tabSpacing) / 2
+                                    height: lobby.actionBtnHeight
+                                    radius: 6
+                                    color: "#f0f0f0"
+                                    border.color: "#bbb"
+                                    border.width: 1
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Cancel"
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 11
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            lobbyFilesMode = ""
+                                            root.lobbyKeepFocus()
+                                        }
+                                    }
+                                }
+                                Rectangle {
+                                    width: (lobbyFilesDeleteBar.width - lobby.tabSpacing) / 2
+                                    height: lobby.actionBtnHeight
+                                    radius: 6
+                                    color: "#f0f0f0"
+                                    border.color: "black"
+                                    border.width: 2
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Delete"
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 11
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            root.lobbyFilesDoDelete()
+                                            root.lobbyKeepFocus()
                                         }
                                     }
                                 }

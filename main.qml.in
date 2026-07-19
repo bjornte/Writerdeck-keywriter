@@ -287,8 +287,6 @@ Window {
             lobbyFilesBeginNew()
         else if (pending === "rename")
             lobbyFilesBeginRename()
-        else if (pending === "delete")
-            lobbyFilesBeginDelete()
         else if (pending === "new-encrypted")
             lobbyFilesBeginNewEncrypted()
         lobbyKeepFocus()
@@ -369,6 +367,8 @@ Window {
         lobbyFilesInput = ""
         lobbyFilesInputPos = 0
         lobbySettingsMode = ""
+        if (lobbyShowNoKeyboard)
+            lobbyDismissNoKeyboard()
         if (idx === 0) lobbyRefreshNotes()
         lobbyKeepFocus()
     }
@@ -489,7 +489,6 @@ Window {
     }
 
     function lobbyFilesBeginDelete() {
-        if (!lobbyEnsureKeyboard("delete")) return
         if (lobbyNotesModel.count === 0) return
         lobbyFilesMode = "confirm-delete"
     }
