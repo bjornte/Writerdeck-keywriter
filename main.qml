@@ -974,45 +974,47 @@ Window {
             return true
         }
         if (lobbyPage === 1) {
-            if (event.key === Qt.Key_U && event.modifiers === Qt.NoModifier) {
+            var kbLetter = lobbyChordLetter(event)
+            if (kbLetter === "u") {
                 writerdeck.setKeyboardLayout("us"); return true }
-            if (event.key === Qt.Key_O && event.modifiers === Qt.NoModifier) {
+            if (kbLetter === "o") {
                 writerdeck.setKeyboardLayout("no"); return true }
         }
         if (lobbyPage === 2) {
-            if ((event.key === Qt.Key_Return || event.key === Qt.Key_S)
-                    && event.modifiers === Qt.NoModifier) {
+            if (event.key === Qt.Key_Return
+                    || lobbyChordLetter(event) === "s") {
                 if (lobbySyncReady && !lobbySyncing) writerdeck.syncNow()
                 return true
             }
         }
         if (lobbyPage === 3 && lobbySettingsMode === "") {
-            if (!lobbyEncryptionEnabled && event.key === Qt.Key_E && event.modifiers === Qt.NoModifier) {
+            var setLetter = lobbyChordLetter(event)
+            if (!lobbyEncryptionEnabled && setLetter === "e") {
                 vaultBeginSetup(); return true }
-            if (lobbyEncryptionEnabled && event.key === Qt.Key_C && event.modifiers === Qt.NoModifier) {
+            if (lobbyEncryptionEnabled && setLetter === "c") {
                 vaultBeginChangePIN(); return true }
-            if (event.key === Qt.Key_F && event.modifiers === Qt.NoModifier) {
+            if (setLetter === "f") {
                 var fonts = ["Inter", "Literata", "EB Garamond", "DejaVu Sans"]
                 var fi = fonts.indexOf(readFont)
                 if (fi < 0) fi = 0
                 writerdeck.setReadFont(fonts[(fi + 1) % fonts.length])
                 return true
             }
-            if (event.key === Qt.Key_P && event.modifiers === Qt.NoModifier) {
+            if (setLetter === "p") {
                 var pins = ["6", "4", "none"]
                 var pi = pins.indexOf(lobbyPinDigits)
                 if (pi < 0) pi = 0
                 writerdeck.setPinDigits(pins[(pi + 1) % pins.length])
                 return true
             }
-            if (event.key === Qt.Key_T && event.modifiers === Qt.NoModifier) {
+            if (setLetter === "t") {
                 var rots = [0, 90, 180, 270]
                 var ri = rots.indexOf(root.rotation)
                 if (ri < 0) ri = 0
                 root.setScreenRotation(rots[(ri + 1) % rots.length])
                 return true
             }
-            if (event.key === Qt.Key_X && event.modifiers === Qt.NoModifier) {
+            if (setLetter === "x") {
                 lobbySettingsBeginExit(); return true }
         }
         if (lobbyPage === 0 && lobbyFilesMode === "" && lobbyEncryptionEnabled) {
