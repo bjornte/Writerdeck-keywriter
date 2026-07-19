@@ -21,6 +21,12 @@ void LobbyBridge::requestNotesList()
     sendReq(QStringLiteral("{\"t\":\"req\",\"op\":\"noteslist\"}"));
 }
 
+void LobbyBridge::requestLobbyInfo()
+{
+    // Keyboard tab polls this so phone/USB presence stays fresh on e-ink.
+    sendReq(QStringLiteral("{\"t\":\"req\",\"op\":\"lobbyinfo\"}"));
+}
+
 void LobbyBridge::createNote(const QString &name)
 {
     QJsonObject o;

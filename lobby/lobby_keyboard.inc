@@ -2,6 +2,13 @@
                     Item {
                         visible: lobbyPage === 1
                         anchors.fill: parent
+                        // Live presence while this tab is open (USB plug / phone page).
+                        Timer {
+                            interval: 2000
+                            running: lobbyPage === 1 && isLobby
+                            repeat: true
+                            onTriggered: writerdeck.requestLobbyInfo()
+                        }
                         Flickable {
                             anchors.fill: parent
                             contentWidth: width
@@ -21,7 +28,7 @@
                                     height: btKbInner.height + 24
                                     color: "white"
                                     border.color: "black"
-                                    border.width: 1
+                                    border.width: lobbyPhoneConnected ? 2 : 1
                                     radius: 6
                                     Column {
                                         id: btKbInner
@@ -36,6 +43,17 @@
                                             font.family: "Noto Sans"
                                             color: "black"
                                             width: parent.width
+                                        }
+                                        Text {
+                                            text: lobbyPhoneConnected
+                                                   ? "Status: Phone page connected — keys reach the tablet."
+                                                   : "Status: No phone page open yet."
+                                            font.pointSize: 12
+                                            font.family: "Noto Sans"
+                                            font.bold: true
+                                            color: "black"
+                                            width: parent.width
+                                            wrapMode: Text.WordWrap
                                         }
                                         Text {
                                             text: "Pair the keyboard to your phone, then open the address below (or scan the code). Typing is forwarded over Wi-Fi."
@@ -81,7 +99,7 @@
                                     height: usbKbInner.height + 24
                                     color: "white"
                                     border.color: "black"
-                                    border.width: 1
+                                    border.width: lobbyUsbKeyboard ? 2 : 1
                                     radius: 6
                                     Column {
                                         id: usbKbInner
@@ -96,6 +114,17 @@
                                             font.family: "Noto Sans"
                                             color: "black"
                                             width: parent.width
+                                        }
+                                        Text {
+                                            text: lobbyUsbKeyboard
+                                                   ? "Status: USB keyboard connected."
+                                                   : "Status: No USB keyboard plugged in."
+                                            font.pointSize: 12
+                                            font.family: "Noto Sans"
+                                            font.bold: true
+                                            color: "black"
+                                            width: parent.width
+                                            wrapMode: Text.WordWrap
                                         }
                                         Text {
                                             text: "Connect with a USB OTG cable.\nChanging layout restarts Writerdeck."

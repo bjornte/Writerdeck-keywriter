@@ -412,6 +412,7 @@ Window {
         if (lobbyShowNoKeyboard)
             lobbyDismissNoKeyboard()
         if (idx === 0) lobbyRefreshNotes()
+        if (idx === 1) writerdeck.requestLobbyInfo()
         lobbyKeepFocus()
     }
 

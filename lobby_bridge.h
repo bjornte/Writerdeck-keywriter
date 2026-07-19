@@ -13,6 +13,7 @@ public:
 
 public slots:
     Q_INVOKABLE void requestNotesList();
+    Q_INVOKABLE void requestLobbyInfo();
     Q_INVOKABLE void createNote(const QString &name);
     Q_INVOKABLE void deleteNote(const QString &name);
     Q_INVOKABLE void renameNote(const QString &oldName, const QString &newName);
