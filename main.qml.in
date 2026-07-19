@@ -43,9 +43,8 @@ Window {
     property var lobbyTabLabels: ["Files", "Keyboard", "Sync", "Settings", "Shortcuts", "Home"]
     property int lobbyFilesIndex: 0
     // How many note rows fit on one Files page (set from list height; e-ink pages, no flick).
+    // Page-aligned window: decisions.md §35.
     property int lobbyFilesPageSize: 6
-    // Sliding window start so Up/Down move one row (not a whole page flip).
-    property int lobbyFilesWindowStart: 0
     // After New / New encrypted, open this file once it appears in the notes list.
     property string lobbyOpenAfterCreate: ""
     property string lobbyLastEditedFile: ""
@@ -94,35 +93,17 @@ Window {
 
     function lobbyFilesPageIndex() {
         var ps = Math.max(1, lobbyFilesPageSize)
-        return Math.floor(Math.max(0, lobbyFilesWindowStart) / ps)
+        if (lobbyFilesIndex < 0) return 0
+        return Math.floor(lobbyFilesIndex / ps)
     }
 
     function lobbyFilesPageStart() {
-        return Math.max(0, lobbyFilesWindowStart)
-    }
-
-    function lobbyFilesClampWindow() {
-        var ps = Math.max(1, lobbyFilesPageSize)
-        var count = lobbyNotesModel.count
-        if (count <= 0) {
-            lobbyFilesWindowStart = 0
-            return
-        }
-        var maxStart = Math.max(0, count - ps)
-        if (lobbyFilesIndex < lobbyFilesWindowStart)
-            lobbyFilesWindowStart = lobbyFilesIndex
-        else if (lobbyFilesIndex >= lobbyFilesWindowStart + ps)
-            lobbyFilesWindowStart = lobbyFilesIndex - ps + 1
-        if (lobbyFilesWindowStart < 0)
-            lobbyFilesWindowStart = 0
-        if (lobbyFilesWindowStart > maxStart)
-            lobbyFilesWindowStart = maxStart
+        return lobbyFilesPageIndex() * Math.max(1, lobbyFilesPageSize)
     }
 
     function lobbyFilesSetIndex(i) {
         var last = Math.max(0, lobbyNotesModel.count - 1)
         lobbyFilesIndex = Math.max(0, Math.min(last, i))
-        lobbyFilesClampWindow()
     }
 
     function lobbyFilesNormalizedName(name, encrypted) {
@@ -510,8 +491,6 @@ Window {
             }
         } else if (lobbyFilesIndex < 0 || lobbyFilesIndex >= lobbyNotesModel.count) {
             lobbyFilesSetIndex(Math.max(0, lobbyNotesModel.count - 1))
-        } else {
-            lobbyFilesClampWindow()
         }
     }
 

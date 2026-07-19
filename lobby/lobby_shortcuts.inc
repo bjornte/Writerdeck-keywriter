@@ -27,7 +27,7 @@
                                           + "1 to 6 — jump straight to a page\n"
                                           + "\n"
                                           + "Files\n"
-                                          + "Up / Down — move the selection\n"
+                                          + "Up / Down — move the selection (turns the page at the edge)\n"
                                           + "Page Up / Page Down — previous or next page of notes\n"
                                           + "Enter — edit the selected note\n"
                                           + "v — read · n — new · r — rename · d — delete · g — download to phone\n"
