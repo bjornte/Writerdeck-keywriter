@@ -28,7 +28,7 @@
                                     height: btKbInner.height + 24
                                     color: "white"
                                     border.color: "black"
-                                    border.width: lobbyPhoneConnected ? 2 : 1
+                                    border.width: lobbyPhoneConnected ? lobby.btnBorderSelected : lobby.btnBorder
                                     radius: 6
                                     Column {
                                         id: btKbInner
@@ -89,7 +89,7 @@
                                     height: usbKbInner.height + 24
                                     color: "white"
                                     border.color: "black"
-                                    border.width: lobbyUsbKeyboard ? 2 : 1
+                                    border.width: lobbyUsbKeyboard ? lobby.btnBorderSelected : lobby.btnBorder
                                     radius: 6
                                     Column {
                                         id: usbKbInner
@@ -137,7 +137,7 @@
                                                     property bool selected: lobbyKeyboardLayout === modelData.id
                                                     color: selected ? "#e8e8e8" : "#f0f0f0"
                                                     border.color: "black"
-                                                    border.width: selected ? 2 : 1
+                                                    border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                     Loader {
                                                         anchors.fill: parent
                                                         property string labelText: modelData.label

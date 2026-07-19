@@ -65,7 +65,7 @@
                                                 property bool selected: readFont === modelData.id
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
                                                 border.color: "black"
-                                                border.width: selected ? 2 : 1
+                                                border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Text {
                                                     anchors.centerIn: parent
                                                     text: modelData.label
@@ -111,7 +111,7 @@
                                             radius: 6
                                             color: "#f0f0f0"
                                             border.color: "black"
-                                            border.width: 1
+                                            border.width: lobby.btnBorder
                                             Loader {
                                                 anchors.fill: parent
                                                 property string labelText: "Enable"
@@ -138,7 +138,7 @@
                                             radius: 6
                                             color: "#f0f0f0"
                                             border.color: "black"
-                                            border.width: 1
+                                            border.width: lobby.btnBorder
                                             Loader {
                                                 anchors.fill: parent
                                                 property string labelText: "Change PIN"
@@ -189,7 +189,7 @@
                                                 property bool selected: lobbyPinDigits === modelData.id
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
                                                 border.color: "black"
-                                                border.width: selected ? 2 : 1
+                                                border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Column {
                                                     anchors.centerIn: parent
                                                     width: parent.width - 12
@@ -257,7 +257,7 @@
                                                 property bool selected: root.rotation === modelData.deg
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
                                                 border.color: "black"
-                                                border.width: selected ? 2 : 1
+                                                border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Text {
                                                     anchors.centerIn: parent
                                                     text: modelData.label
@@ -297,7 +297,7 @@
                                         radius: 6
                                         color: "#f0f0f0"
                                         border.color: "black"
-                                        border.width: 1
+                                        border.width: lobby.btnBorder
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: "Exit Writerdeck"

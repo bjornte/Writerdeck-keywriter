@@ -2334,10 +2334,14 @@ Window {
             readonly property int actionBtnHeight: 72
             readonly property int tabSpacing: 12
             readonly property int contentSpacing: 12
+            // Button chrome: normal border matches former selected Settings option;
+            // selected option / active tab is twice as thick.
+            readonly property int btnBorder: 2
+            readonly property int btnBorderSelected: 4
             // Inner keycap for single-letter / digit chords. Opacity-only hide
             // when no keyboard so the label does not jump. Square hugs the
             // outer button (tight outer margin), not the glyph inside.
-            readonly property int shortcutBadgeMargin: 2
+            readonly property int shortcutBadgeMargin: 4
 
             // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
             // (and optional labelBold / labelColor).
@@ -2378,7 +2382,7 @@ Window {
                         radius: 3
                         color: "white"
                         border.color: "black"
-                        border.width: showBadge ? 1 : 0
+                        border.width: showBadge ? lobby.btnBorder : 0
                         // Keep layout width when keyboard drops; only fade the keycap.
                         opacity: (showBadge && root.lobbyKeyboardReady()) ? 1 : 0
                         Text {
@@ -2446,7 +2450,7 @@ Window {
                             radius: 6
                             color: lobbyPage === index ? "#e0e0e0" : "#f5f5f5"
                             border.color: "black"
-                            border.width: lobbyPage === index ? 2 : 1
+                            border.width: lobbyPage === index ? lobby.btnBorderSelected : lobby.btnBorder
 
                             Loader {
                                 anchors.fill: parent
@@ -2562,7 +2566,7 @@ Window {
                                 height: lobbyFilesFeedbackCol.height + 24
                                 color: "white"
                                 border.color: "black"
-                                border.width: 2
+                                border.width: lobby.btnBorder
                                 radius: 8
                                 clip: true
 
@@ -2631,7 +2635,7 @@ Window {
                                     radius: 6
                                     color: "#f0f0f0"
                                     border.color: "black"
-                                    border.width: 1
+                                    border.width: lobby.btnBorder
                                     opacity: lobbyFilesPageStrip.canPrev ? 1 : 0.45
                                     Text {
                                         anchors.centerIn: parent
@@ -2668,7 +2672,7 @@ Window {
                                     radius: 6
                                     color: "#f0f0f0"
                                     border.color: "black"
-                                    border.width: 1
+                                    border.width: lobby.btnBorder
                                     opacity: lobbyFilesPageStrip.canNext ? 1 : 0.45
                                     Text {
                                         anchors.centerIn: parent
@@ -2720,7 +2724,7 @@ Window {
                                         radius: 6
                                         color: "#f0f0f0"
                                         border.color: "black"
-                                        border.width: 1
+                                        border.width: lobby.btnBorder
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: modelData.label
@@ -2766,7 +2770,7 @@ Window {
                                     radius: 6
                                     color: "#f0f0f0"
                                     border.color: "black"
-                                    border.width: 1
+                                    border.width: lobby.btnBorder
                                     Loader {
                                         anchors.fill: parent
                                         property string labelText: "Encrypt"
@@ -2789,7 +2793,7 @@ Window {
                                     radius: 6
                                     color: "#f0f0f0"
                                     border.color: "black"
-                                    border.width: 1
+                                    border.width: lobby.btnBorder
                                     Loader {
                                         anchors.fill: parent
                                         property string labelText: "New encrypted"
@@ -2812,7 +2816,7 @@ Window {
                                     radius: 6
                                     color: "#f0f0f0"
                                     border.color: "black"
-                                    border.width: 1
+                                    border.width: lobby.btnBorder
                                     Loader {
                                         anchors.fill: parent
                                         property string labelText: "Decrypt"
@@ -2930,7 +2934,7 @@ Window {
                                     height: btKbInner.height + 24
                                     color: "white"
                                     border.color: "black"
-                                    border.width: lobbyPhoneConnected ? 2 : 1
+                                    border.width: lobbyPhoneConnected ? lobby.btnBorderSelected : lobby.btnBorder
                                     radius: 6
                                     Column {
                                         id: btKbInner
@@ -2991,7 +2995,7 @@ Window {
                                     height: usbKbInner.height + 24
                                     color: "white"
                                     border.color: "black"
-                                    border.width: lobbyUsbKeyboard ? 2 : 1
+                                    border.width: lobbyUsbKeyboard ? lobby.btnBorderSelected : lobby.btnBorder
                                     radius: 6
                                     Column {
                                         id: usbKbInner
@@ -3039,7 +3043,7 @@ Window {
                                                     property bool selected: lobbyKeyboardLayout === modelData.id
                                                     color: selected ? "#e8e8e8" : "#f0f0f0"
                                                     border.color: "black"
-                                                    border.width: selected ? 2 : 1
+                                                    border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                     Loader {
                                                         anchors.fill: parent
                                                         property string labelText: modelData.label
@@ -3105,7 +3109,7 @@ Window {
                                     height: syncErrCol.height + 20
                                     color: "white"
                                     border.color: "black"
-                                    border.width: 2
+                                    border.width: lobby.btnBorder
                                     radius: 4
                                     Column {
                                         id: syncErrCol
@@ -3137,7 +3141,7 @@ Window {
                                     height: tokenWarnCol.height + 20
                                     color: "white"
                                     border.color: "black"
-                                    border.width: 2
+                                    border.width: lobby.btnBorder
                                     radius: 4
                                     Column {
                                         id: tokenWarnCol
@@ -3170,7 +3174,7 @@ Window {
                                     radius: 6
                                     color: (lobbySyncReady && !lobbySyncing) ? "#f0f0f0" : "white"
                                     border.color: "black"
-                                    border.width: lobbySyncReady ? 1 : 2
+                                    border.width: lobbySyncReady ? lobby.btnBorder : lobby.btnBorderSelected
                                     Loader {
                                         anchors.fill: parent
                                         property string labelText: !lobbySyncReady ? "Token needed — phone Sync setup"
@@ -3268,7 +3272,7 @@ Window {
                                                 property bool selected: readFont === modelData.id
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
                                                 border.color: "black"
-                                                border.width: selected ? 2 : 1
+                                                border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Text {
                                                     anchors.centerIn: parent
                                                     text: modelData.label
@@ -3314,7 +3318,7 @@ Window {
                                             radius: 6
                                             color: "#f0f0f0"
                                             border.color: "black"
-                                            border.width: 1
+                                            border.width: lobby.btnBorder
                                             Loader {
                                                 anchors.fill: parent
                                                 property string labelText: "Enable"
@@ -3341,7 +3345,7 @@ Window {
                                             radius: 6
                                             color: "#f0f0f0"
                                             border.color: "black"
-                                            border.width: 1
+                                            border.width: lobby.btnBorder
                                             Loader {
                                                 anchors.fill: parent
                                                 property string labelText: "Change PIN"
@@ -3392,7 +3396,7 @@ Window {
                                                 property bool selected: lobbyPinDigits === modelData.id
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
                                                 border.color: "black"
-                                                border.width: selected ? 2 : 1
+                                                border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Column {
                                                     anchors.centerIn: parent
                                                     width: parent.width - 12
@@ -3460,7 +3464,7 @@ Window {
                                                 property bool selected: root.rotation === modelData.deg
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
                                                 border.color: "black"
-                                                border.width: selected ? 2 : 1
+                                                border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Text {
                                                     anchors.centerIn: parent
                                                     text: modelData.label
@@ -3500,7 +3504,7 @@ Window {
                                         radius: 6
                                         color: "#f0f0f0"
                                         border.color: "black"
-                                        border.width: 1
+                                        border.width: lobby.btnBorder
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: "Exit Writerdeck"
@@ -3643,8 +3647,8 @@ Window {
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: modelData === "" ? "transparent" : "#f0f0f0"
-                            border.color: modelData === "" ? "transparent" : "#bbb"
-                            border.width: modelData === "" ? 0 : 1
+                            border.color: modelData === "" ? "transparent" : "black"
+                            border.width: modelData === "" ? 0 : lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData
@@ -3669,7 +3673,7 @@ Window {
                     radius: 6
                     color: "#f0f0f0"
                     border.color: "black"
-                    border.width: 1
+                    border.width: lobby.btnBorder
                     Text {
                         anchors.centerIn: parent
                         text: "Cancel"
@@ -3702,7 +3706,7 @@ Window {
                 height: lobbyDialogCol.height + 48
                 color: "white"
                 border.color: "black"
-                border.width: 2
+                border.width: lobby.btnBorderSelected
                 radius: 8
 
                 Column {
@@ -3822,7 +3826,7 @@ Window {
                             radius: 6
                             color: "white"
                             border.color: "black"
-                            border.width: 1
+                            border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
                                 text: "Cancel"
@@ -3844,7 +3848,7 @@ Window {
                             radius: 6
                             color: "white"
                             border.color: "black"
-                            border.width: 2
+                            border.width: lobby.btnBorderSelected
                             Text {
                                 anchors.centerIn: parent
                                 text: "Delete"
@@ -3876,7 +3880,7 @@ Window {
                             radius: 6
                             color: "white"
                             border.color: "black"
-                            border.width: 1
+                            border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
                                 text: "Cancel"
@@ -3903,7 +3907,7 @@ Window {
                             radius: 6
                             color: "white"
                             border.color: "black"
-                            border.width: 2
+                            border.width: lobby.btnBorderSelected
                             Text {
                                 anchors.centerIn: parent
                                 text: lobbyFilesMode === "rename" ? "Rename" : "Create"
@@ -3932,7 +3936,7 @@ Window {
                             radius: 6
                             color: "white"
                             border.color: "black"
-                            border.width: 1
+                            border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
                                 text: "Cancel"

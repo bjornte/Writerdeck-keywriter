@@ -41,7 +41,7 @@
                                     height: syncErrCol.height + 20
                                     color: "white"
                                     border.color: "black"
-                                    border.width: 2
+                                    border.width: lobby.btnBorder
                                     radius: 4
                                     Column {
                                         id: syncErrCol
@@ -73,7 +73,7 @@
                                     height: tokenWarnCol.height + 20
                                     color: "white"
                                     border.color: "black"
-                                    border.width: 2
+                                    border.width: lobby.btnBorder
                                     radius: 4
                                     Column {
                                         id: tokenWarnCol
@@ -106,7 +106,7 @@
                                     radius: 6
                                     color: (lobbySyncReady && !lobbySyncing) ? "#f0f0f0" : "white"
                                     border.color: "black"
-                                    border.width: lobbySyncReady ? 1 : 2
+                                    border.width: lobbySyncReady ? lobby.btnBorder : lobby.btnBorderSelected
                                     Loader {
                                         anchors.fill: parent
                                         property string labelText: !lobbySyncReady ? "Token needed — phone Sync setup"

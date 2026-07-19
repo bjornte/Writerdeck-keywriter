@@ -11,10 +11,14 @@
             readonly property int actionBtnHeight: 72
             readonly property int tabSpacing: 12
             readonly property int contentSpacing: 12
+            // Button chrome: normal border matches former selected Settings option;
+            // selected option / active tab is twice as thick.
+            readonly property int btnBorder: 2
+            readonly property int btnBorderSelected: 4
             // Inner keycap for single-letter / digit chords. Opacity-only hide
             // when no keyboard so the label does not jump. Square hugs the
             // outer button (tight outer margin), not the glyph inside.
-            readonly property int shortcutBadgeMargin: 2
+            readonly property int shortcutBadgeMargin: 4
 
             // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
             // (and optional labelBold / labelColor).
@@ -55,7 +59,7 @@
                         radius: 3
                         color: "white"
                         border.color: "black"
-                        border.width: showBadge ? 1 : 0
+                        border.width: showBadge ? lobby.btnBorder : 0
                         // Keep layout width when keyboard drops; only fade the keycap.
                         opacity: (showBadge && root.lobbyKeyboardReady()) ? 1 : 0
                         Text {
@@ -123,7 +127,7 @@
                             radius: 6
                             color: lobbyPage === index ? "#e0e0e0" : "#f5f5f5"
                             border.color: "black"
-                            border.width: lobbyPage === index ? 2 : 1
+                            border.width: lobbyPage === index ? lobby.btnBorderSelected : lobby.btnBorder
 
                             Loader {
                                 anchors.fill: parent

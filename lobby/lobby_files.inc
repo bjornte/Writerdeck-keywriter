@@ -24,7 +24,7 @@
                                 height: lobbyFilesFeedbackCol.height + 24
                                 color: "white"
                                 border.color: "black"
-                                border.width: 2
+                                border.width: lobby.btnBorder
                                 radius: 8
                                 clip: true
 
@@ -93,7 +93,7 @@
                                     radius: 6
                                     color: "#f0f0f0"
                                     border.color: "black"
-                                    border.width: 1
+                                    border.width: lobby.btnBorder
                                     opacity: lobbyFilesPageStrip.canPrev ? 1 : 0.45
                                     Text {
                                         anchors.centerIn: parent
@@ -130,7 +130,7 @@
                                     radius: 6
                                     color: "#f0f0f0"
                                     border.color: "black"
-                                    border.width: 1
+                                    border.width: lobby.btnBorder
                                     opacity: lobbyFilesPageStrip.canNext ? 1 : 0.45
                                     Text {
                                         anchors.centerIn: parent
@@ -182,7 +182,7 @@
                                         radius: 6
                                         color: "#f0f0f0"
                                         border.color: "black"
-                                        border.width: 1
+                                        border.width: lobby.btnBorder
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: modelData.label
@@ -228,7 +228,7 @@
                                     radius: 6
                                     color: "#f0f0f0"
                                     border.color: "black"
-                                    border.width: 1
+                                    border.width: lobby.btnBorder
                                     Loader {
                                         anchors.fill: parent
                                         property string labelText: "Encrypt"
@@ -251,7 +251,7 @@
                                     radius: 6
                                     color: "#f0f0f0"
                                     border.color: "black"
-                                    border.width: 1
+                                    border.width: lobby.btnBorder
                                     Loader {
                                         anchors.fill: parent
                                         property string labelText: "New encrypted"
@@ -274,7 +274,7 @@
                                     radius: 6
                                     color: "#f0f0f0"
                                     border.color: "black"
-                                    border.width: 1
+                                    border.width: lobby.btnBorder
                                     Loader {
                                         anchors.fill: parent
                                         property string labelText: "Decrypt"

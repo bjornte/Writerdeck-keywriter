@@ -14,7 +14,7 @@
                 height: lobbyDialogCol.height + 48
                 color: "white"
                 border.color: "black"
-                border.width: 2
+                border.width: lobby.btnBorderSelected
                 radius: 8
 
                 Column {
@@ -134,7 +134,7 @@
                             radius: 6
                             color: "white"
                             border.color: "black"
-                            border.width: 1
+                            border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
                                 text: "Cancel"
@@ -156,7 +156,7 @@
                             radius: 6
                             color: "white"
                             border.color: "black"
-                            border.width: 2
+                            border.width: lobby.btnBorderSelected
                             Text {
                                 anchors.centerIn: parent
                                 text: "Delete"
@@ -188,7 +188,7 @@
                             radius: 6
                             color: "white"
                             border.color: "black"
-                            border.width: 1
+                            border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
                                 text: "Cancel"
@@ -215,7 +215,7 @@
                             radius: 6
                             color: "white"
                             border.color: "black"
-                            border.width: 2
+                            border.width: lobby.btnBorderSelected
                             Text {
                                 anchors.centerIn: parent
                                 text: lobbyFilesMode === "rename" ? "Rename" : "Create"
@@ -244,7 +244,7 @@
                             radius: 6
                             color: "white"
                             border.color: "black"
-                            border.width: 1
+                            border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
                                 text: "Cancel"

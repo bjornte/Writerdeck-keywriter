@@ -49,8 +49,8 @@
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: modelData === "" ? "transparent" : "#f0f0f0"
-                            border.color: modelData === "" ? "transparent" : "#bbb"
-                            border.width: modelData === "" ? 0 : 1
+                            border.color: modelData === "" ? "transparent" : "black"
+                            border.width: modelData === "" ? 0 : lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData
@@ -75,7 +75,7 @@
                     radius: 6
                     color: "#f0f0f0"
                     border.color: "black"
-                    border.width: 1
+                    border.width: lobby.btnBorder
                     Text {
                         anchors.centerIn: parent
                         text: "Cancel"
