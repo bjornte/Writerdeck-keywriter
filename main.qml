@@ -254,11 +254,11 @@ Window {
         return "http://" + lobbyIP + ":" + lobbyPort
     }
 
-    // Tip gate is USB only. An open phone page is not a keyboard — people leave
-    // that tab open for sync/download. Key chords skip the tip (fromKey). A key
-    // while the tip is up (phone Type or USB) continues once via fromKey.
+    // USB keyboard or an open phone/laptop page (WebSocket). Touch actions show
+    // the tip only when neither is present. Key chords skip the tip (fromKey).
+    // Continue / a key while the tip is up uses fromKey once — never a sticky flag.
     function lobbyKeyboardReady() {
-        return lobbyUsbKeyboard
+        return lobbyUsbKeyboard || lobbyPhoneConnected
     }
 
     function lobbyDialogIsOpen() {
@@ -475,9 +475,8 @@ Window {
         lobbyDecryptSelected()
     }
 
-    function lobbyOpenSelected() {
-        // Optional fromKey: key chord already proves a keyboard path (USB or phone).
-        var fromKey = (arguments.length > 0) ? !!arguments[0] : false
+    function lobbyOpenSelected(fromKey) {
+        // fromKey: key chord already proves a keyboard path (USB or phone).
         if (!fromKey && !lobbyEnsureKeyboard("edit")) return
         if (lobbyNotesModel.count === 0) return
         var row = lobbyNotesModel.get(lobbyFilesIndex)
@@ -516,16 +515,14 @@ Window {
         return name
     }
 
-    function lobbyFilesBeginNew() {
-        var fromKey = (arguments.length > 0) ? !!arguments[0] : false
+    function lobbyFilesBeginNew(fromKey) {
         if (!fromKey && !lobbyEnsureKeyboard("new")) return
         lobbyFilesMode = "new"
         lobbyFilesInput = ""
         lobbyFilesInputPos = 0
     }
 
-    function lobbyFilesBeginRename() {
-        var fromKey = (arguments.length > 0) ? !!arguments[0] : false
+    function lobbyFilesBeginRename(fromKey) {
         if (!fromKey && !lobbyEnsureKeyboard("rename")) return
         if (lobbyNotesModel.count === 0) return
         var n = lobbyNotesModel.get(lobbyFilesIndex).name
@@ -578,8 +575,7 @@ Window {
         }
     }
 
-    function lobbyFilesBeginNewEncrypted() {
-        var fromKey = (arguments.length > 0) ? !!arguments[0] : false
+    function lobbyFilesBeginNewEncrypted(fromKey) {
         if (!fromKey && !lobbyEnsureKeyboard("new-encrypted")) return
         vaultPendingAction = "new-encrypted"
         vaultBeginPIN("Enter PIN to create encrypted note", false)
