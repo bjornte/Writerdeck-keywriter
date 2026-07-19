@@ -800,6 +800,19 @@ Window {
         return ""
     }
 
+    // Phone keys arrive as text codepoints (event.key == 0); USB sends Qt::Key_A..Z.
+    function lobbyChordLetter(event) {
+        if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))
+            return ""
+        if (event.key >= Qt.Key_A && event.key <= Qt.Key_Z)
+            return String.fromCharCode(event.key).toLowerCase()
+        if (event.text && event.text.length === 1) {
+            var c = event.text.toLowerCase()
+            if (c >= "a" && c <= "z") return c
+        }
+        return ""
+    }
+
     function lobbyHandleKey(event) {
         if (isOmni) return false
         if (lobbyShowNoKeyboard) {
@@ -934,12 +947,10 @@ Window {
                 lobbySettingsBeginExit(); return true }
         }
         if (lobbyPage === 0 && lobbyFilesMode === "" && lobbyEncryptionEnabled) {
-            if (event.key === Qt.Key_X && event.modifiers === Qt.NoModifier) {
-                lobbyEncryptSelected(); return true }
-            if (event.key === Qt.Key_Y && event.modifiers === Qt.NoModifier) {
-                lobbyDecryptSelected(); return true }
-            if (event.key === Qt.Key_E && event.modifiers === Qt.NoModifier) {
-                lobbyFilesBeginNewEncrypted(true); return true }
+            var vaultLetter = lobbyChordLetter(event)
+            if (vaultLetter === "x") { lobbyEncryptSelected(); return true }
+            if (vaultLetter === "y") { lobbyDecryptSelected(); return true }
+            if (vaultLetter === "e") { lobbyFilesBeginNewEncrypted(true); return true }
         }
         if (lobbyPage === 0) {
             var ps = Math.max(1, lobbyFilesPageSize)
@@ -964,23 +975,24 @@ Window {
                 lobbyOpenSelected(true)
                 return true
             }
-            if (event.key === Qt.Key_N) {
+            var letter = lobbyChordLetter(event)
+            if (letter === "n") {
                 lobbyFilesBeginNew(true)
                 return true
             }
-            if (event.key === Qt.Key_D) {
+            if (letter === "d") {
                 lobbyFilesBeginDelete()
                 return true
             }
-            if (event.key === Qt.Key_R && !(event.modifiers & Qt.ControlModifier)) {
+            if (letter === "r") {
                 lobbyFilesBeginRename(true)
                 return true
             }
-            if (event.key === Qt.Key_V && !(event.modifiers & Qt.ControlModifier)) {
+            if (letter === "v") {
                 lobbyReadSelected()
                 return true
             }
-            if (event.key === Qt.Key_G && !(event.modifiers & Qt.ControlModifier)) {
+            if (letter === "g") {
                 lobbyFilesBeginDownload()
                 return true
             }
