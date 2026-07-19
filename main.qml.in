@@ -536,6 +536,16 @@ Window {
         lobbyFilesMode = "confirm-delete"
     }
 
+    function lobbyFilesBeginDownload() {
+        if (lobbyNotesModel.count === 0) return
+        if (!lobbyPhoneConnected) {
+            lobbyVaultError = "Open the phone page, then try Download again."
+            return
+        }
+        lobbyVaultError = ""
+        writerdeck.offerDownload(lobbyNotesModel.get(lobbyFilesIndex).name)
+    }
+
     function lobbyFilesDoDelete() {
         if (lobbyNotesModel.count === 0) { lobbyFilesMode = ""; return }
         writerdeck.deleteNote(lobbyNotesModel.get(lobbyFilesIndex).name)
@@ -906,6 +916,10 @@ Window {
             }
             if (event.key === Qt.Key_V && !(event.modifiers & Qt.ControlModifier)) {
                 lobbyReadSelected()
+                return true
+            }
+            if (event.key === Qt.Key_G && !(event.modifiers & Qt.ControlModifier)) {
+                lobbyFilesBeginDownload()
                 return true
             }
         }

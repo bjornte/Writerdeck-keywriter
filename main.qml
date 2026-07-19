@@ -536,6 +536,16 @@ Window {
         lobbyFilesMode = "confirm-delete"
     }
 
+    function lobbyFilesBeginDownload() {
+        if (lobbyNotesModel.count === 0) return
+        if (!lobbyPhoneConnected) {
+            lobbyVaultError = "Open the phone page, then try Download again."
+            return
+        }
+        lobbyVaultError = ""
+        writerdeck.offerDownload(lobbyNotesModel.get(lobbyFilesIndex).name)
+    }
+
     function lobbyFilesDoDelete() {
         if (lobbyNotesModel.count === 0) { lobbyFilesMode = ""; return }
         writerdeck.deleteNote(lobbyNotesModel.get(lobbyFilesIndex).name)
@@ -906,6 +916,10 @@ Window {
             }
             if (event.key === Qt.Key_V && !(event.modifiers & Qt.ControlModifier)) {
                 lobbyReadSelected()
+                return true
+            }
+            if (event.key === Qt.Key_G && !(event.modifiers & Qt.ControlModifier)) {
+                lobbyFilesBeginDownload()
                 return true
             }
         }
@@ -2406,9 +2420,9 @@ Window {
                                 visible: lobbyFilesMode === ""
 
                                 Repeater {
-                                    model: ["New", "Edit", "Read", "Rename", "Delete"]
+                                    model: ["New", "Edit", "Read", "Rename", "Delete", "Download"]
                                     delegate: Rectangle {
-                                        width: (lobbyFilesBar.width - lobby.tabSpacing * 4) / 5
+                                        width: (lobbyFilesBar.width - lobby.tabSpacing * 5) / 6
                                         height: lobby.actionBtnHeight
                                         radius: 6
                                         color: "#f0f0f0"
@@ -2418,7 +2432,7 @@ Window {
                                             anchors.centerIn: parent
                                             text: modelData
                                             font.family: "Noto Sans"
-                                            font.pointSize: 11
+                                            font.pointSize: 10
                                         }
                                         MouseArea {
                                             anchors.fill: parent
@@ -2428,6 +2442,7 @@ Window {
                                                 else if (modelData === "Read") root.lobbyReadSelected()
                                                 else if (modelData === "Rename") root.lobbyFilesBeginRename()
                                                 else if (modelData === "Delete") root.lobbyFilesBeginDelete()
+                                                else if (modelData === "Download") root.lobbyFilesBeginDownload()
                                                 root.lobbyKeepFocus()
                                             }
                                         }
@@ -3154,7 +3169,7 @@ Window {
                                           + "Up / Down — move the selection\n"
                                           + "Page Up / Page Down — previous or next page of notes\n"
                                           + "Enter — edit the selected note\n"
-                                          + "v — read · n — new · r — rename · d — delete\n"
+                                          + "v — read · n — new · r — rename · d — delete · g — download to phone\n"
                                           + "With private notes on: e — new encrypted · x — encrypt · y — decrypt\n"
                                           + "\n"
                                           + "Keyboard\n"

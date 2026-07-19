@@ -19,6 +19,7 @@ public slots:
     Q_INVOKABLE void notifyOpen(const QString &name);
     Q_INVOKABLE void notifyReadOpen(const QString &name);
     Q_INVOKABLE void notifyLobbyInput(const QString &mode);
+    Q_INVOKABLE void offerDownload(const QString &name);
     Q_INVOKABLE void syncNow();
     Q_INVOKABLE void setKeyboardLayout(const QString &layout);
     Q_INVOKABLE void setReadFont(const QString &font);

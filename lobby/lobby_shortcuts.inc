@@ -30,7 +30,7 @@
                                           + "Up / Down — move the selection\n"
                                           + "Page Up / Page Down — previous or next page of notes\n"
                                           + "Enter — edit the selected note\n"
-                                          + "v — read · n — new · r — rename · d — delete\n"
+                                          + "v — read · n — new · r — rename · d — delete · g — download to phone\n"
                                           + "With private notes on: e — new encrypted · x — encrypt · y — decrypt\n"
                                           + "\n"
                                           + "Keyboard\n"

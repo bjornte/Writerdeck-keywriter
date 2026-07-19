@@ -73,6 +73,15 @@ void LobbyBridge::notifyLobbyInput(const QString &mode)
     sendReq(QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Compact)));
 }
 
+void LobbyBridge::offerDownload(const QString &name)
+{
+    QJsonObject o;
+    o[QStringLiteral("t")] = QStringLiteral("req");
+    o[QStringLiteral("op")] = QStringLiteral("offerdownload");
+    o[QStringLiteral("name")] = name;
+    sendReq(QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Compact)));
+}
+
 void LobbyBridge::syncNow()
 {
     sendReq(QStringLiteral("{\"t\":\"req\",\"op\":\"syncnow\"}"));
