@@ -44,8 +44,8 @@ with open('lobby_subpages.qml.inc') as lf:
     lobby_ui = lf.read()
 with open('lobby/lobby_vault_numpad.inc') as vf:
     vault_ui = vf.read()
-with open('lobby/lobby_no_keyboard.inc') as nf:
-    no_kb_ui = nf.read()
+with open('lobby/lobby_dialog.inc') as df:
+    dialog_ui = df.read()
 
 lobby_rect = (
     '        ListModel {\n'
@@ -53,7 +53,7 @@ lobby_rect = (
     '        }\n'
     + lobby_ui +
     vault_ui +
-    no_kb_ui +
+    dialog_ui +
     '        Rectangle {\n'
     '            id: sleepScreen\n'
     '            anchors.fill: parent\n'

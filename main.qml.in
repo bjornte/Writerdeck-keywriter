@@ -26,6 +26,7 @@ Window {
     property string lobbyQrPath: ""
     property bool lobbyShowNoKeyboard: false
     property string lobbyNoKeyboardPending: ""
+    property bool lobbyKeyboardOverride: false
     property int paraSpacing: 28
     property string readFont: "Inter"
     property bool lobbySyncOn: false
@@ -241,12 +242,18 @@ Window {
     }
 
     function setLobbyKeyboardPresence(phoneConnected, usbKeyboard, port, qrPath) {
+        var wasUsb = lobbyUsbKeyboard
+        var wasPhone = lobbyPhoneConnected
         lobbyPhoneConnected = !!phoneConnected
         lobbyUsbKeyboard = !!usbKeyboard
         lobbyPort = port || 8000
         lobbyQrPath = qrPath || ""
-        if (lobbyShowNoKeyboard && lobbyKeyboardReady())
-            lobbyContinueAfterKeyboard()
+        // Auto-continue only when USB or phone path newly appears — not when a
+        // phone tab was already open (that still shows the tip + Continue).
+        if (lobbyShowNoKeyboard) {
+            if ((lobbyUsbKeyboard && !wasUsb) || (lobbyPhoneConnected && !wasPhone))
+                lobbyContinueAfterKeyboard()
+        }
     }
 
     function lobbyPhoneUrl() {
@@ -254,12 +261,41 @@ Window {
         return "http://" + lobbyIP + ":" + lobbyPort
     }
 
+    // Typing actions need a USB keyboard unless the user Continues past the tip
+    // (phone page open) or types a key while the tip is up.
     function lobbyKeyboardReady() {
-        return lobbyPhoneConnected || lobbyUsbKeyboard
+        return lobbyUsbKeyboard || lobbyKeyboardOverride
+    }
+
+    function lobbyDialogIsOpen() {
+        if (lobbyShowNoKeyboard) return true
+        return lobbyFilesMode === "confirm-delete"
+            || lobbyFilesMode === "new"
+            || lobbyFilesMode === "rename"
+            || lobbyFilesMode === "new-encrypted"
+    }
+
+    function lobbyDialogTitle() {
+        if (lobbyShowNoKeyboard) return "Connect a keyboard"
+        if (lobbyFilesMode === "confirm-delete") return "Delete this note?"
+        if (lobbyFilesMode === "new") return "New note"
+        if (lobbyFilesMode === "rename") return "Rename note"
+        if (lobbyFilesMode === "new-encrypted") return "New encrypted note"
+        return ""
+    }
+
+    function lobbyDialogSelectedNoteLabel() {
+        if (lobbyNotesModel.count === 0) return ""
+        if (lobbyFilesIndex < 0 || lobbyFilesIndex >= lobbyNotesModel.count) return ""
+        var row = lobbyNotesModel.get(lobbyFilesIndex)
+        return row ? lobbyFilesStripSuffix(row.name) : ""
     }
 
     function lobbyEnsureKeyboard(pending) {
-        if (lobbyKeyboardReady()) return true
+        if (lobbyKeyboardReady()) {
+            lobbyKeyboardOverride = false
+            return true
+        }
         lobbyNoKeyboardPending = pending || ""
         lobbyShowNoKeyboard = true
         writerdeck.notifyLobbyInput("no-keyboard")
@@ -270,6 +306,7 @@ Window {
     function lobbyDismissNoKeyboard() {
         lobbyShowNoKeyboard = false
         lobbyNoKeyboardPending = ""
+        lobbyKeyboardOverride = false
         if (vaultOverlayMode === "")
             writerdeck.notifyLobbyInput(lobbyFilesMode)
         lobbyKeepFocus()
@@ -279,6 +316,7 @@ Window {
         var pending = lobbyNoKeyboardPending
         lobbyShowNoKeyboard = false
         lobbyNoKeyboardPending = ""
+        lobbyKeyboardOverride = true
         if (vaultOverlayMode === "")
             writerdeck.notifyLobbyInput(lobbyFilesMode)
         if (pending === "edit")
@@ -289,6 +327,8 @@ Window {
             lobbyFilesBeginRename()
         else if (pending === "new-encrypted")
             lobbyFilesBeginNewEncrypted()
+        else
+            lobbyKeyboardOverride = false
         lobbyKeepFocus()
     }
 
@@ -694,8 +734,7 @@ Window {
                 lobbyDismissNoKeyboard()
                 return true
             }
-            // A keystroke means USB or phone path is live (info may still be catching up).
-            lobbyPhoneConnected = true
+            // Phone or USB key while tip is up — continue the pending action.
             lobbyContinueAfterKeyboard()
             return true
         }

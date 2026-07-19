@@ -26,6 +26,7 @@ Window {
     property string lobbyQrPath: ""
     property bool lobbyShowNoKeyboard: false
     property string lobbyNoKeyboardPending: ""
+    property bool lobbyKeyboardOverride: false
     property int paraSpacing: 28
     property string readFont: "Inter"
     property bool lobbySyncOn: false
@@ -241,12 +242,18 @@ Window {
     }
 
     function setLobbyKeyboardPresence(phoneConnected, usbKeyboard, port, qrPath) {
+        var wasUsb = lobbyUsbKeyboard
+        var wasPhone = lobbyPhoneConnected
         lobbyPhoneConnected = !!phoneConnected
         lobbyUsbKeyboard = !!usbKeyboard
         lobbyPort = port || 8000
         lobbyQrPath = qrPath || ""
-        if (lobbyShowNoKeyboard && lobbyKeyboardReady())
-            lobbyContinueAfterKeyboard()
+        // Auto-continue only when USB or phone path newly appears — not when a
+        // phone tab was already open (that still shows the tip + Continue).
+        if (lobbyShowNoKeyboard) {
+            if ((lobbyUsbKeyboard && !wasUsb) || (lobbyPhoneConnected && !wasPhone))
+                lobbyContinueAfterKeyboard()
+        }
     }
 
     function lobbyPhoneUrl() {
@@ -254,12 +261,41 @@ Window {
         return "http://" + lobbyIP + ":" + lobbyPort
     }
 
+    // Typing actions need a USB keyboard unless the user Continues past the tip
+    // (phone page open) or types a key while the tip is up.
     function lobbyKeyboardReady() {
-        return lobbyPhoneConnected || lobbyUsbKeyboard
+        return lobbyUsbKeyboard || lobbyKeyboardOverride
+    }
+
+    function lobbyDialogIsOpen() {
+        if (lobbyShowNoKeyboard) return true
+        return lobbyFilesMode === "confirm-delete"
+            || lobbyFilesMode === "new"
+            || lobbyFilesMode === "rename"
+            || lobbyFilesMode === "new-encrypted"
+    }
+
+    function lobbyDialogTitle() {
+        if (lobbyShowNoKeyboard) return "Connect a keyboard"
+        if (lobbyFilesMode === "confirm-delete") return "Delete this note?"
+        if (lobbyFilesMode === "new") return "New note"
+        if (lobbyFilesMode === "rename") return "Rename note"
+        if (lobbyFilesMode === "new-encrypted") return "New encrypted note"
+        return ""
+    }
+
+    function lobbyDialogSelectedNoteLabel() {
+        if (lobbyNotesModel.count === 0) return ""
+        if (lobbyFilesIndex < 0 || lobbyFilesIndex >= lobbyNotesModel.count) return ""
+        var row = lobbyNotesModel.get(lobbyFilesIndex)
+        return row ? lobbyFilesStripSuffix(row.name) : ""
     }
 
     function lobbyEnsureKeyboard(pending) {
-        if (lobbyKeyboardReady()) return true
+        if (lobbyKeyboardReady()) {
+            lobbyKeyboardOverride = false
+            return true
+        }
         lobbyNoKeyboardPending = pending || ""
         lobbyShowNoKeyboard = true
         writerdeck.notifyLobbyInput("no-keyboard")
@@ -270,6 +306,7 @@ Window {
     function lobbyDismissNoKeyboard() {
         lobbyShowNoKeyboard = false
         lobbyNoKeyboardPending = ""
+        lobbyKeyboardOverride = false
         if (vaultOverlayMode === "")
             writerdeck.notifyLobbyInput(lobbyFilesMode)
         lobbyKeepFocus()
@@ -279,6 +316,7 @@ Window {
         var pending = lobbyNoKeyboardPending
         lobbyShowNoKeyboard = false
         lobbyNoKeyboardPending = ""
+        lobbyKeyboardOverride = true
         if (vaultOverlayMode === "")
             writerdeck.notifyLobbyInput(lobbyFilesMode)
         if (pending === "edit")
@@ -289,6 +327,8 @@ Window {
             lobbyFilesBeginRename()
         else if (pending === "new-encrypted")
             lobbyFilesBeginNewEncrypted()
+        else
+            lobbyKeyboardOverride = false
         lobbyKeepFocus()
     }
 
@@ -694,8 +734,7 @@ Window {
                 lobbyDismissNoKeyboard()
                 return true
             }
-            // A keystroke means USB or phone path is live (info may still be catching up).
-            lobbyPhoneConnected = true
+            // Phone or USB key while tip is up — continue the pending action.
             lobbyContinueAfterKeyboard()
             return true
         }
@@ -2273,29 +2312,6 @@ Window {
                             spacing: lobby.contentSpacing
 
                             Text {
-                                visible: lobbyFilesMode === "new" || lobbyFilesMode === "rename"
-                                         || lobbyFilesMode === "new-encrypted"
-                                text: lobbyFilesMode === "new" ? "New note name:"
-                                     : lobbyFilesMode === "rename" ? "Rename to:"
-                                     : lobbyFilesMode === "new-encrypted" ? "New encrypted note name:"
-                                     : ""
-                                font.family: "Noto Sans"
-                                font.pointSize: 13
-                                color: "black"
-                                width: parent.width
-                            }
-
-                            Text {
-                                visible: lobbyFilesMode === "new" || lobbyFilesMode === "rename"
-                                         || lobbyFilesMode === "new-encrypted"
-                                text: lobbyFilesInputDisplay()
-                                font.family: "Noto Mono"
-                                font.pointSize: 12
-                                color: "#333"
-                                width: parent.width
-                            }
-
-                            Text {
                                 visible: lobbyVaultError !== "" && lobbyFilesMode === ""
                                 text: lobbyVaultError
                                 font.family: "Noto Sans"
@@ -2503,118 +2519,6 @@ Window {
                                         onClicked: {
                                             root.lobbyDecryptSelected()
                                             root.lobbyKeepFocus()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // One floating confirm — title and actions together (not split across the list).
-                        Rectangle {
-                            id: deleteConfirmScrim
-                            anchors.fill: parent
-                            color: "#dddddd"
-                            visible: lobbyFilesMode === "confirm-delete"
-                            z: 20
-
-                            Rectangle {
-                                id: deleteConfirmBox
-                                anchors.centerIn: parent
-                                width: Math.min(parent.width * 0.85, parent.width - 48)
-                                height: deleteConfirmCol.height + 48
-                                color: "white"
-                                border.color: "black"
-                                border.width: 2
-                                radius: 8
-
-                                Column {
-                                    id: deleteConfirmCol
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    anchors.top: parent.top
-                                    anchors.topMargin: 24
-                                    width: parent.width - 48
-                                    spacing: 16
-
-                                    Text {
-                                        width: parent.width
-                                        horizontalAlignment: Text.AlignHCenter
-                                        wrapMode: Text.WordWrap
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 16
-                                        color: "black"
-                                        text: "Delete this note?"
-                                    }
-
-                                    Text {
-                                        width: parent.width
-                                        horizontalAlignment: Text.AlignHCenter
-                                        wrapMode: Text.WordWrap
-                                        elide: Text.ElideMiddle
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 13
-                                        color: "black"
-                                        text: {
-                                            if (lobbyNotesModel.count === 0) return ""
-                                            if (lobbyFilesIndex < 0 || lobbyFilesIndex >= lobbyNotesModel.count)
-                                                return ""
-                                            var row = lobbyNotesModel.get(lobbyFilesIndex)
-                                            return row ? root.lobbyFilesStripSuffix(row.name) : ""
-                                        }
-                                    }
-
-                                    Rectangle {
-                                        width: parent.width
-                                        height: 1
-                                        color: "black"
-                                    }
-
-                                    Row {
-                                        width: parent.width
-                                        spacing: lobby.tabSpacing
-
-                                        Rectangle {
-                                            width: (parent.width - lobby.tabSpacing) / 2
-                                            height: lobby.actionBtnHeight
-                                            radius: 6
-                                            color: "white"
-                                            border.color: "black"
-                                            border.width: 1
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: "Cancel"
-                                                font.family: "Noto Sans"
-                                                font.pointSize: 12
-                                                color: "black"
-                                            }
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                onClicked: {
-                                                    lobbyFilesMode = ""
-                                                    root.lobbyKeepFocus()
-                                                }
-                                            }
-                                        }
-                                        Rectangle {
-                                            width: (parent.width - lobby.tabSpacing) / 2
-                                            height: lobby.actionBtnHeight
-                                            radius: 6
-                                            color: "white"
-                                            border.color: "black"
-                                            border.width: 2
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: "Delete"
-                                                font.family: "Noto Sans"
-                                                font.pointSize: 12
-                                                color: "black"
-                                            }
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                onClicked: {
-                                                    root.lobbyFilesDoDelete()
-                                                    root.lobbyKeepFocus()
-                                                }
-                                            }
                                         }
                                     }
                                 }
@@ -3319,97 +3223,278 @@ Window {
                 }
             }
         }
+        // Shared Lobby dialog chrome: grey scrim + white floating box (black type).
+        // Kind comes from lobbyShowNoKeyboard / lobbyFilesMode — keep content in one piece.
         Rectangle {
-            id: noKeyboardOverlay
+            id: lobbyDialogScrim
             anchors.fill: parent
-            color: "#f8f8f8"
-            visible: lobbyShowNoKeyboard
-            z: 26
+            color: "#dddddd"
+            visible: root.lobbyDialogIsOpen()
+            z: 24
 
-            Column {
+            Rectangle {
+                id: lobbyDialogBox
                 anchors.centerIn: parent
-                width: parent.width * 0.85
-                spacing: lobby.contentSpacing
+                width: Math.min(parent.width * 0.85, parent.width - 48)
+                height: lobbyDialogCol.height + 48
+                color: "white"
+                border.color: "black"
+                border.width: 2
+                radius: 8
 
-                Text {
-                    width: parent.width
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                    font.family: "Noto Sans"
-                    font.pointSize: 16
-                    color: "black"
-                    text: "Connect a keyboard"
-                }
-
-                Text {
-                    width: parent.width
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                    font.family: "Noto Sans"
-                    font.pointSize: 12
-                    color: "#333"
-                    text: "USB: plug in with an OTG cable.\n\nBluetooth: pair to your phone, then open the address below (or scan the code)."
-                }
-
-                Text {
-                    width: parent.width
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                    font.family: "Noto Mono"
-                    font.pointSize: 13
-                    color: "black"
-                    text: root.lobbyPhoneUrl()
-                }
-
-                Text {
-                    width: parent.width
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                    font.family: "Noto Sans"
-                    font.pointSize: 12
-                    color: "#333"
-                    visible: lobbyPIN !== ""
-                    text: "PIN: " + lobbyPIN
-                }
-
-                Image {
+                Column {
+                    id: lobbyDialogCol
                     anchors.horizontalCenter: parent.horizontalCenter
-                    width: Math.min(parent.width * 0.55, 280)
-                    height: width
-                    fillMode: Image.PreserveAspectFit
-                    visible: lobbyQrPath !== ""
-                    source: lobbyQrPath !== "" ? ("file://" + lobbyQrPath) : ""
-                    cache: false
-                }
+                    anchors.top: parent.top
+                    anchors.topMargin: 24
+                    width: parent.width - 48
+                    spacing: 16
 
-                Text {
-                    width: parent.width
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                    font.family: "Noto Sans"
-                    font.pointSize: 11
-                    color: "#555"
-                    text: "Esc or Cancel to close. Tip closes when a keyboard connects."
-                }
-
-                Rectangle {
-                    width: parent.width
-                    height: lobby.actionBtnHeight
-                    radius: 6
-                    color: "#f0f0f0"
-                    border.color: "#bbb"
-                    border.width: 1
                     Text {
-                        anchors.centerIn: parent
-                        text: "Cancel"
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        font.family: "Noto Sans"
+                        font.pointSize: 16
+                        color: "black"
+                        text: root.lobbyDialogTitle()
+                    }
+
+                    // ---- confirm-delete body ----
+                    Text {
+                        width: parent.width
+                        visible: !lobbyShowNoKeyboard && lobbyFilesMode === "confirm-delete"
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        elide: Text.ElideMiddle
+                        font.family: "Noto Sans"
+                        font.pointSize: 13
+                        color: "black"
+                        text: root.lobbyDialogSelectedNoteLabel()
+                    }
+
+                    // ---- new / rename / new-encrypted body ----
+                    Text {
+                        width: parent.width
+                        visible: !lobbyShowNoKeyboard
+                                 && (lobbyFilesMode === "new"
+                                     || lobbyFilesMode === "rename"
+                                     || lobbyFilesMode === "new-encrypted")
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WrapAnywhere
+                        font.family: "Noto Mono"
+                        font.pointSize: 14
+                        color: "black"
+                        text: root.lobbyFilesInputDisplay()
+                    }
+
+                    // ---- no-keyboard body ----
+                    Text {
+                        width: parent.width
+                        visible: lobbyShowNoKeyboard
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
                         font.family: "Noto Sans"
                         font.pointSize: 12
+                        color: "black"
+                        text: lobbyUsbKeyboard
+                              ? "USB keyboard detected."
+                              : (lobbyPhoneConnected
+                                 ? "Phone page is open — tap Continue to type from the phone, or plug in USB."
+                                 : "USB: plug in with an OTG cable.\n\nBluetooth: pair to your phone, then open the address below (or scan the code).")
                     }
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: {
-                            root.lobbyDismissNoKeyboard()
-                            root.lobbyKeepFocus()
+
+                    Text {
+                        width: parent.width
+                        visible: lobbyShowNoKeyboard
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        font.family: "Noto Mono"
+                        font.pointSize: 13
+                        color: "black"
+                        text: root.lobbyPhoneUrl()
+                    }
+
+                    Text {
+                        width: parent.width
+                        visible: lobbyShowNoKeyboard && lobbyPIN !== ""
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        font.family: "Noto Sans"
+                        font.pointSize: 12
+                        color: "black"
+                        text: "PIN: " + lobbyPIN
+                    }
+
+                    Image {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: Math.min(parent.width * 0.55, 280)
+                        height: width
+                        fillMode: Image.PreserveAspectFit
+                        visible: lobbyShowNoKeyboard && lobbyQrPath !== ""
+                        source: (lobbyShowNoKeyboard && lobbyQrPath !== "") ? ("file://" + lobbyQrPath) : ""
+                        cache: false
+                    }
+
+                    // ---- buttons ----
+                    Row {
+                        width: parent.width
+                        spacing: lobby.tabSpacing
+                        visible: !lobbyShowNoKeyboard && lobbyFilesMode === "confirm-delete"
+
+                        Rectangle {
+                            width: (parent.width - lobby.tabSpacing) / 2
+                            height: lobby.actionBtnHeight
+                            radius: 6
+                            color: "white"
+                            border.color: "black"
+                            border.width: 1
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Cancel"
+                                font.family: "Noto Sans"
+                                font.pointSize: 12
+                                color: "black"
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    lobbyFilesMode = ""
+                                    root.lobbyKeepFocus()
+                                }
+                            }
+                        }
+                        Rectangle {
+                            width: (parent.width - lobby.tabSpacing) / 2
+                            height: lobby.actionBtnHeight
+                            radius: 6
+                            color: "white"
+                            border.color: "black"
+                            border.width: 2
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Delete"
+                                font.family: "Noto Sans"
+                                font.pointSize: 12
+                                color: "black"
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    root.lobbyFilesDoDelete()
+                                    root.lobbyKeepFocus()
+                                }
+                            }
+                        }
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: lobby.tabSpacing
+                        visible: !lobbyShowNoKeyboard
+                                 && (lobbyFilesMode === "new"
+                                     || lobbyFilesMode === "rename"
+                                     || lobbyFilesMode === "new-encrypted")
+
+                        Rectangle {
+                            width: (parent.width - lobby.tabSpacing) / 2
+                            height: lobby.actionBtnHeight
+                            radius: 6
+                            color: "white"
+                            border.color: "black"
+                            border.width: 1
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Cancel"
+                                font.family: "Noto Sans"
+                                font.pointSize: 12
+                                color: "black"
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    lobbyFilesMode = ""
+                                    lobbyFilesInput = ""
+                                    lobbyFilesInputPos = 0
+                                    root.lobbyKeepFocus()
+                                }
+                            }
+                        }
+                        Rectangle {
+                            width: (parent.width - lobby.tabSpacing) / 2
+                            height: lobby.actionBtnHeight
+                            radius: 6
+                            color: "white"
+                            border.color: "black"
+                            border.width: 2
+                            Text {
+                                anchors.centerIn: parent
+                                text: lobbyFilesMode === "rename" ? "Rename" : "Create"
+                                font.family: "Noto Sans"
+                                font.pointSize: 12
+                                color: "black"
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    root.lobbyFilesSubmitInput()
+                                    root.lobbyKeepFocus()
+                                }
+                            }
+                        }
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: lobby.tabSpacing
+                        visible: lobbyShowNoKeyboard
+
+                        Rectangle {
+                            width: lobbyPhoneConnected
+                                   ? ((parent.width - lobby.tabSpacing) / 2)
+                                   : parent.width
+                            height: lobby.actionBtnHeight
+                            radius: 6
+                            color: "white"
+                            border.color: "black"
+                            border.width: 1
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Cancel"
+                                font.family: "Noto Sans"
+                                font.pointSize: 12
+                                color: "black"
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    root.lobbyDismissNoKeyboard()
+                                    root.lobbyKeepFocus()
+                                }
+                            }
+                        }
+                        Rectangle {
+                            visible: lobbyPhoneConnected
+                            width: (parent.width - lobby.tabSpacing) / 2
+                            height: lobby.actionBtnHeight
+                            radius: 6
+                            color: "white"
+                            border.color: "black"
+                            border.width: 2
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Continue"
+                                font.family: "Noto Sans"
+                                font.pointSize: 12
+                                color: "black"
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    root.lobbyContinueAfterKeyboard()
+                                    root.lobbyKeepFocus()
+                                }
+                            }
                         }
                     }
                 }
