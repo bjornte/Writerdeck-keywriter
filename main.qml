@@ -2274,12 +2274,10 @@ Window {
 
                             Text {
                                 visible: lobbyFilesMode === "new" || lobbyFilesMode === "rename"
-                                         || lobbyFilesMode === "confirm-delete"
                                          || lobbyFilesMode === "new-encrypted"
                                 text: lobbyFilesMode === "new" ? "New note name:"
                                      : lobbyFilesMode === "rename" ? "Rename to:"
                                      : lobbyFilesMode === "new-encrypted" ? "New encrypted note name:"
-                                     : lobbyFilesMode === "confirm-delete" ? "Delete this note?"
                                      : ""
                                 font.family: "Noto Sans"
                                 font.pointSize: 13
@@ -2313,15 +2311,13 @@ Window {
                                 width: parent.width
                                 height: {
                                     var reserved = lobbyFilesBar.height + lobby.contentSpacing * 2
-                                    if (lobbyFilesMode === "confirm-delete")
-                                        reserved = lobbyFilesDeleteBar.height + lobby.contentSpacing * 2
                                     if (lobbyEncryptionEnabled && lobbyFilesMode === "" && lobbyNotesModel.count > 0)
                                         reserved += lobbyFilesVaultBar.height + lobby.contentSpacing
                                     if (lobbyFilesPageLabel.visible)
                                         reserved += lobbyFilesPageLabel.height + lobby.contentSpacing
                                     return Math.max(lobby.rowHeight * 2, parent.height - reserved)
                                 }
-                                visible: lobbyFilesMode === "" || lobbyFilesMode === "confirm-delete"
+                                visible: lobbyFilesMode === ""
                                 clip: true
 
                                 property int pageSize: Math.max(1, Math.floor(height / lobby.rowHeight))
@@ -2430,57 +2426,6 @@ Window {
                             }
 
                             Row {
-                                id: lobbyFilesDeleteBar
-                                width: parent.width
-                                height: lobby.actionBtnHeight + 8
-                                spacing: lobby.tabSpacing
-                                visible: lobbyFilesMode === "confirm-delete"
-
-                                Rectangle {
-                                    width: (lobbyFilesDeleteBar.width - lobby.tabSpacing) / 2
-                                    height: lobby.actionBtnHeight
-                                    radius: 6
-                                    color: "#f0f0f0"
-                                    border.color: "#bbb"
-                                    border.width: 1
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Cancel"
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 11
-                                    }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        onClicked: {
-                                            lobbyFilesMode = ""
-                                            root.lobbyKeepFocus()
-                                        }
-                                    }
-                                }
-                                Rectangle {
-                                    width: (lobbyFilesDeleteBar.width - lobby.tabSpacing) / 2
-                                    height: lobby.actionBtnHeight
-                                    radius: 6
-                                    color: "#f0f0f0"
-                                    border.color: "black"
-                                    border.width: 2
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Delete"
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 11
-                                    }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        onClicked: {
-                                            root.lobbyFilesDoDelete()
-                                            root.lobbyKeepFocus()
-                                        }
-                                    }
-                                }
-                            }
-
-                            Row {
                                 id: lobbyFilesVaultBar
                                 width: parent.width
                                 height: lobby.actionBtnHeight + 4
@@ -2558,6 +2503,118 @@ Window {
                                         onClicked: {
                                             root.lobbyDecryptSelected()
                                             root.lobbyKeepFocus()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // One floating confirm — title and actions together (not split across the list).
+                        Rectangle {
+                            id: deleteConfirmScrim
+                            anchors.fill: parent
+                            color: "#dddddd"
+                            visible: lobbyFilesMode === "confirm-delete"
+                            z: 20
+
+                            Rectangle {
+                                id: deleteConfirmBox
+                                anchors.centerIn: parent
+                                width: Math.min(parent.width * 0.85, parent.width - 48)
+                                height: deleteConfirmCol.height + 48
+                                color: "white"
+                                border.color: "black"
+                                border.width: 2
+                                radius: 8
+
+                                Column {
+                                    id: deleteConfirmCol
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    anchors.top: parent.top
+                                    anchors.topMargin: 24
+                                    width: parent.width - 48
+                                    spacing: 16
+
+                                    Text {
+                                        width: parent.width
+                                        horizontalAlignment: Text.AlignHCenter
+                                        wrapMode: Text.WordWrap
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 16
+                                        color: "black"
+                                        text: "Delete this note?"
+                                    }
+
+                                    Text {
+                                        width: parent.width
+                                        horizontalAlignment: Text.AlignHCenter
+                                        wrapMode: Text.WordWrap
+                                        elide: Text.ElideMiddle
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 13
+                                        color: "black"
+                                        text: {
+                                            if (lobbyNotesModel.count === 0) return ""
+                                            if (lobbyFilesIndex < 0 || lobbyFilesIndex >= lobbyNotesModel.count)
+                                                return ""
+                                            var row = lobbyNotesModel.get(lobbyFilesIndex)
+                                            return row ? root.lobbyFilesStripSuffix(row.name) : ""
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        width: parent.width
+                                        height: 1
+                                        color: "black"
+                                    }
+
+                                    Row {
+                                        width: parent.width
+                                        spacing: lobby.tabSpacing
+
+                                        Rectangle {
+                                            width: (parent.width - lobby.tabSpacing) / 2
+                                            height: lobby.actionBtnHeight
+                                            radius: 6
+                                            color: "white"
+                                            border.color: "black"
+                                            border.width: 1
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "Cancel"
+                                                font.family: "Noto Sans"
+                                                font.pointSize: 12
+                                                color: "black"
+                                            }
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                onClicked: {
+                                                    lobbyFilesMode = ""
+                                                    root.lobbyKeepFocus()
+                                                }
+                                            }
+                                        }
+                                        Rectangle {
+                                            width: (parent.width - lobby.tabSpacing) / 2
+                                            height: lobby.actionBtnHeight
+                                            radius: 6
+                                            color: "white"
+                                            border.color: "black"
+                                            border.width: 2
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "Delete"
+                                                font.family: "Noto Sans"
+                                                font.pointSize: 12
+                                                color: "black"
+                                            }
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                onClicked: {
+                                                    root.lobbyFilesDoDelete()
+                                                    root.lobbyKeepFocus()
+                                                }
+                                            }
                                         }
                                     }
                                 }
