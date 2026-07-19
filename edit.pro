@@ -42,9 +42,10 @@ HEADERS += \
     edit_utils.h \
     rotation_watcher.h \
     lobby_bridge.h \
+    lobby_ui_config.h \
     edit_helper.h
 
-SOURCES += rotation_watcher.cpp lobby_bridge.cpp edit_helper.cpp
+SOURCES += rotation_watcher.cpp lobby_bridge.cpp lobby_ui_config.cpp edit_helper.cpp
 
 # Socket reader thread (main.cpp) needs pthread.
 QMAKE_CXXFLAGS += -pthread

@@ -38,8 +38,8 @@
                                     wrapMode: Text.WordWrap
                                 }
                                 Text {
-                                    text: "Open the Files tab (1) or press Ctrl-K.\nUse Tab / arrows / 1-6 to switch pages."
-                                    color: "black"
+                                    text: lobbyUi.str("home.tip")
+                                    color: lobby.textColor
                                     font.pointSize: 10
                                     font.family: "Noto Sans"
                                     width: parent.width

@@ -297,11 +297,11 @@ Window {
     }
 
     function lobbyDialogTitle() {
-        if (lobbyShowNoKeyboard) return "Connect a keyboard"
-        if (lobbyFilesMode === "confirm-delete") return "Delete this note?"
-        if (lobbyFilesMode === "new") return "New note"
-        if (lobbyFilesMode === "rename") return "Rename note"
-        if (lobbyFilesMode === "new-encrypted") return "New encrypted note"
+        if (lobbyShowNoKeyboard) return lobbyUi.str("dialog.connectTitle")
+        if (lobbyFilesMode === "confirm-delete") return lobbyUi.str("dialog.deleteTitle")
+        if (lobbyFilesMode === "new") return lobbyUi.str("dialog.newTitle")
+        if (lobbyFilesMode === "rename") return lobbyUi.str("dialog.renameTitle")
+        if (lobbyFilesMode === "new-encrypted") return lobbyUi.str("dialog.newEncryptedTitle")
         return ""
     }
 
@@ -865,8 +865,8 @@ Window {
     }
 
     // Phone keys arrive as text codepoints (event.key == 0); USB sends Qt::Key_A..Z.
-    // Lobby action letter: Ctrl/Cmd+letter only (not the bare key).
-    // Ctrl-K / Ctrl-Q stay global. Ctrl-R renames on Files; rotates on other Lobby pages.
+    // Lobby action letter: Ctrl/Cmd+letter only; bindings from lobby-ui.json.
+    // Ctrl-K / Ctrl-Q stay global. files.rename letter rotates on other Lobby pages.
     function lobbyChordLetter(event) {
         if (event.modifiers & Qt.AltModifier)
             return ""
@@ -878,10 +878,14 @@ Window {
         var letter = String.fromCharCode(event.key).toLowerCase()
         if (letter === "k" || letter === "q")
             return ""
-        // Files: Ctrl-R is rename (below). Elsewhere Ctrl-R rotates in handleKeyDown.
-        if (letter === "r" && !(lobbyPage === 0 && lobbyFilesMode === ""))
+        if (letter === lobbyUi.shortcut("files.rename")
+                && !(lobbyPage === 0 && lobbyFilesMode === ""))
             return ""
         return letter
+    }
+
+    function lobbyShortcutIs(letter, actionId) {
+        return letter !== "" && letter === lobbyUi.shortcut(actionId)
     }
 
     function lobbyHandleKey(event) {
@@ -989,53 +993,53 @@ Window {
         }
         if (lobbyPage === 1) {
             var kbLetter = lobbyChordLetter(event)
-            if (kbLetter === "u") {
+            if (lobbyShortcutIs(kbLetter, "keyboard.us")) {
                 writerdeck.setKeyboardLayout("us"); return true }
-            if (kbLetter === "o") {
+            if (lobbyShortcutIs(kbLetter, "keyboard.no")) {
                 writerdeck.setKeyboardLayout("no"); return true }
         }
         if (lobbyPage === 2) {
             if (event.key === Qt.Key_Return
-                    || lobbyChordLetter(event) === "s") {
+                    || lobbyShortcutIs(lobbyChordLetter(event), "sync.now")) {
                 if (lobbySyncReady && !lobbySyncing) writerdeck.syncNow()
                 return true
             }
         }
         if (lobbyPage === 3 && lobbySettingsMode === "") {
             var setLetter = lobbyChordLetter(event)
-            if (!lobbyEncryptionEnabled && setLetter === "e") {
+            if (!lobbyEncryptionEnabled && lobbyShortcutIs(setLetter, "settings.enableVault")) {
                 vaultBeginSetup(); return true }
-            if (lobbyEncryptionEnabled && setLetter === "c") {
+            if (lobbyEncryptionEnabled && lobbyShortcutIs(setLetter, "settings.changePin")) {
                 vaultBeginChangePIN(); return true }
-            if (setLetter === "f") {
+            if (lobbyShortcutIs(setLetter, "settings.font")) {
                 var fonts = ["Inter", "Literata", "EB Garamond", "DejaVu Sans"]
                 var fi = fonts.indexOf(readFont)
                 if (fi < 0) fi = 0
                 writerdeck.setReadFont(fonts[(fi + 1) % fonts.length])
                 return true
             }
-            if (setLetter === "p") {
+            if (lobbyShortcutIs(setLetter, "settings.pin")) {
                 var pins = ["6", "4", "none"]
                 var pi = pins.indexOf(lobbyPinDigits)
                 if (pi < 0) pi = 0
                 writerdeck.setPinDigits(pins[(pi + 1) % pins.length])
                 return true
             }
-            if (setLetter === "t") {
+            if (lobbyShortcutIs(setLetter, "settings.rotation")) {
                 var rots = [0, 90, 180, 270]
                 var ri = rots.indexOf(root.rotation)
                 if (ri < 0) ri = 0
                 root.setScreenRotation(rots[(ri + 1) % rots.length])
                 return true
             }
-            if (setLetter === "x") {
+            if (lobbyShortcutIs(setLetter, "settings.exit")) {
                 lobbySettingsBeginExit(); return true }
         }
         if (lobbyPage === 0 && lobbyFilesMode === "" && lobbyEncryptionEnabled) {
             var vaultLetter = lobbyChordLetter(event)
-            if (vaultLetter === "x") { lobbyEncryptSelected(); return true }
-            if (vaultLetter === "y") { lobbyDecryptSelected(); return true }
-            if (vaultLetter === "e") { lobbyFilesBeginNewEncrypted(true); return true }
+            if (lobbyShortcutIs(vaultLetter, "files.encrypt")) { lobbyEncryptSelected(); return true }
+            if (lobbyShortcutIs(vaultLetter, "files.decrypt")) { lobbyDecryptSelected(); return true }
+            if (lobbyShortcutIs(vaultLetter, "files.newEncrypted")) { lobbyFilesBeginNewEncrypted(true); return true }
         }
         if (lobbyPage === 0) {
             var ps = Math.max(1, lobbyFilesPageSize)
@@ -1061,23 +1065,23 @@ Window {
                 return true
             }
             var letter = lobbyChordLetter(event)
-            if (letter === "n") {
+            if (lobbyShortcutIs(letter, "files.new")) {
                 lobbyFilesBeginNew(true)
                 return true
             }
-            if (letter === "d") {
+            if (lobbyShortcutIs(letter, "files.delete")) {
                 lobbyFilesBeginDelete()
                 return true
             }
-            if (letter === "r") {
+            if (lobbyShortcutIs(letter, "files.rename")) {
                 lobbyFilesBeginRename(true)
                 return true
             }
-            if (letter === "v") {
+            if (lobbyShortcutIs(letter, "files.read")) {
                 lobbyReadSelected()
                 return true
             }
-            if (letter === "g") {
+            if (lobbyShortcutIs(letter, "files.download")) {
                 lobbyFilesBeginDownload()
                 return true
             }
@@ -1211,10 +1215,13 @@ Window {
             } else isOmni = !isOmni
             event.accepted = true
         } else if (event.key === Qt.Key_R && (ctrlPressed || (event.modifiers & Qt.ControlModifier))) {
-            // Lobby Files uses Ctrl-R for rename; elsewhere in Lobby it rotates.
-            if (isLobby && !(lobbyPage === 0 && lobbyFilesMode === "")) {
-                rotateScreen()
-                event.accepted = true
+            // Ctrl-R rotates unless lobby-ui maps files.rename to r and Files is active.
+            if (isLobby) {
+                if (!(lobbyUi.shortcut("files.rename") === "r"
+                        && lobbyPage === 0 && lobbyFilesMode === "")) {
+                    rotateScreen()
+                    event.accepted = true
+                }
             }
         } else if (event.key === Qt.Key_Q && (ctrlPressed || (event.modifiers & Qt.ControlModifier))) {
             saveAndQuit()

@@ -16,7 +16,7 @@
                                 spacing: lobby.contentSpacing
                                 Text {
                                     text: lobbySettingsMode === "confirm-exit"
-                                          ? "Stop Writerdeck? Enter=yes  Esc=no"
+                                          ? lobbyUi.str("settings.confirmExit")
                                           : "Settings"
                                     font.pointSize: 14
                                     font.family: "Noto Sans"
@@ -37,7 +37,7 @@
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "Ctrl-F — cycle through fonts."
+                                        text: lobbyUi.str("settings.fontHelp")
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -64,7 +64,7 @@
                                                 radius: 6
                                                 property bool selected: readFont === modelData.id
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
-                                                border.color: "black"
+                                                border.color: lobby.borderColor
                                                 border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Text {
                                                     anchors.centerIn: parent
@@ -93,8 +93,8 @@
                                     }
                                     Text {
                                         text: lobbyEncryptionEnabled
-                                            ? "On — encrypted notes require PIN to open, read, or edit"
-                                            : "Off — optional encryption with a separate 6-digit PIN. Recovery via GitHub secret/pin when sync is on."
+                                            ? lobbyUi.str("settings.privateOn")
+                                            : lobbyUi.str("settings.privateOff")
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -110,13 +110,13 @@
                                             height: lobby.actionBtnHeight
                                             radius: 6
                                             color: "#f0f0f0"
-                                            border.color: "black"
+                                            border.color: lobby.borderColor
                                             border.width: lobby.btnBorder
                                             Loader {
                                                 anchors.fill: parent
                                                 property string labelText: "Enable"
-                                                property string shortcutKey: "e"
-                                                property int pointSize: 11
+                                                property string shortcutKey: lobbyUi.shortcut("settings.enableVault")
+                                                property int pointSize: lobby.labelPointSize
                                                 sourceComponent: lobbyBtnLabelComp
                                             }
                                             MouseArea {
@@ -137,13 +137,13 @@
                                             height: lobby.actionBtnHeight
                                             radius: 6
                                             color: "#f0f0f0"
-                                            border.color: "black"
+                                            border.color: lobby.borderColor
                                             border.width: lobby.btnBorder
                                             Loader {
                                                 anchors.fill: parent
                                                 property string labelText: "Change PIN"
-                                                property string shortcutKey: "c"
-                                                property int pointSize: 11
+                                                property string shortcutKey: lobbyUi.shortcut("settings.changePin")
+                                                property int pointSize: lobby.labelPointSize
                                                 sourceComponent: lobbyBtnLabelComp
                                             }
                                             MouseArea {
@@ -164,7 +164,7 @@
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "Ctrl-P — cycle PIN length. Adding a PIN ensures that only intended devices can access your notes."
+                                        text: lobbyUi.str("settings.pinHelp")
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -188,7 +188,7 @@
                                                 radius: 6
                                                 property bool selected: lobbyPinDigits === modelData.id
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
-                                                border.color: "black"
+                                                border.color: lobby.borderColor
                                                 border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Column {
                                                     anchors.centerIn: parent
@@ -232,7 +232,7 @@
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "Ctrl-T — cycle. Ctrl-R or Ctrl+arrows also rotate."
+                                        text: lobbyUi.str("settings.rotationHelp")
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -256,7 +256,7 @@
                                                 radius: 6
                                                 property bool selected: root.rotation === modelData.deg
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
-                                                border.color: "black"
+                                                border.color: lobby.borderColor
                                                 border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Text {
                                                     anchors.centerIn: parent
@@ -284,7 +284,7 @@
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "Stop Writerdeck and return the tablet to the stock reMarkable UI. Reconnect later via SSH or reboot."
+                                        text: lobbyUi.str("settings.serviceHelp")
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -296,12 +296,12 @@
                                         height: lobby.actionBtnHeight
                                         radius: 6
                                         color: "#f0f0f0"
-                                        border.color: "black"
+                                        border.color: lobby.borderColor
                                         border.width: lobby.btnBorder
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: "Exit Writerdeck"
-                                            property string shortcutKey: "x"
+                                            property string shortcutKey: lobbyUi.shortcut("settings.exit")
                                             property int pointSize: 12
                                             sourceComponent: lobbyBtnLabelComp
                                         }

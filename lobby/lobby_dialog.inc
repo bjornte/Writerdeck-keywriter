@@ -13,7 +13,7 @@
                 width: Math.min(parent.width * 0.85, parent.width - 48)
                 height: lobbyDialogCol.height + 48
                 color: "white"
-                border.color: "black"
+                border.color: lobby.borderColor
                 border.width: lobby.btnBorderSelected
                 radius: 8
 
@@ -87,7 +87,7 @@
                         font.family: "Noto Sans"
                         font.pointSize: 12
                         color: "black"
-                        text: "USB: plug in with an OTG cable.\n\nBluetooth: pair to your phone, then open the address below (or scan the code)."
+                        text: lobbyUi.str("dialog.noKeyboardBody")
                     }
 
                     Text {
@@ -133,11 +133,11 @@
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: "white"
-                            border.color: "black"
+                            border.color: lobby.borderColor
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: "Cancel"
+                                text: lobbyUi.str("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: "black"
@@ -155,11 +155,11 @@
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: "white"
-                            border.color: "black"
+                            border.color: lobby.borderColor
                             border.width: lobby.btnBorderSelected
                             Text {
                                 anchors.centerIn: parent
-                                text: "Delete"
+                                text: lobbyUi.str("dialog.delete")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: "black"
@@ -187,11 +187,11 @@
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: "white"
-                            border.color: "black"
+                            border.color: lobby.borderColor
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: "Cancel"
+                                text: lobbyUi.str("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: "black"
@@ -214,11 +214,13 @@
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: "white"
-                            border.color: "black"
+                            border.color: lobby.borderColor
                             border.width: lobby.btnBorderSelected
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyFilesMode === "rename" ? "Rename" : "Create"
+                                text: lobbyFilesMode === "rename"
+                                      ? lobbyUi.str("dialog.rename")
+                                      : lobbyUi.str("dialog.create")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: "black"
@@ -243,11 +245,11 @@
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: "white"
-                            border.color: "black"
+                            border.color: lobby.borderColor
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: "Cancel"
+                                text: lobbyUi.str("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: "black"

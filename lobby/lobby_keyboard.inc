@@ -27,7 +27,7 @@
                                     width: parent.width
                                     height: btKbInner.height + 24
                                     color: "white"
-                                    border.color: "black"
+                                    border.color: lobby.borderColor
                                     border.width: lobbyPhoneConnected ? lobby.btnBorderSelected : lobby.btnBorder
                                     radius: 6
                                     Column {
@@ -88,7 +88,7 @@
                                     width: parent.width
                                     height: usbKbInner.height + 24
                                     color: "white"
-                                    border.color: "black"
+                                    border.color: lobby.borderColor
                                     border.width: lobbyUsbKeyboard ? lobby.btnBorderSelected : lobby.btnBorder
                                     radius: 6
                                     Column {
@@ -127,8 +127,8 @@
                                             spacing: lobby.tabSpacing
                                             Repeater {
                                                 model: [
-                                                    { id: "us", label: "US QWERTY", key: "u" },
-                                                    { id: "no", label: "Norwegian", key: "o" }
+                                                    { id: "us", label: "US QWERTY", action: "keyboard.us" },
+                                                    { id: "no", label: "Norwegian", action: "keyboard.no" }
                                                 ]
                                                 delegate: Rectangle {
                                                     width: (kbLayoutRow.width - lobby.tabSpacing) / 2
@@ -136,13 +136,13 @@
                                                     radius: 6
                                                     property bool selected: lobbyKeyboardLayout === modelData.id
                                                     color: selected ? "#e8e8e8" : "#f0f0f0"
-                                                    border.color: "black"
+                                                    border.color: lobby.borderColor
                                                     border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                     Loader {
                                                         anchors.fill: parent
                                                         property string labelText: modelData.label
-                                                        property string shortcutKey: modelData.key
-                                                        property int pointSize: 11
+                                                        property string shortcutKey: lobbyUi.shortcut(modelData.action)
+                                                        property int pointSize: lobby.labelPointSize
                                                         sourceComponent: lobbyBtnLabelComp
                                                     }
                                                     MouseArea {

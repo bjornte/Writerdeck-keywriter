@@ -40,7 +40,7 @@
                                     width: parent.width
                                     height: syncErrCol.height + 20
                                     color: "white"
-                                    border.color: "black"
+                                    border.color: lobby.borderColor
                                     border.width: lobby.btnBorder
                                     radius: 4
                                     Column {
@@ -72,7 +72,7 @@
                                     width: parent.width
                                     height: tokenWarnCol.height + 20
                                     color: "white"
-                                    border.color: "black"
+                                    border.color: lobby.borderColor
                                     border.width: lobby.btnBorder
                                     radius: 4
                                     Column {
@@ -105,13 +105,14 @@
                                     height: lobby.actionBtnHeight
                                     radius: 6
                                     color: (lobbySyncReady && !lobbySyncing) ? "#f0f0f0" : "white"
-                                    border.color: "black"
+                                    border.color: lobby.borderColor
                                     border.width: lobbySyncReady ? lobby.btnBorder : lobby.btnBorderSelected
                                     Loader {
                                         anchors.fill: parent
                                         property string labelText: !lobbySyncReady ? "Token needed — phone Sync setup"
                                             : (lobbySyncing ? "Syncing…" : "Sync now")
-                                        property string shortcutKey: (lobbySyncReady && !lobbySyncing) ? "s" : ""
+                                        property string shortcutKey: (lobbySyncReady && !lobbySyncing)
+                                            ? lobbyUi.shortcut("sync.now") : ""
                                         property int pointSize: !lobbySyncReady ? 14 : 12
                                         property bool labelBold: !lobbySyncReady
                                         property color labelColor: "black"
@@ -130,7 +131,7 @@
                                     text: "Sync also runs automatically on save, Home, and every few minutes."
                                     font.pointSize: 10
                                     font.family: "Noto Sans"
-                                    color: "black"
+                                    color: lobby.textColor
                                     width: parent.width
                                     wrapMode: Text.WordWrap
                                 }

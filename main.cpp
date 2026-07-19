@@ -31,10 +31,12 @@ Q_IMPORT_PLUGIN(QsgEpaperPlugin)
 #include <QJsonObject>
 #include <mutex>
 #include "lobby_bridge.h"
+#include "lobby_ui_config.h"
 #include "edit_helper.h"
 
 static const char *WRITERDECK_SOCK = "/run/Writerdeck.sock";
 static LobbyBridge g_lobbyBridge;
+static LobbyUiConfig g_lobbyUi;
 static EditHelper g_editHelper;
 static QObject *g_rootObj = nullptr; // stashed after QML load; used by cmd handler
 static int g_clientFd = -1;
@@ -580,6 +582,13 @@ int main(int argc, char *argv[])
 
     engine.rootContext()->setContextProperty("screen", app.primaryScreen()->geometry());
     engine.rootContext()->setContextProperty("home_dir", configDir);
+    {
+        QString uiPath = qEnvironmentVariable("LOBBY_UI_CONFIG");
+        if (uiPath.isEmpty())
+            uiPath = configDir + QStringLiteral("/.Writerdeck/lobby-ui.json");
+        g_lobbyUi.setPath(uiPath);
+    }
+    engine.rootContext()->setContextProperty("lobbyUi", &g_lobbyUi);
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
     if (engine.rootObjects().isEmpty())
         return -1;

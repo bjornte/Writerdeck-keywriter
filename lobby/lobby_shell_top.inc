@@ -5,20 +5,20 @@
             visible: isLobby
             z: 5
 
-            readonly property int pageMargin: 24
-            readonly property int tabBtnHeight: 64
-            readonly property int rowHeight: 72
-            readonly property int actionBtnHeight: 72
-            readonly property int tabSpacing: 12
-            readonly property int contentSpacing: 12
-            // Button chrome: normal border matches former selected Settings option;
-            // selected option / active tab is twice as thick.
-            readonly property int btnBorder: 2
-            readonly property int btnBorderSelected: 4
-            // Inner keycap for single-letter / digit chords. Opacity-only hide
-            // when no keyboard so the label does not jump. Square hugs the
-            // outer button (tight outer margin), not the glyph inside.
-            readonly property int shortcutBadgeMargin: 4
+            readonly property int pageMargin: lobbyUi.pageMargin
+            readonly property int tabBtnHeight: lobbyUi.tabBtnHeight
+            readonly property int rowHeight: lobbyUi.rowHeight
+            readonly property int actionBtnHeight: lobbyUi.actionBtnHeight
+            readonly property int tabSpacing: lobbyUi.tabSpacing
+            readonly property int contentSpacing: lobbyUi.contentSpacing
+            readonly property int btnBorder: lobbyUi.btnBorder
+            readonly property int btnBorderSelected: lobbyUi.btnBorderSelected
+            readonly property int shortcutBadgeMargin: lobbyUi.shortcutBadgeMargin
+            readonly property color textColor: lobbyUi.textColor
+            readonly property color borderColor: lobbyUi.borderColor
+            readonly property color badgeTextColor: lobbyUi.badgeTextColor
+            readonly property int labelPointSize: lobbyUi.labelPointSize
+            readonly property int badgePointSize: lobbyUi.badgePointSize
 
             // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
             // (and optional labelBold / labelColor).
@@ -30,7 +30,7 @@
                     readonly property string shortcutKey: parent.shortcutKey
                     readonly property int pointSize: parent.pointSize
                     readonly property bool labelBold: !!parent.labelBold
-                    readonly property color labelColor: parent.labelColor || "black"
+                    readonly property color labelColor: parent.labelColor !== undefined ? parent.labelColor : lobby.textColor
                     readonly property bool showBadge: shortcutKey !== ""
 
                     Text {
@@ -58,7 +58,7 @@
                         width: showBadge ? height : 0
                         radius: 3
                         color: "white"
-                        border.color: "black"
+                        border.color: lobby.borderColor
                         border.width: showBadge ? lobby.btnBorder : 0
                         // Keep layout width when keyboard drops; only fade the keycap.
                         opacity: (showBadge && root.lobbyKeyboardReady()) ? 1 : 0
@@ -67,10 +67,9 @@
                             visible: showBadge
                             text: shortcutKey
                             font.family: "Noto Sans"
-                            // Quieter than the button label — never bolder.
-                            font.pointSize: Math.max(8, pointSize - 2)
+                            font.pointSize: lobby.badgePointSize
                             font.bold: false
-                            color: "black"
+                            color: lobby.badgeTextColor
                         }
                     }
                 }
@@ -126,14 +125,14 @@
                             height: lobby.tabBtnHeight
                             radius: 6
                             color: lobbyPage === index ? "#e0e0e0" : "#f5f5f5"
-                            border.color: "black"
+                            border.color: lobby.borderColor
                             border.width: lobbyPage === index ? lobby.btnBorderSelected : lobby.btnBorder
 
                             Loader {
                                 anchors.fill: parent
                                 property string labelText: modelData
                                 property string shortcutKey: "" + (index + 1)
-                                property int pointSize: 11
+                                property int pointSize: lobby.labelPointSize
                                 sourceComponent: lobbyBtnLabelComp
                             }
 

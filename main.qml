@@ -297,11 +297,11 @@ Window {
     }
 
     function lobbyDialogTitle() {
-        if (lobbyShowNoKeyboard) return "Connect a keyboard"
-        if (lobbyFilesMode === "confirm-delete") return "Delete this note?"
-        if (lobbyFilesMode === "new") return "New note"
-        if (lobbyFilesMode === "rename") return "Rename note"
-        if (lobbyFilesMode === "new-encrypted") return "New encrypted note"
+        if (lobbyShowNoKeyboard) return lobbyUi.str("dialog.connectTitle")
+        if (lobbyFilesMode === "confirm-delete") return lobbyUi.str("dialog.deleteTitle")
+        if (lobbyFilesMode === "new") return lobbyUi.str("dialog.newTitle")
+        if (lobbyFilesMode === "rename") return lobbyUi.str("dialog.renameTitle")
+        if (lobbyFilesMode === "new-encrypted") return lobbyUi.str("dialog.newEncryptedTitle")
         return ""
     }
 
@@ -865,8 +865,8 @@ Window {
     }
 
     // Phone keys arrive as text codepoints (event.key == 0); USB sends Qt::Key_A..Z.
-    // Lobby action letter: Ctrl/Cmd+letter only (not the bare key).
-    // Ctrl-K / Ctrl-Q stay global. Ctrl-R renames on Files; rotates on other Lobby pages.
+    // Lobby action letter: Ctrl/Cmd+letter only; bindings from lobby-ui.json.
+    // Ctrl-K / Ctrl-Q stay global. files.rename letter rotates on other Lobby pages.
     function lobbyChordLetter(event) {
         if (event.modifiers & Qt.AltModifier)
             return ""
@@ -878,10 +878,14 @@ Window {
         var letter = String.fromCharCode(event.key).toLowerCase()
         if (letter === "k" || letter === "q")
             return ""
-        // Files: Ctrl-R is rename (below). Elsewhere Ctrl-R rotates in handleKeyDown.
-        if (letter === "r" && !(lobbyPage === 0 && lobbyFilesMode === ""))
+        if (letter === lobbyUi.shortcut("files.rename")
+                && !(lobbyPage === 0 && lobbyFilesMode === ""))
             return ""
         return letter
+    }
+
+    function lobbyShortcutIs(letter, actionId) {
+        return letter !== "" && letter === lobbyUi.shortcut(actionId)
     }
 
     function lobbyHandleKey(event) {
@@ -989,53 +993,53 @@ Window {
         }
         if (lobbyPage === 1) {
             var kbLetter = lobbyChordLetter(event)
-            if (kbLetter === "u") {
+            if (lobbyShortcutIs(kbLetter, "keyboard.us")) {
                 writerdeck.setKeyboardLayout("us"); return true }
-            if (kbLetter === "o") {
+            if (lobbyShortcutIs(kbLetter, "keyboard.no")) {
                 writerdeck.setKeyboardLayout("no"); return true }
         }
         if (lobbyPage === 2) {
             if (event.key === Qt.Key_Return
-                    || lobbyChordLetter(event) === "s") {
+                    || lobbyShortcutIs(lobbyChordLetter(event), "sync.now")) {
                 if (lobbySyncReady && !lobbySyncing) writerdeck.syncNow()
                 return true
             }
         }
         if (lobbyPage === 3 && lobbySettingsMode === "") {
             var setLetter = lobbyChordLetter(event)
-            if (!lobbyEncryptionEnabled && setLetter === "e") {
+            if (!lobbyEncryptionEnabled && lobbyShortcutIs(setLetter, "settings.enableVault")) {
                 vaultBeginSetup(); return true }
-            if (lobbyEncryptionEnabled && setLetter === "c") {
+            if (lobbyEncryptionEnabled && lobbyShortcutIs(setLetter, "settings.changePin")) {
                 vaultBeginChangePIN(); return true }
-            if (setLetter === "f") {
+            if (lobbyShortcutIs(setLetter, "settings.font")) {
                 var fonts = ["Inter", "Literata", "EB Garamond", "DejaVu Sans"]
                 var fi = fonts.indexOf(readFont)
                 if (fi < 0) fi = 0
                 writerdeck.setReadFont(fonts[(fi + 1) % fonts.length])
                 return true
             }
-            if (setLetter === "p") {
+            if (lobbyShortcutIs(setLetter, "settings.pin")) {
                 var pins = ["6", "4", "none"]
                 var pi = pins.indexOf(lobbyPinDigits)
                 if (pi < 0) pi = 0
                 writerdeck.setPinDigits(pins[(pi + 1) % pins.length])
                 return true
             }
-            if (setLetter === "t") {
+            if (lobbyShortcutIs(setLetter, "settings.rotation")) {
                 var rots = [0, 90, 180, 270]
                 var ri = rots.indexOf(root.rotation)
                 if (ri < 0) ri = 0
                 root.setScreenRotation(rots[(ri + 1) % rots.length])
                 return true
             }
-            if (setLetter === "x") {
+            if (lobbyShortcutIs(setLetter, "settings.exit")) {
                 lobbySettingsBeginExit(); return true }
         }
         if (lobbyPage === 0 && lobbyFilesMode === "" && lobbyEncryptionEnabled) {
             var vaultLetter = lobbyChordLetter(event)
-            if (vaultLetter === "x") { lobbyEncryptSelected(); return true }
-            if (vaultLetter === "y") { lobbyDecryptSelected(); return true }
-            if (vaultLetter === "e") { lobbyFilesBeginNewEncrypted(true); return true }
+            if (lobbyShortcutIs(vaultLetter, "files.encrypt")) { lobbyEncryptSelected(); return true }
+            if (lobbyShortcutIs(vaultLetter, "files.decrypt")) { lobbyDecryptSelected(); return true }
+            if (lobbyShortcutIs(vaultLetter, "files.newEncrypted")) { lobbyFilesBeginNewEncrypted(true); return true }
         }
         if (lobbyPage === 0) {
             var ps = Math.max(1, lobbyFilesPageSize)
@@ -1061,23 +1065,23 @@ Window {
                 return true
             }
             var letter = lobbyChordLetter(event)
-            if (letter === "n") {
+            if (lobbyShortcutIs(letter, "files.new")) {
                 lobbyFilesBeginNew(true)
                 return true
             }
-            if (letter === "d") {
+            if (lobbyShortcutIs(letter, "files.delete")) {
                 lobbyFilesBeginDelete()
                 return true
             }
-            if (letter === "r") {
+            if (lobbyShortcutIs(letter, "files.rename")) {
                 lobbyFilesBeginRename(true)
                 return true
             }
-            if (letter === "v") {
+            if (lobbyShortcutIs(letter, "files.read")) {
                 lobbyReadSelected()
                 return true
             }
-            if (letter === "g") {
+            if (lobbyShortcutIs(letter, "files.download")) {
                 lobbyFilesBeginDownload()
                 return true
             }
@@ -2036,10 +2040,13 @@ Window {
             } else isOmni = !isOmni
             event.accepted = true
         } else if (event.key === Qt.Key_R && (ctrlPressed || (event.modifiers & Qt.ControlModifier))) {
-            // Lobby Files uses Ctrl-R for rename; elsewhere in Lobby it rotates.
-            if (isLobby && !(lobbyPage === 0 && lobbyFilesMode === "")) {
-                rotateScreen()
-                event.accepted = true
+            // Ctrl-R rotates unless lobby-ui maps files.rename to r and Files is active.
+            if (isLobby) {
+                if (!(lobbyUi.shortcut("files.rename") === "r"
+                        && lobbyPage === 0 && lobbyFilesMode === "")) {
+                    rotateScreen()
+                    event.accepted = true
+                }
             }
         } else if (event.key === Qt.Key_Q && (ctrlPressed || (event.modifiers & Qt.ControlModifier))) {
             saveAndQuit()
@@ -2327,20 +2334,20 @@ Window {
             visible: isLobby
             z: 5
 
-            readonly property int pageMargin: 24
-            readonly property int tabBtnHeight: 64
-            readonly property int rowHeight: 72
-            readonly property int actionBtnHeight: 72
-            readonly property int tabSpacing: 12
-            readonly property int contentSpacing: 12
-            // Button chrome: normal border matches former selected Settings option;
-            // selected option / active tab is twice as thick.
-            readonly property int btnBorder: 2
-            readonly property int btnBorderSelected: 4
-            // Inner keycap for single-letter / digit chords. Opacity-only hide
-            // when no keyboard so the label does not jump. Square hugs the
-            // outer button (tight outer margin), not the glyph inside.
-            readonly property int shortcutBadgeMargin: 4
+            readonly property int pageMargin: lobbyUi.pageMargin
+            readonly property int tabBtnHeight: lobbyUi.tabBtnHeight
+            readonly property int rowHeight: lobbyUi.rowHeight
+            readonly property int actionBtnHeight: lobbyUi.actionBtnHeight
+            readonly property int tabSpacing: lobbyUi.tabSpacing
+            readonly property int contentSpacing: lobbyUi.contentSpacing
+            readonly property int btnBorder: lobbyUi.btnBorder
+            readonly property int btnBorderSelected: lobbyUi.btnBorderSelected
+            readonly property int shortcutBadgeMargin: lobbyUi.shortcutBadgeMargin
+            readonly property color textColor: lobbyUi.textColor
+            readonly property color borderColor: lobbyUi.borderColor
+            readonly property color badgeTextColor: lobbyUi.badgeTextColor
+            readonly property int labelPointSize: lobbyUi.labelPointSize
+            readonly property int badgePointSize: lobbyUi.badgePointSize
 
             // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
             // (and optional labelBold / labelColor).
@@ -2352,7 +2359,7 @@ Window {
                     readonly property string shortcutKey: parent.shortcutKey
                     readonly property int pointSize: parent.pointSize
                     readonly property bool labelBold: !!parent.labelBold
-                    readonly property color labelColor: parent.labelColor || "black"
+                    readonly property color labelColor: parent.labelColor !== undefined ? parent.labelColor : lobby.textColor
                     readonly property bool showBadge: shortcutKey !== ""
 
                     Text {
@@ -2380,7 +2387,7 @@ Window {
                         width: showBadge ? height : 0
                         radius: 3
                         color: "white"
-                        border.color: "black"
+                        border.color: lobby.borderColor
                         border.width: showBadge ? lobby.btnBorder : 0
                         // Keep layout width when keyboard drops; only fade the keycap.
                         opacity: (showBadge && root.lobbyKeyboardReady()) ? 1 : 0
@@ -2389,10 +2396,9 @@ Window {
                             visible: showBadge
                             text: shortcutKey
                             font.family: "Noto Sans"
-                            // Quieter than the button label — never bolder.
-                            font.pointSize: Math.max(8, pointSize - 2)
+                            font.pointSize: lobby.badgePointSize
                             font.bold: false
-                            color: "black"
+                            color: lobby.badgeTextColor
                         }
                     }
                 }
@@ -2448,14 +2454,14 @@ Window {
                             height: lobby.tabBtnHeight
                             radius: 6
                             color: lobbyPage === index ? "#e0e0e0" : "#f5f5f5"
-                            border.color: "black"
+                            border.color: lobby.borderColor
                             border.width: lobbyPage === index ? lobby.btnBorderSelected : lobby.btnBorder
 
                             Loader {
                                 anchors.fill: parent
                                 property string labelText: modelData
                                 property string shortcutKey: "" + (index + 1)
-                                property int pointSize: 11
+                                property int pointSize: lobby.labelPointSize
                                 sourceComponent: lobbyBtnLabelComp
                             }
 
@@ -2521,8 +2527,8 @@ Window {
                                     wrapMode: Text.WordWrap
                                 }
                                 Text {
-                                    text: "Open the Files tab (1) or press Ctrl-K.\nUse Tab / arrows / 1-6 to switch pages."
-                                    color: "black"
+                                    text: lobbyUi.str("home.tip")
+                                    color: lobby.textColor
                                     font.pointSize: 10
                                     font.family: "Noto Sans"
                                     width: parent.width
@@ -2564,7 +2570,7 @@ Window {
                                 visible: lobbyVaultError !== "" && lobbyFilesMode === ""
                                 height: lobbyFilesFeedbackCol.height + 24
                                 color: "white"
-                                border.color: "black"
+                                border.color: lobby.borderColor
                                 border.width: lobby.btnBorder
                                 radius: 8
                                 clip: true
@@ -2594,7 +2600,7 @@ Window {
                                         font.family: "Noto Sans"
                                         font.pointSize: 11
                                         color: "black"
-                                        text: "Tap to dismiss"
+                                        text: lobbyUi.str("files.tapDismiss")
                                     }
                                 }
 
@@ -2633,7 +2639,7 @@ Window {
                                     height: 48
                                     radius: 6
                                     color: "#f0f0f0"
-                                    border.color: "black"
+                                    border.color: lobby.borderColor
                                     border.width: lobby.btnBorder
                                     opacity: lobbyFilesPageStrip.canPrev ? 1 : 0.45
                                     Text {
@@ -2670,7 +2676,7 @@ Window {
                                     height: 48
                                     radius: 6
                                     color: "#f0f0f0"
-                                    border.color: "black"
+                                    border.color: lobby.borderColor
                                     border.width: lobby.btnBorder
                                     opacity: lobbyFilesPageStrip.canNext ? 1 : 0.45
                                     Text {
@@ -2710,24 +2716,26 @@ Window {
 
                                 Repeater {
                                     model: [
-                                        { label: "New", key: "n" },
-                                        { label: "Edit", key: "\u21B5" },
-                                        { label: "Read", key: "v" },
-                                        { label: "Rename", key: "r" },
-                                        { label: "Delete", key: "d" },
-                                        { label: "Download", key: "g" }
+                                        { label: "New", action: "files.new" },
+                                        { label: "Edit", action: "" },
+                                        { label: "Read", action: "files.read" },
+                                        { label: "Rename", action: "files.rename" },
+                                        { label: "Delete", action: "files.delete" },
+                                        { label: "Download", action: "files.download" }
                                     ]
                                     delegate: Rectangle {
                                         width: (lobbyFilesBar.width - lobby.tabSpacing * 5) / 6
                                         height: lobby.actionBtnHeight
                                         radius: 6
                                         color: "#f0f0f0"
-                                        border.color: "black"
+                                        border.color: lobby.borderColor
                                         border.width: lobby.btnBorder
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: modelData.label
-                                            property string shortcutKey: modelData.key
+                                            property string shortcutKey: modelData.action === ""
+                                                ? lobbyUi.str("files.editBadge")
+                                                : lobbyUi.shortcut(modelData.action)
                                             property int pointSize: 10
                                             sourceComponent: lobbyBtnLabelComp
                                         }
@@ -2768,15 +2776,15 @@ Window {
                                     height: lobby.actionBtnHeight
                                     radius: 6
                                     color: "#f0f0f0"
-                                    border.color: "black"
-                                    border.width: lobby.btnBorder
-                                    Loader {
-                                        anchors.fill: parent
-                                        property string labelText: "Encrypt"
-                                        property string shortcutKey: "x"
-                                        property int pointSize: 11
-                                        sourceComponent: lobbyBtnLabelComp
-                                    }
+                                        border.color: lobby.borderColor
+                                        border.width: lobby.btnBorder
+                                        Loader {
+                                            anchors.fill: parent
+                                            property string labelText: "Encrypt"
+                                            property string shortcutKey: lobbyUi.shortcut("files.encrypt")
+                                            property int pointSize: lobby.labelPointSize
+                                            sourceComponent: lobbyBtnLabelComp
+                                        }
                                     MouseArea {
                                         anchors.fill: parent
                                         onClicked: {
@@ -2791,15 +2799,15 @@ Window {
                                     height: lobby.actionBtnHeight
                                     radius: 6
                                     color: "#f0f0f0"
-                                    border.color: "black"
-                                    border.width: lobby.btnBorder
-                                    Loader {
-                                        anchors.fill: parent
-                                        property string labelText: "New encrypted"
-                                        property string shortcutKey: "e"
-                                        property int pointSize: 11
-                                        sourceComponent: lobbyBtnLabelComp
-                                    }
+                                        border.color: lobby.borderColor
+                                        border.width: lobby.btnBorder
+                                        Loader {
+                                            anchors.fill: parent
+                                            property string labelText: "New encrypted"
+                                            property string shortcutKey: lobbyUi.shortcut("files.newEncrypted")
+                                            property int pointSize: lobby.labelPointSize
+                                            sourceComponent: lobbyBtnLabelComp
+                                        }
                                     MouseArea {
                                         anchors.fill: parent
                                         onClicked: {
@@ -2814,15 +2822,15 @@ Window {
                                     height: lobby.actionBtnHeight
                                     radius: 6
                                     color: "#f0f0f0"
-                                    border.color: "black"
-                                    border.width: lobby.btnBorder
-                                    Loader {
-                                        anchors.fill: parent
-                                        property string labelText: "Decrypt"
-                                        property string shortcutKey: "y"
-                                        property int pointSize: 11
-                                        sourceComponent: lobbyBtnLabelComp
-                                    }
+                                        border.color: lobby.borderColor
+                                        border.width: lobby.btnBorder
+                                        Loader {
+                                            anchors.fill: parent
+                                            property string labelText: "Decrypt"
+                                            property string shortcutKey: lobbyUi.shortcut("files.decrypt")
+                                            property int pointSize: lobby.labelPointSize
+                                            sourceComponent: lobbyBtnLabelComp
+                                        }
                                     MouseArea {
                                         anchors.fill: parent
                                         onClicked: {
@@ -2932,7 +2940,7 @@ Window {
                                     width: parent.width
                                     height: btKbInner.height + 24
                                     color: "white"
-                                    border.color: "black"
+                                    border.color: lobby.borderColor
                                     border.width: lobbyPhoneConnected ? lobby.btnBorderSelected : lobby.btnBorder
                                     radius: 6
                                     Column {
@@ -2993,7 +3001,7 @@ Window {
                                     width: parent.width
                                     height: usbKbInner.height + 24
                                     color: "white"
-                                    border.color: "black"
+                                    border.color: lobby.borderColor
                                     border.width: lobbyUsbKeyboard ? lobby.btnBorderSelected : lobby.btnBorder
                                     radius: 6
                                     Column {
@@ -3032,8 +3040,8 @@ Window {
                                             spacing: lobby.tabSpacing
                                             Repeater {
                                                 model: [
-                                                    { id: "us", label: "US QWERTY", key: "u" },
-                                                    { id: "no", label: "Norwegian", key: "o" }
+                                                    { id: "us", label: "US QWERTY", action: "keyboard.us" },
+                                                    { id: "no", label: "Norwegian", action: "keyboard.no" }
                                                 ]
                                                 delegate: Rectangle {
                                                     width: (kbLayoutRow.width - lobby.tabSpacing) / 2
@@ -3041,13 +3049,13 @@ Window {
                                                     radius: 6
                                                     property bool selected: lobbyKeyboardLayout === modelData.id
                                                     color: selected ? "#e8e8e8" : "#f0f0f0"
-                                                    border.color: "black"
+                                                    border.color: lobby.borderColor
                                                     border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                     Loader {
                                                         anchors.fill: parent
                                                         property string labelText: modelData.label
-                                                        property string shortcutKey: modelData.key
-                                                        property int pointSize: 11
+                                                        property string shortcutKey: lobbyUi.shortcut(modelData.action)
+                                                        property int pointSize: lobby.labelPointSize
                                                         sourceComponent: lobbyBtnLabelComp
                                                     }
                                                     MouseArea {
@@ -3107,7 +3115,7 @@ Window {
                                     width: parent.width
                                     height: syncErrCol.height + 20
                                     color: "white"
-                                    border.color: "black"
+                                    border.color: lobby.borderColor
                                     border.width: lobby.btnBorder
                                     radius: 4
                                     Column {
@@ -3139,7 +3147,7 @@ Window {
                                     width: parent.width
                                     height: tokenWarnCol.height + 20
                                     color: "white"
-                                    border.color: "black"
+                                    border.color: lobby.borderColor
                                     border.width: lobby.btnBorder
                                     radius: 4
                                     Column {
@@ -3172,13 +3180,14 @@ Window {
                                     height: lobby.actionBtnHeight
                                     radius: 6
                                     color: (lobbySyncReady && !lobbySyncing) ? "#f0f0f0" : "white"
-                                    border.color: "black"
+                                    border.color: lobby.borderColor
                                     border.width: lobbySyncReady ? lobby.btnBorder : lobby.btnBorderSelected
                                     Loader {
                                         anchors.fill: parent
                                         property string labelText: !lobbySyncReady ? "Token needed — phone Sync setup"
                                             : (lobbySyncing ? "Syncing…" : "Sync now")
-                                        property string shortcutKey: (lobbySyncReady && !lobbySyncing) ? "s" : ""
+                                        property string shortcutKey: (lobbySyncReady && !lobbySyncing)
+                                            ? lobbyUi.shortcut("sync.now") : ""
                                         property int pointSize: !lobbySyncReady ? 14 : 12
                                         property bool labelBold: !lobbySyncReady
                                         property color labelColor: "black"
@@ -3197,7 +3206,7 @@ Window {
                                     text: "Sync also runs automatically on save, Home, and every few minutes."
                                     font.pointSize: 10
                                     font.family: "Noto Sans"
-                                    color: "black"
+                                    color: lobby.textColor
                                     width: parent.width
                                     wrapMode: Text.WordWrap
                                 }
@@ -3222,7 +3231,7 @@ Window {
                                 spacing: lobby.contentSpacing
                                 Text {
                                     text: lobbySettingsMode === "confirm-exit"
-                                          ? "Stop Writerdeck? Enter=yes  Esc=no"
+                                          ? lobbyUi.str("settings.confirmExit")
                                           : "Settings"
                                     font.pointSize: 14
                                     font.family: "Noto Sans"
@@ -3243,7 +3252,7 @@ Window {
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "Ctrl-F — cycle through fonts."
+                                        text: lobbyUi.str("settings.fontHelp")
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -3270,7 +3279,7 @@ Window {
                                                 radius: 6
                                                 property bool selected: readFont === modelData.id
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
-                                                border.color: "black"
+                                                border.color: lobby.borderColor
                                                 border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Text {
                                                     anchors.centerIn: parent
@@ -3299,8 +3308,8 @@ Window {
                                     }
                                     Text {
                                         text: lobbyEncryptionEnabled
-                                            ? "On — encrypted notes require PIN to open, read, or edit"
-                                            : "Off — optional encryption with a separate 6-digit PIN. Recovery via GitHub secret/pin when sync is on."
+                                            ? lobbyUi.str("settings.privateOn")
+                                            : lobbyUi.str("settings.privateOff")
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -3316,13 +3325,13 @@ Window {
                                             height: lobby.actionBtnHeight
                                             radius: 6
                                             color: "#f0f0f0"
-                                            border.color: "black"
+                                            border.color: lobby.borderColor
                                             border.width: lobby.btnBorder
                                             Loader {
                                                 anchors.fill: parent
                                                 property string labelText: "Enable"
-                                                property string shortcutKey: "e"
-                                                property int pointSize: 11
+                                                property string shortcutKey: lobbyUi.shortcut("settings.enableVault")
+                                                property int pointSize: lobby.labelPointSize
                                                 sourceComponent: lobbyBtnLabelComp
                                             }
                                             MouseArea {
@@ -3343,13 +3352,13 @@ Window {
                                             height: lobby.actionBtnHeight
                                             radius: 6
                                             color: "#f0f0f0"
-                                            border.color: "black"
+                                            border.color: lobby.borderColor
                                             border.width: lobby.btnBorder
                                             Loader {
                                                 anchors.fill: parent
                                                 property string labelText: "Change PIN"
-                                                property string shortcutKey: "c"
-                                                property int pointSize: 11
+                                                property string shortcutKey: lobbyUi.shortcut("settings.changePin")
+                                                property int pointSize: lobby.labelPointSize
                                                 sourceComponent: lobbyBtnLabelComp
                                             }
                                             MouseArea {
@@ -3370,7 +3379,7 @@ Window {
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "Ctrl-P — cycle PIN length. Adding a PIN ensures that only intended devices can access your notes."
+                                        text: lobbyUi.str("settings.pinHelp")
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -3394,7 +3403,7 @@ Window {
                                                 radius: 6
                                                 property bool selected: lobbyPinDigits === modelData.id
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
-                                                border.color: "black"
+                                                border.color: lobby.borderColor
                                                 border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Column {
                                                     anchors.centerIn: parent
@@ -3438,7 +3447,7 @@ Window {
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "Ctrl-T — cycle. Ctrl-R or Ctrl+arrows also rotate."
+                                        text: lobbyUi.str("settings.rotationHelp")
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -3462,7 +3471,7 @@ Window {
                                                 radius: 6
                                                 property bool selected: root.rotation === modelData.deg
                                                 color: selected ? "#e8e8e8" : "#f0f0f0"
-                                                border.color: "black"
+                                                border.color: lobby.borderColor
                                                 border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Text {
                                                     anchors.centerIn: parent
@@ -3490,7 +3499,7 @@ Window {
                                         width: parent.width
                                     }
                                     Text {
-                                        text: "Stop Writerdeck and return the tablet to the stock reMarkable UI. Reconnect later via SSH or reboot."
+                                        text: lobbyUi.str("settings.serviceHelp")
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -3502,12 +3511,12 @@ Window {
                                         height: lobby.actionBtnHeight
                                         radius: 6
                                         color: "#f0f0f0"
-                                        border.color: "black"
+                                        border.color: lobby.borderColor
                                         border.width: lobby.btnBorder
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: "Exit Writerdeck"
-                                            property string shortcutKey: "x"
+                                            property string shortcutKey: lobbyUi.shortcut("settings.exit")
                                             property int pointSize: 12
                                             sourceComponent: lobbyBtnLabelComp
                                         }
@@ -3540,50 +3549,17 @@ Window {
                                 width: parent.width
                                 spacing: lobby.contentSpacing
                                 Text {
-                                    text: "Shortcuts"
+                                    text: lobbyUi.str("shortcuts.title")
                                     font.pointSize: 14
                                     font.family: "Noto Sans"
-                                    color: "black"
+                                    color: lobby.textColor
                                     width: parent.width
                                 }
                                 Text {
-                                    text: "Pages\n"
-                                          + "Tab or Left / Right — next or previous page\n"
-                                          + "1 to 6 — jump straight to a page\n"
-                                          + "\n"
-                                          + "Files\n"
-                                          + "Up / Down — move the selection (turns the page at the edge)\n"
-                                          + "Page Up / Page Down — previous or next page of notes\n"
-                                          + "Enter or \u21B5 — edit the selected note\n"
-                                          + "Ctrl-V — read · Ctrl-N — new · Ctrl-R — rename · Ctrl-D — delete\n"
-                                          + "Ctrl-G — download to phone\n"
-                                          + "With private notes on: Ctrl-E — new encrypted · Ctrl-X — encrypt · Ctrl-Y — decrypt\n"
-                                          + "\n"
-                                          + "Keyboard\n"
-                                          + "Ctrl-U — US layout · Ctrl-O — Norwegian\n"
-                                          + "\n"
-                                          + "Sync\n"
-                                          + "Enter or Ctrl-S — sync now\n"
-                                          + "\n"
-                                          + "Settings\n"
-                                          + "Ctrl-F — cycle reading font · Ctrl-P — cycle phone PIN length\n"
-                                          + "Ctrl-T — cycle rotation · Ctrl-E — enable private notes · Ctrl-C — change private PIN\n"
-                                          + "Ctrl-X — exit Writerdeck (then Enter to confirm)\n"
-                                          + "\n"
-                                          + "Anywhere\n"
-                                          + "Ctrl-K — quick file picker\n"
-                                          + "Ctrl-C / Ctrl-X / Ctrl-V — copy, cut, paste (while editing a note)\n"
-                                          + "Ctrl-R — rotate (Lobby pages other than Files) · Ctrl-Q — quit\n"
-                                          + "Home — from a note, back to Files; from Lobby, quit to the stock UI\n"
-                                          + "\n"
-                                          + "Private PIN\n"
-                                          + "Type the six digits on a USB keyboard, or on the phone while it shows the PIN banner.\n"
-                                          + "\n"
-                                          + "Open Lobby from the stock UI\n"
-                                          + "Esc on a USB keyboard, or both page buttons together."
+                                    text: lobbyUi.str("shortcuts.body")
                                     font.pointSize: 11
                                     font.family: "Noto Sans"
-                                    color: "black"
+                                    color: lobby.textColor
                                     width: parent.width
                                     wrapMode: Text.WordWrap
                                     lineHeight: 1.25
@@ -3703,7 +3679,7 @@ Window {
                 width: Math.min(parent.width * 0.85, parent.width - 48)
                 height: lobbyDialogCol.height + 48
                 color: "white"
-                border.color: "black"
+                border.color: lobby.borderColor
                 border.width: lobby.btnBorderSelected
                 radius: 8
 
@@ -3777,7 +3753,7 @@ Window {
                         font.family: "Noto Sans"
                         font.pointSize: 12
                         color: "black"
-                        text: "USB: plug in with an OTG cable.\n\nBluetooth: pair to your phone, then open the address below (or scan the code)."
+                        text: lobbyUi.str("dialog.noKeyboardBody")
                     }
 
                     Text {
@@ -3823,11 +3799,11 @@ Window {
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: "white"
-                            border.color: "black"
+                            border.color: lobby.borderColor
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: "Cancel"
+                                text: lobbyUi.str("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: "black"
@@ -3845,11 +3821,11 @@ Window {
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: "white"
-                            border.color: "black"
+                            border.color: lobby.borderColor
                             border.width: lobby.btnBorderSelected
                             Text {
                                 anchors.centerIn: parent
-                                text: "Delete"
+                                text: lobbyUi.str("dialog.delete")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: "black"
@@ -3877,11 +3853,11 @@ Window {
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: "white"
-                            border.color: "black"
+                            border.color: lobby.borderColor
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: "Cancel"
+                                text: lobbyUi.str("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: "black"
@@ -3904,11 +3880,13 @@ Window {
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: "white"
-                            border.color: "black"
+                            border.color: lobby.borderColor
                             border.width: lobby.btnBorderSelected
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyFilesMode === "rename" ? "Rename" : "Create"
+                                text: lobbyFilesMode === "rename"
+                                      ? lobbyUi.str("dialog.rename")
+                                      : lobbyUi.str("dialog.create")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: "black"
@@ -3933,11 +3911,11 @@ Window {
                             height: lobby.actionBtnHeight
                             radius: 6
                             color: "white"
-                            border.color: "black"
+                            border.color: lobby.borderColor
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: "Cancel"
+                                text: lobbyUi.str("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: "black"
