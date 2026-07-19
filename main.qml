@@ -2302,75 +2302,142 @@ Window {
                             }
                         }
                     }
-                    // 1 Files — bottom chrome is anchored; the list fills what is left.
-                    // Do not put feedback and bars in one Column with a hand-reserved
-                    // list height: extra lines then push the buttons off the screen.
+                    // 1 Files — strict vertical stack (header / list / footer).
+                    // Every slot has an explicit height (0 when unused). The list only
+                    // fills between header.bottom and footer.top so chrome cannot sink
+                    // or be painted under the note rows.
                     Item {
                         visible: lobbyPage === 0
                         anchors.fill: parent
 
-                        Rectangle {
-                            id: lobbyFilesFeedbackBox
+                        // ---- header: vault / open errors (height 0 when idle) ----
+                        Item {
+                            id: lobbyFilesHeader
                             anchors.top: parent.top
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            visible: lobbyVaultError !== "" && lobbyFilesMode === ""
-                            height: visible ? (lobbyFilesFeedbackCol.height + 24) : 0
-                            color: "white"
-                            border.color: "black"
-                            border.width: 2
-                            radius: 8
-                            clip: true
+                            height: lobbyFilesFeedbackBox.visible ? lobbyFilesFeedbackBox.height : 0
+                            z: 2
 
-                            Column {
-                                id: lobbyFilesFeedbackCol
+                            Rectangle {
+                                id: lobbyFilesFeedbackBox
+                                anchors.top: parent.top
                                 anchors.left: parent.left
                                 anchors.right: parent.right
-                                anchors.top: parent.top
-                                anchors.leftMargin: 16
-                                anchors.rightMargin: 16
-                                anchors.topMargin: 12
-                                spacing: 8
+                                visible: lobbyVaultError !== "" && lobbyFilesMode === ""
+                                height: lobbyFilesFeedbackCol.height + 24
+                                color: "white"
+                                border.color: "black"
+                                border.width: 2
+                                radius: 8
+                                clip: true
 
-                                Text {
-                                    width: parent.width
-                                    wrapMode: Text.WordWrap
-                                    font.family: "Noto Sans"
-                                    font.pointSize: 13
-                                    color: "black"
-                                    text: lobbyVaultError
+                                Column {
+                                    id: lobbyFilesFeedbackCol
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    anchors.leftMargin: 16
+                                    anchors.rightMargin: 16
+                                    anchors.topMargin: 12
+                                    spacing: 8
+
+                                    Text {
+                                        width: parent.width
+                                        wrapMode: Text.WordWrap
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 13
+                                        color: "black"
+                                        text: lobbyVaultError
+                                    }
+
+                                    Text {
+                                        width: parent.width
+                                        horizontalAlignment: Text.AlignHCenter
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 11
+                                        color: "#555555"
+                                        text: "Tap to dismiss"
+                                    }
                                 }
 
-                                Text {
-                                    width: parent.width
-                                    horizontalAlignment: Text.AlignHCenter
-                                    font.family: "Noto Sans"
-                                    font.pointSize: 11
-                                    color: "#555555"
-                                    text: "Tap to dismiss"
-                                }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: {
-                                    lobbyVaultError = ""
-                                    root.lobbyKeepFocus()
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        lobbyVaultError = ""
+                                        root.lobbyKeepFocus()
+                                    }
                                 }
                             }
                         }
 
+                        // ---- footer: page label + action bars (pinned to bottom) ----
                         Column {
-                            id: lobbyFilesBottom
+                            id: lobbyFilesFooter
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.bottom: parent.bottom
                             spacing: lobby.contentSpacing
+                            z: 2
+
+                            Item {
+                                width: parent.width
+                                height: lobbyFilesPageLabel.visible ? lobbyFilesPageLabel.implicitHeight : 0
+
+                                Text {
+                                    id: lobbyFilesPageLabel
+                                    width: parent.width
+                                    visible: lobbyFilesMode === "" && lobbyNotesModel.count > lobbyFilesPageSize
+                                    text: "Page " + (root.lobbyFilesPageIndex() + 1)
+                                          + "/" + root.lobbyFilesPageCount()
+                                          + "  Up/Down  PgUp/PgDn"
+                                    font.family: "Noto Mono"
+                                    font.pointSize: 9
+                                    color: "#888888"
+                                }
+                            }
+
+                            Row {
+                                id: lobbyFilesBar
+                                width: parent.width
+                                height: visible ? (lobby.actionBtnHeight + 8) : 0
+                                spacing: lobby.tabSpacing
+                                visible: lobbyFilesMode === ""
+
+                                Repeater {
+                                    model: ["New", "Edit", "Read", "Rename", "Delete"]
+                                    delegate: Rectangle {
+                                        width: (lobbyFilesBar.width - lobby.tabSpacing * 4) / 5
+                                        height: lobby.actionBtnHeight
+                                        radius: 6
+                                        color: "#f0f0f0"
+                                        border.color: "#bbb"
+                                        border.width: 1
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: modelData
+                                            font.family: "Noto Sans"
+                                            font.pointSize: 11
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: {
+                                                if (modelData === "New") root.lobbyFilesBeginNew()
+                                                else if (modelData === "Edit") root.lobbyOpenSelected()
+                                                else if (modelData === "Read") root.lobbyReadSelected()
+                                                else if (modelData === "Rename") root.lobbyFilesBeginRename()
+                                                else if (modelData === "Delete") root.lobbyFilesBeginDelete()
+                                                root.lobbyKeepFocus()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
 
                             Row {
                                 id: lobbyFilesVaultBar
                                 width: parent.width
-                                height: lobby.actionBtnHeight + 4
+                                height: visible ? (lobby.actionBtnHeight + 4) : 0
                                 spacing: lobby.tabSpacing
                                 visible: lobbyFilesMode === "" && lobbyEncryptionEnabled && lobbyNotesModel.count > 0
 
@@ -2449,76 +2516,22 @@ Window {
                                     }
                                 }
                             }
-
-                            Row {
-                                id: lobbyFilesBar
-                                width: parent.width
-                                height: lobby.actionBtnHeight + 8
-                                spacing: lobby.tabSpacing
-                                visible: lobbyFilesMode === ""
-
-                                Repeater {
-                                    model: ["New", "Edit", "Read", "Rename", "Delete"]
-                                    delegate: Rectangle {
-                                        width: (lobbyFilesBar.width - lobby.tabSpacing * 4) / 5
-                                        height: lobby.actionBtnHeight
-                                        radius: 6
-                                        color: "#f0f0f0"
-                                        border.color: "#bbb"
-                                        border.width: 1
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: modelData
-                                            font.family: "Noto Sans"
-                                            font.pointSize: 11
-                                        }
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            onClicked: {
-                                                if (modelData === "New") root.lobbyFilesBeginNew()
-                                                else if (modelData === "Edit") root.lobbyOpenSelected()
-                                                else if (modelData === "Read") root.lobbyReadSelected()
-                                                else if (modelData === "Rename") root.lobbyFilesBeginRename()
-                                                else if (modelData === "Delete") root.lobbyFilesBeginDelete()
-                                                root.lobbyKeepFocus()
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                         }
 
-                        Text {
-                            id: lobbyFilesPageLabel
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.bottom: lobbyFilesBottom.top
-                            anchors.bottomMargin: lobby.contentSpacing
-                            visible: lobbyFilesMode === "" && lobbyNotesModel.count > lobbyFilesPageSize
-                            height: visible ? implicitHeight : 0
-                            text: "Page " + (root.lobbyFilesPageIndex() + 1)
-                                  + "/" + root.lobbyFilesPageCount()
-                                  + "  Up/Down  PgUp/PgDn"
-                            font.family: "Noto Mono"
-                            font.pointSize: 9
-                            color: "#888888"
-                        }
-
-                        // Fixed page of rows — no flick scroll (e-ink).
+                        // ---- list: only the band between header and footer ----
                         Item {
                             id: lobbyFilesList
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            anchors.top: lobbyFilesFeedbackBox.bottom
-                            anchors.topMargin: lobbyFilesFeedbackBox.visible ? lobby.contentSpacing : 0
-                            anchors.bottom: lobbyFilesPageLabel.visible
-                                            ? lobbyFilesPageLabel.top
-                                            : lobbyFilesBottom.top
-                            anchors.bottomMargin: lobby.contentSpacing
+                            anchors.top: lobbyFilesHeader.bottom
+                            anchors.topMargin: lobbyFilesHeader.height > 0 ? lobby.contentSpacing : 0
+                            anchors.bottom: lobbyFilesFooter.top
+                            anchors.bottomMargin: lobbyFilesFooter.height > 0 ? lobby.contentSpacing : 0
                             visible: lobbyFilesMode === ""
                             clip: true
+                            z: 1
 
-                            property int pageSize: Math.max(1, Math.floor(height / lobby.rowHeight))
+                            property int pageSize: Math.max(1, Math.floor(Math.max(0, height) / lobby.rowHeight))
                             property int pageStart: root.lobbyFilesPageStart()
                             property int visibleCount: {
                                 var end = Math.min(lobbyNotesModel.count, pageStart + pageSize)
