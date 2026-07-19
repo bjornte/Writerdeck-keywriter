@@ -81,13 +81,16 @@ LobbyUiConfig::LobbyUiConfig(QObject *parent)
             this, &LobbyUiConfig::onFileChanged);
     m_poll.setInterval(1500);
     connect(&m_poll, &QTimer::timeout, this, &LobbyUiConfig::pollDisk);
-    m_poll.start();
+    // Do not start m_poll here: g_lobbyUi is a static constructed before
+    // QApplication, and timers started that early never fire.
 }
 
 void LobbyUiConfig::setPath(const QString &path)
 {
     m_path = path;
     reload();
+    if (!m_poll.isActive())
+        m_poll.start();
 }
 
 void LobbyUiConfig::reload()
