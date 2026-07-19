@@ -11,6 +11,63 @@
             readonly property int actionBtnHeight: 72
             readonly property int tabSpacing: 12
             readonly property int contentSpacing: 12
+            // Inner keycap for single-letter / digit chords. Opacity-only hide
+            // when no keyboard so the label does not jump.
+            readonly property int shortcutBadgeSize: 28
+            readonly property int shortcutBadgeMargin: 4
+
+            // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
+            // (and optional labelBold / labelColor).
+            Component {
+                id: lobbyBtnLabelComp
+                Item {
+                    anchors.fill: parent
+                    readonly property string labelText: parent.labelText
+                    readonly property string shortcutKey: parent.shortcutKey
+                    readonly property int pointSize: parent.pointSize
+                    readonly property bool labelBold: !!parent.labelBold
+                    readonly property color labelColor: parent.labelColor || "black"
+                    readonly property bool showBadge: shortcutKey !== ""
+
+                    Text {
+                        anchors.left: parent.left
+                        anchors.right: keyBadge.left
+                        anchors.leftMargin: 6
+                        anchors.rightMargin: showBadge ? 4 : 6
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: labelText
+                        font.family: "Noto Sans"
+                        font.pointSize: pointSize
+                        font.bold: labelBold
+                        color: labelColor
+                        horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideRight
+                    }
+                    Rectangle {
+                        id: keyBadge
+                        anchors.right: parent.right
+                        anchors.rightMargin: lobby.shortcutBadgeMargin
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: showBadge ? lobby.shortcutBadgeSize : 0
+                        height: lobby.shortcutBadgeSize
+                        radius: 3
+                        color: "white"
+                        border.color: "#666666"
+                        border.width: showBadge ? 1 : 0
+                        // Keep layout width when keyboard drops; only fade the keycap.
+                        opacity: (showBadge && root.lobbyKeyboardReady()) ? 1 : 0
+                        Text {
+                            anchors.centerIn: parent
+                            visible: showBadge
+                            text: shortcutKey
+                            font.family: "Noto Sans"
+                            font.pointSize: Math.max(9, pointSize)
+                            font.bold: true
+                            color: "black"
+                        }
+                    }
+                }
+            }
 
             FocusScope {
                 id: lobbyFocus
@@ -65,12 +122,12 @@
                             border.color: lobbyPage === index ? "#999" : "#ccc"
                             border.width: 1
 
-                            Text {
-                                anchors.centerIn: parent
-                                text: (index + 1) + " " + modelData
-                                font.family: "Noto Sans"
-                                font.pointSize: 11
-                                color: "black"
+                            Loader {
+                                anchors.fill: parent
+                                property string labelText: modelData
+                                property string shortcutKey: "" + (index + 1)
+                                property int pointSize: 11
+                                sourceComponent: lobbyBtnLabelComp
                             }
 
                             MouseArea {

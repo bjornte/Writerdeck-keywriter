@@ -103,11 +103,12 @@
                                             color: "#f0f0f0"
                                             border.color: "#bbb"
                                             border.width: 1
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: "Enable"
-                                                font.family: "Noto Sans"
-                                                font.pointSize: 11
+                                            Loader {
+                                                anchors.fill: parent
+                                                property string labelText: "Enable"
+                                                property string shortcutKey: "e"
+                                                property int pointSize: 11
+                                                sourceComponent: lobbyBtnLabelComp
                                             }
                                             MouseArea {
                                                 anchors.fill: parent
@@ -129,11 +130,12 @@
                                             color: "#f0f0f0"
                                             border.color: "#bbb"
                                             border.width: 1
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: "Change PIN"
-                                                font.family: "Noto Sans"
-                                                font.pointSize: 11
+                                            Loader {
+                                                anchors.fill: parent
+                                                property string labelText: "Change PIN"
+                                                property string shortcutKey: "c"
+                                                property int pointSize: 11
+                                                sourceComponent: lobbyBtnLabelComp
                                             }
                                             MouseArea {
                                                 anchors.fill: parent
@@ -286,11 +288,12 @@
                                         color: "#f0f0f0"
                                         border.color: "#bbb"
                                         border.width: 1
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: "Exit Writerdeck"
-                                            font.family: "Noto Sans"
-                                            font.pointSize: 12
+                                        Loader {
+                                            anchors.fill: parent
+                                            property string labelText: "Exit Writerdeck"
+                                            property string shortcutKey: "x"
+                                            property int pointSize: 12
+                                            sourceComponent: lobbyBtnLabelComp
                                         }
                                         MouseArea {
                                             anchors.fill: parent

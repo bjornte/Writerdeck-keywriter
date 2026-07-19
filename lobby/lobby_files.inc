@@ -168,7 +168,14 @@
                                 visible: lobbyFilesMode === ""
 
                                 Repeater {
-                                    model: ["New", "Edit", "Read", "Rename", "Delete", "Download"]
+                                    model: [
+                                        { label: "New", key: "n" },
+                                        { label: "Edit", key: "" },
+                                        { label: "Read", key: "v" },
+                                        { label: "Rename", key: "r" },
+                                        { label: "Delete", key: "d" },
+                                        { label: "Download", key: "g" }
+                                    ]
                                     delegate: Rectangle {
                                         width: (lobbyFilesBar.width - lobby.tabSpacing * 5) / 6
                                         height: lobby.actionBtnHeight
@@ -176,21 +183,22 @@
                                         color: "#f0f0f0"
                                         border.color: "#bbb"
                                         border.width: 1
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: modelData
-                                            font.family: "Noto Sans"
-                                            font.pointSize: 10
+                                        Loader {
+                                            anchors.fill: parent
+                                            property string labelText: modelData.label
+                                            property string shortcutKey: modelData.key
+                                            property int pointSize: 10
+                                            sourceComponent: lobbyBtnLabelComp
                                         }
                                         MouseArea {
                                             anchors.fill: parent
                                             onClicked: {
-                                                if (modelData === "New") root.lobbyFilesBeginNew()
-                                                else if (modelData === "Edit") root.lobbyOpenSelected()
-                                                else if (modelData === "Read") root.lobbyReadSelected()
-                                                else if (modelData === "Rename") root.lobbyFilesBeginRename()
-                                                else if (modelData === "Delete") root.lobbyFilesBeginDelete()
-                                                else if (modelData === "Download") root.lobbyFilesBeginDownload()
+                                                if (modelData.label === "New") root.lobbyFilesBeginNew()
+                                                else if (modelData.label === "Edit") root.lobbyOpenSelected()
+                                                else if (modelData.label === "Read") root.lobbyReadSelected()
+                                                else if (modelData.label === "Rename") root.lobbyFilesBeginRename()
+                                                else if (modelData.label === "Delete") root.lobbyFilesBeginDelete()
+                                                else if (modelData.label === "Download") root.lobbyFilesBeginDownload()
                                                 root.lobbyKeepFocus()
                                             }
                                         }
@@ -221,11 +229,12 @@
                                     color: "#f0f0f0"
                                     border.color: "#bbb"
                                     border.width: 1
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Encrypt"
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 11
+                                    Loader {
+                                        anchors.fill: parent
+                                        property string labelText: "Encrypt"
+                                        property string shortcutKey: "x"
+                                        property int pointSize: 11
+                                        sourceComponent: lobbyBtnLabelComp
                                     }
                                     MouseArea {
                                         anchors.fill: parent
@@ -243,11 +252,12 @@
                                     color: "#f0f0f0"
                                     border.color: "#bbb"
                                     border.width: 1
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "New encrypted"
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 11
+                                    Loader {
+                                        anchors.fill: parent
+                                        property string labelText: "New encrypted"
+                                        property string shortcutKey: "e"
+                                        property int pointSize: 11
+                                        sourceComponent: lobbyBtnLabelComp
                                     }
                                     MouseArea {
                                         anchors.fill: parent
@@ -265,11 +275,12 @@
                                     color: "#f0f0f0"
                                     border.color: "#bbb"
                                     border.width: 1
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Decrypt"
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 11
+                                    Loader {
+                                        anchors.fill: parent
+                                        property string labelText: "Decrypt"
+                                        property string shortcutKey: "y"
+                                        property int pointSize: 11
+                                        sourceComponent: lobbyBtnLabelComp
                                     }
                                     MouseArea {
                                         anchors.fill: parent

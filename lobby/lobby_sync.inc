@@ -107,14 +107,15 @@
                                     color: (lobbySyncReady && !lobbySyncing) ? "#f0f0f0" : "white"
                                     border.color: lobbySyncReady ? "#bbb" : "black"
                                     border.width: lobbySyncReady ? 1 : 2
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: !lobbySyncReady ? "Token needed — phone Sync setup"
+                                    Loader {
+                                        anchors.fill: parent
+                                        property string labelText: !lobbySyncReady ? "Token needed — phone Sync setup"
                                             : (lobbySyncing ? "Syncing…" : "Sync now")
-                                        font.family: "Noto Sans"
-                                        font.pointSize: !lobbySyncReady ? 14 : 12
-                                        font.bold: !lobbySyncReady
-                                        color: (lobbySyncReady && !lobbySyncing) ? "black" : (lobbySyncReady ? "#888888" : "black")
+                                        property string shortcutKey: (lobbySyncReady && !lobbySyncing) ? "s" : ""
+                                        property int pointSize: !lobbySyncReady ? 14 : 12
+                                        property bool labelBold: !lobbySyncReady
+                                        property color labelColor: (lobbySyncReady && !lobbySyncing) ? "black" : (lobbySyncReady ? "#888888" : "black")
+                                        sourceComponent: lobbyBtnLabelComp
                                     }
                                     MouseArea {
                                         anchors.fill: parent

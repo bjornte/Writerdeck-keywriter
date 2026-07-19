@@ -125,25 +125,25 @@
                                             id: kbLayoutRow
                                             width: parent.width
                                             spacing: lobby.tabSpacing
-                                            property var layoutOptions: [
-                                                { id: "us", label: "US QWERTY" },
-                                                { id: "no", label: "Norwegian" }
-                                            ]
                                             Repeater {
-                                                model: kbLayoutRow.layoutOptions
+                                                model: [
+                                                    { id: "us", label: "US QWERTY", key: "u" },
+                                                    { id: "no", label: "Norwegian", key: "o" }
+                                                ]
                                                 delegate: Rectangle {
-                                                    width: (kbLayoutRow.width - lobby.tabSpacing * (kbLayoutRow.layoutOptions.length - 1)) / kbLayoutRow.layoutOptions.length
+                                                    width: (kbLayoutRow.width - lobby.tabSpacing) / 2
                                                     height: lobby.actionBtnHeight
                                                     radius: 6
                                                     property bool selected: lobbyKeyboardLayout === modelData.id
                                                     color: selected ? "#e8e8e8" : "#f0f0f0"
                                                     border.color: selected ? "black" : "#bbb"
                                                     border.width: selected ? 2 : 1
-                                                    Text {
-                                                        anchors.centerIn: parent
-                                                        text: modelData.label
-                                                        font.family: "Noto Sans"
-                                                        font.pointSize: 11
+                                                    Loader {
+                                                        anchors.fill: parent
+                                                        property string labelText: modelData.label
+                                                        property string shortcutKey: modelData.key
+                                                        property int pointSize: 11
+                                                        sourceComponent: lobbyBtnLabelComp
                                                     }
                                                     MouseArea {
                                                         anchors.fill: parent

@@ -2316,6 +2316,63 @@ Window {
             readonly property int actionBtnHeight: 72
             readonly property int tabSpacing: 12
             readonly property int contentSpacing: 12
+            // Inner keycap for single-letter / digit chords. Opacity-only hide
+            // when no keyboard so the label does not jump.
+            readonly property int shortcutBadgeSize: 28
+            readonly property int shortcutBadgeMargin: 4
+
+            // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
+            // (and optional labelBold / labelColor).
+            Component {
+                id: lobbyBtnLabelComp
+                Item {
+                    anchors.fill: parent
+                    readonly property string labelText: parent.labelText
+                    readonly property string shortcutKey: parent.shortcutKey
+                    readonly property int pointSize: parent.pointSize
+                    readonly property bool labelBold: !!parent.labelBold
+                    readonly property color labelColor: parent.labelColor || "black"
+                    readonly property bool showBadge: shortcutKey !== ""
+
+                    Text {
+                        anchors.left: parent.left
+                        anchors.right: keyBadge.left
+                        anchors.leftMargin: 6
+                        anchors.rightMargin: showBadge ? 4 : 6
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: labelText
+                        font.family: "Noto Sans"
+                        font.pointSize: pointSize
+                        font.bold: labelBold
+                        color: labelColor
+                        horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideRight
+                    }
+                    Rectangle {
+                        id: keyBadge
+                        anchors.right: parent.right
+                        anchors.rightMargin: lobby.shortcutBadgeMargin
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: showBadge ? lobby.shortcutBadgeSize : 0
+                        height: lobby.shortcutBadgeSize
+                        radius: 3
+                        color: "white"
+                        border.color: "#666666"
+                        border.width: showBadge ? 1 : 0
+                        // Keep layout width when keyboard drops; only fade the keycap.
+                        opacity: (showBadge && root.lobbyKeyboardReady()) ? 1 : 0
+                        Text {
+                            anchors.centerIn: parent
+                            visible: showBadge
+                            text: shortcutKey
+                            font.family: "Noto Sans"
+                            font.pointSize: Math.max(9, pointSize)
+                            font.bold: true
+                            color: "black"
+                        }
+                    }
+                }
+            }
 
             FocusScope {
                 id: lobbyFocus
@@ -2370,12 +2427,12 @@ Window {
                             border.color: lobbyPage === index ? "#999" : "#ccc"
                             border.width: 1
 
-                            Text {
-                                anchors.centerIn: parent
-                                text: (index + 1) + " " + modelData
-                                font.family: "Noto Sans"
-                                font.pointSize: 11
-                                color: "black"
+                            Loader {
+                                anchors.fill: parent
+                                property string labelText: modelData
+                                property string shortcutKey: "" + (index + 1)
+                                property int pointSize: 11
+                                sourceComponent: lobbyBtnLabelComp
                             }
 
                             MouseArea {
@@ -2628,7 +2685,14 @@ Window {
                                 visible: lobbyFilesMode === ""
 
                                 Repeater {
-                                    model: ["New", "Edit", "Read", "Rename", "Delete", "Download"]
+                                    model: [
+                                        { label: "New", key: "n" },
+                                        { label: "Edit", key: "" },
+                                        { label: "Read", key: "v" },
+                                        { label: "Rename", key: "r" },
+                                        { label: "Delete", key: "d" },
+                                        { label: "Download", key: "g" }
+                                    ]
                                     delegate: Rectangle {
                                         width: (lobbyFilesBar.width - lobby.tabSpacing * 5) / 6
                                         height: lobby.actionBtnHeight
@@ -2636,21 +2700,22 @@ Window {
                                         color: "#f0f0f0"
                                         border.color: "#bbb"
                                         border.width: 1
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: modelData
-                                            font.family: "Noto Sans"
-                                            font.pointSize: 10
+                                        Loader {
+                                            anchors.fill: parent
+                                            property string labelText: modelData.label
+                                            property string shortcutKey: modelData.key
+                                            property int pointSize: 10
+                                            sourceComponent: lobbyBtnLabelComp
                                         }
                                         MouseArea {
                                             anchors.fill: parent
                                             onClicked: {
-                                                if (modelData === "New") root.lobbyFilesBeginNew()
-                                                else if (modelData === "Edit") root.lobbyOpenSelected()
-                                                else if (modelData === "Read") root.lobbyReadSelected()
-                                                else if (modelData === "Rename") root.lobbyFilesBeginRename()
-                                                else if (modelData === "Delete") root.lobbyFilesBeginDelete()
-                                                else if (modelData === "Download") root.lobbyFilesBeginDownload()
+                                                if (modelData.label === "New") root.lobbyFilesBeginNew()
+                                                else if (modelData.label === "Edit") root.lobbyOpenSelected()
+                                                else if (modelData.label === "Read") root.lobbyReadSelected()
+                                                else if (modelData.label === "Rename") root.lobbyFilesBeginRename()
+                                                else if (modelData.label === "Delete") root.lobbyFilesBeginDelete()
+                                                else if (modelData.label === "Download") root.lobbyFilesBeginDownload()
                                                 root.lobbyKeepFocus()
                                             }
                                         }
@@ -2681,11 +2746,12 @@ Window {
                                     color: "#f0f0f0"
                                     border.color: "#bbb"
                                     border.width: 1
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Encrypt"
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 11
+                                    Loader {
+                                        anchors.fill: parent
+                                        property string labelText: "Encrypt"
+                                        property string shortcutKey: "x"
+                                        property int pointSize: 11
+                                        sourceComponent: lobbyBtnLabelComp
                                     }
                                     MouseArea {
                                         anchors.fill: parent
@@ -2703,11 +2769,12 @@ Window {
                                     color: "#f0f0f0"
                                     border.color: "#bbb"
                                     border.width: 1
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "New encrypted"
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 11
+                                    Loader {
+                                        anchors.fill: parent
+                                        property string labelText: "New encrypted"
+                                        property string shortcutKey: "e"
+                                        property int pointSize: 11
+                                        sourceComponent: lobbyBtnLabelComp
                                     }
                                     MouseArea {
                                         anchors.fill: parent
@@ -2725,11 +2792,12 @@ Window {
                                     color: "#f0f0f0"
                                     border.color: "#bbb"
                                     border.width: 1
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Decrypt"
-                                        font.family: "Noto Sans"
-                                        font.pointSize: 11
+                                    Loader {
+                                        anchors.fill: parent
+                                        property string labelText: "Decrypt"
+                                        property string shortcutKey: "y"
+                                        property int pointSize: 11
+                                        sourceComponent: lobbyBtnLabelComp
                                     }
                                     MouseArea {
                                         anchors.fill: parent
@@ -2938,25 +3006,25 @@ Window {
                                             id: kbLayoutRow
                                             width: parent.width
                                             spacing: lobby.tabSpacing
-                                            property var layoutOptions: [
-                                                { id: "us", label: "US QWERTY" },
-                                                { id: "no", label: "Norwegian" }
-                                            ]
                                             Repeater {
-                                                model: kbLayoutRow.layoutOptions
+                                                model: [
+                                                    { id: "us", label: "US QWERTY", key: "u" },
+                                                    { id: "no", label: "Norwegian", key: "o" }
+                                                ]
                                                 delegate: Rectangle {
-                                                    width: (kbLayoutRow.width - lobby.tabSpacing * (kbLayoutRow.layoutOptions.length - 1)) / kbLayoutRow.layoutOptions.length
+                                                    width: (kbLayoutRow.width - lobby.tabSpacing) / 2
                                                     height: lobby.actionBtnHeight
                                                     radius: 6
                                                     property bool selected: lobbyKeyboardLayout === modelData.id
                                                     color: selected ? "#e8e8e8" : "#f0f0f0"
                                                     border.color: selected ? "black" : "#bbb"
                                                     border.width: selected ? 2 : 1
-                                                    Text {
-                                                        anchors.centerIn: parent
-                                                        text: modelData.label
-                                                        font.family: "Noto Sans"
-                                                        font.pointSize: 11
+                                                    Loader {
+                                                        anchors.fill: parent
+                                                        property string labelText: modelData.label
+                                                        property string shortcutKey: modelData.key
+                                                        property int pointSize: 11
+                                                        sourceComponent: lobbyBtnLabelComp
                                                     }
                                                     MouseArea {
                                                         anchors.fill: parent
@@ -3082,14 +3150,15 @@ Window {
                                     color: (lobbySyncReady && !lobbySyncing) ? "#f0f0f0" : "white"
                                     border.color: lobbySyncReady ? "#bbb" : "black"
                                     border.width: lobbySyncReady ? 1 : 2
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: !lobbySyncReady ? "Token needed — phone Sync setup"
+                                    Loader {
+                                        anchors.fill: parent
+                                        property string labelText: !lobbySyncReady ? "Token needed — phone Sync setup"
                                             : (lobbySyncing ? "Syncing…" : "Sync now")
-                                        font.family: "Noto Sans"
-                                        font.pointSize: !lobbySyncReady ? 14 : 12
-                                        font.bold: !lobbySyncReady
-                                        color: (lobbySyncReady && !lobbySyncing) ? "black" : (lobbySyncReady ? "#888888" : "black")
+                                        property string shortcutKey: (lobbySyncReady && !lobbySyncing) ? "s" : ""
+                                        property int pointSize: !lobbySyncReady ? 14 : 12
+                                        property bool labelBold: !lobbySyncReady
+                                        property color labelColor: (lobbySyncReady && !lobbySyncing) ? "black" : (lobbySyncReady ? "#888888" : "black")
+                                        sourceComponent: lobbyBtnLabelComp
                                     }
                                     MouseArea {
                                         anchors.fill: parent
@@ -3216,11 +3285,12 @@ Window {
                                             color: "#f0f0f0"
                                             border.color: "#bbb"
                                             border.width: 1
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: "Enable"
-                                                font.family: "Noto Sans"
-                                                font.pointSize: 11
+                                            Loader {
+                                                anchors.fill: parent
+                                                property string labelText: "Enable"
+                                                property string shortcutKey: "e"
+                                                property int pointSize: 11
+                                                sourceComponent: lobbyBtnLabelComp
                                             }
                                             MouseArea {
                                                 anchors.fill: parent
@@ -3242,11 +3312,12 @@ Window {
                                             color: "#f0f0f0"
                                             border.color: "#bbb"
                                             border.width: 1
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: "Change PIN"
-                                                font.family: "Noto Sans"
-                                                font.pointSize: 11
+                                            Loader {
+                                                anchors.fill: parent
+                                                property string labelText: "Change PIN"
+                                                property string shortcutKey: "c"
+                                                property int pointSize: 11
+                                                sourceComponent: lobbyBtnLabelComp
                                             }
                                             MouseArea {
                                                 anchors.fill: parent
@@ -3399,11 +3470,12 @@ Window {
                                         color: "#f0f0f0"
                                         border.color: "#bbb"
                                         border.width: 1
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: "Exit Writerdeck"
-                                            font.family: "Noto Sans"
-                                            font.pointSize: 12
+                                        Loader {
+                                            anchors.fill: parent
+                                            property string labelText: "Exit Writerdeck"
+                                            property string shortcutKey: "x"
+                                            property int pointSize: 12
+                                            sourceComponent: lobbyBtnLabelComp
                                         }
                                         MouseArea {
                                             anchors.fill: parent
