@@ -12,9 +12,9 @@
             readonly property int tabSpacing: 12
             readonly property int contentSpacing: 12
             // Inner keycap for single-letter / digit chords. Opacity-only hide
-            // when no keyboard so the label does not jump.
-            readonly property int shortcutBadgeSize: 28
-            readonly property int shortcutBadgeMargin: 4
+            // when no keyboard so the label does not jump. Square hugs the
+            // outer button (tight outer margin), not the glyph inside.
+            readonly property int shortcutBadgeMargin: 2
 
             // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
             // (and optional labelBold / labelColor).
@@ -33,7 +33,7 @@
                         anchors.left: parent.left
                         anchors.right: keyBadge.left
                         anchors.leftMargin: 6
-                        anchors.rightMargin: showBadge ? 4 : 6
+                        anchors.rightMargin: showBadge ? 2 : 6
                         anchors.verticalCenter: parent.verticalCenter
                         text: labelText
                         font.family: "Noto Sans"
@@ -47,12 +47,14 @@
                         id: keyBadge
                         anchors.right: parent.right
                         anchors.rightMargin: lobby.shortcutBadgeMargin
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: showBadge ? lobby.shortcutBadgeSize : 0
-                        height: lobby.shortcutBadgeSize
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.topMargin: lobby.shortcutBadgeMargin
+                        anchors.bottomMargin: lobby.shortcutBadgeMargin
+                        width: showBadge ? height : 0
                         radius: 3
                         color: "white"
-                        border.color: "#666666"
+                        border.color: "#888888"
                         border.width: showBadge ? 1 : 0
                         // Keep layout width when keyboard drops; only fade the keycap.
                         opacity: (showBadge && root.lobbyKeyboardReady()) ? 1 : 0
@@ -61,9 +63,10 @@
                             visible: showBadge
                             text: shortcutKey
                             font.family: "Noto Sans"
-                            font.pointSize: Math.max(9, pointSize)
-                            font.bold: true
-                            color: "black"
+                            // Quieter than the button label — never bolder.
+                            font.pointSize: Math.max(8, pointSize - 2)
+                            font.bold: false
+                            color: "#555555"
                         }
                     }
                 }

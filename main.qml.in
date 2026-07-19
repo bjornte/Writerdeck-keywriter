@@ -865,16 +865,25 @@ Window {
     }
 
     // Phone keys arrive as text codepoints (event.key == 0); USB sends Qt::Key_A..Z.
+    // Lobby action letter: bare key, phone text inject, or Ctrl/Cmd+letter.
+    // Ctrl-K / Ctrl-R / Ctrl-Q stay global (picker / rotate / quit).
     function lobbyChordLetter(event) {
-        if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))
+        if (event.modifiers & Qt.AltModifier)
             return ""
+        var ctrl = !!(event.modifiers & (Qt.ControlModifier | Qt.MetaModifier)) || !!ctrlPressed
+        var letter = ""
         if (event.key >= Qt.Key_A && event.key <= Qt.Key_Z)
-            return String.fromCharCode(event.key).toLowerCase()
-        if (event.text && event.text.length === 1) {
+            letter = String.fromCharCode(event.key).toLowerCase()
+        else if (!ctrl && event.text && event.text.length === 1) {
             var c = event.text.toLowerCase()
-            if (c >= "a" && c <= "z") return c
+            if (c >= "a" && c <= "z")
+                letter = c
         }
-        return ""
+        if (letter === "")
+            return ""
+        if (ctrl && (letter === "k" || letter === "r" || letter === "q"))
+            return ""
+        return letter
     }
 
     function lobbyHandleKey(event) {

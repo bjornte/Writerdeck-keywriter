@@ -170,7 +170,7 @@
                                 Repeater {
                                     model: [
                                         { label: "New", key: "n" },
-                                        { label: "Edit", key: "" },
+                                        { label: "Edit", key: "\u21B5" },
                                         { label: "Read", key: "v" },
                                         { label: "Rename", key: "r" },
                                         { label: "Delete", key: "d" },

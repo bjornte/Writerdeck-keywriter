@@ -865,16 +865,25 @@ Window {
     }
 
     // Phone keys arrive as text codepoints (event.key == 0); USB sends Qt::Key_A..Z.
+    // Lobby action letter: bare key, phone text inject, or Ctrl/Cmd+letter.
+    // Ctrl-K / Ctrl-R / Ctrl-Q stay global (picker / rotate / quit).
     function lobbyChordLetter(event) {
-        if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))
+        if (event.modifiers & Qt.AltModifier)
             return ""
+        var ctrl = !!(event.modifiers & (Qt.ControlModifier | Qt.MetaModifier)) || !!ctrlPressed
+        var letter = ""
         if (event.key >= Qt.Key_A && event.key <= Qt.Key_Z)
-            return String.fromCharCode(event.key).toLowerCase()
-        if (event.text && event.text.length === 1) {
+            letter = String.fromCharCode(event.key).toLowerCase()
+        else if (!ctrl && event.text && event.text.length === 1) {
             var c = event.text.toLowerCase()
-            if (c >= "a" && c <= "z") return c
+            if (c >= "a" && c <= "z")
+                letter = c
         }
-        return ""
+        if (letter === "")
+            return ""
+        if (ctrl && (letter === "k" || letter === "r" || letter === "q"))
+            return ""
+        return letter
     }
 
     function lobbyHandleKey(event) {
@@ -2326,9 +2335,9 @@ Window {
             readonly property int tabSpacing: 12
             readonly property int contentSpacing: 12
             // Inner keycap for single-letter / digit chords. Opacity-only hide
-            // when no keyboard so the label does not jump.
-            readonly property int shortcutBadgeSize: 28
-            readonly property int shortcutBadgeMargin: 4
+            // when no keyboard so the label does not jump. Square hugs the
+            // outer button (tight outer margin), not the glyph inside.
+            readonly property int shortcutBadgeMargin: 2
 
             // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
             // (and optional labelBold / labelColor).
@@ -2347,7 +2356,7 @@ Window {
                         anchors.left: parent.left
                         anchors.right: keyBadge.left
                         anchors.leftMargin: 6
-                        anchors.rightMargin: showBadge ? 4 : 6
+                        anchors.rightMargin: showBadge ? 2 : 6
                         anchors.verticalCenter: parent.verticalCenter
                         text: labelText
                         font.family: "Noto Sans"
@@ -2361,12 +2370,14 @@ Window {
                         id: keyBadge
                         anchors.right: parent.right
                         anchors.rightMargin: lobby.shortcutBadgeMargin
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: showBadge ? lobby.shortcutBadgeSize : 0
-                        height: lobby.shortcutBadgeSize
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.topMargin: lobby.shortcutBadgeMargin
+                        anchors.bottomMargin: lobby.shortcutBadgeMargin
+                        width: showBadge ? height : 0
                         radius: 3
                         color: "white"
-                        border.color: "#666666"
+                        border.color: "#888888"
                         border.width: showBadge ? 1 : 0
                         // Keep layout width when keyboard drops; only fade the keycap.
                         opacity: (showBadge && root.lobbyKeyboardReady()) ? 1 : 0
@@ -2375,9 +2386,10 @@ Window {
                             visible: showBadge
                             text: shortcutKey
                             font.family: "Noto Sans"
-                            font.pointSize: Math.max(9, pointSize)
-                            font.bold: true
-                            color: "black"
+                            // Quieter than the button label — never bolder.
+                            font.pointSize: Math.max(8, pointSize - 2)
+                            font.bold: false
+                            color: "#555555"
                         }
                     }
                 }
@@ -2696,7 +2708,7 @@ Window {
                                 Repeater {
                                     model: [
                                         { label: "New", key: "n" },
-                                        { label: "Edit", key: "" },
+                                        { label: "Edit", key: "\u21B5" },
                                         { label: "Read", key: "v" },
                                         { label: "Rename", key: "r" },
                                         { label: "Delete", key: "d" },
@@ -3529,20 +3541,22 @@ Window {
                                           + "Files\n"
                                           + "Up / Down — move the selection (turns the page at the edge)\n"
                                           + "Page Up / Page Down — previous or next page of notes\n"
-                                          + "Enter — edit the selected note\n"
-                                          + "v — read · n — new · r — rename · d — delete · g — download to phone\n"
-                                          + "With private notes on: e — new encrypted · x — encrypt · y — decrypt\n"
+                                          + "Enter or \u21B5 — edit the selected note\n"
+                                          + "v or Ctrl-V — read · n or Ctrl-N — new · r — rename · d or Ctrl-D — delete\n"
+                                          + "g or Ctrl-G — download to phone\n"
+                                          + "With private notes on: e / Ctrl-E — new encrypted · x / Ctrl-X — encrypt · y / Ctrl-Y — decrypt\n"
+                                          + "(Ctrl-R still rotates; Ctrl-K opens the quick picker; Ctrl-Q quits.)\n"
                                           + "\n"
                                           + "Keyboard\n"
-                                          + "u — US layout · o — Norwegian\n"
+                                          + "u or Ctrl-U — US layout · o or Ctrl-O — Norwegian\n"
                                           + "\n"
                                           + "Sync\n"
-                                          + "Enter or s — sync now\n"
+                                          + "Enter or s / Ctrl-S — sync now\n"
                                           + "\n"
                                           + "Settings\n"
-                                          + "f — cycle reading font · p — cycle phone PIN length\n"
-                                          + "t — cycle rotation · e — enable private notes · c — change private PIN\n"
-                                          + "x — exit Writerdeck (then Enter to confirm)\n"
+                                          + "f / Ctrl-F — cycle reading font · p / Ctrl-P — cycle phone PIN length\n"
+                                          + "t / Ctrl-T — cycle rotation · e / Ctrl-E — enable private notes · c / Ctrl-C — change private PIN\n"
+                                          + "x / Ctrl-X — exit Writerdeck (then Enter to confirm)\n"
                                           + "\n"
                                           + "Anywhere\n"
                                           + "Ctrl-K — quick file picker\n"
