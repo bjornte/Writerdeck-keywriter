@@ -26,7 +26,6 @@ Window {
     property string lobbyQrPath: ""
     property bool lobbyShowNoKeyboard: false
     property string lobbyNoKeyboardPending: ""
-    property bool lobbyKeyboardOverride: false
     property int paraSpacing: 28
     property string readFont: "Inter"
     property bool lobbySyncOn: false
@@ -246,8 +245,6 @@ Window {
         lobbyUsbKeyboard = !!usbKeyboard
         lobbyPort = port || 8000
         lobbyQrPath = qrPath || ""
-        if (lobbyUsbKeyboard || lobbyPhoneConnected)
-            lobbyKeyboardOverride = false
         if (lobbyShowNoKeyboard && lobbyKeyboardReady())
             lobbyContinueAfterKeyboard()
     }
@@ -259,8 +256,9 @@ Window {
 
     // USB keyboard or phone page open (Bluetooth bridge). Touch actions show the
     // tip only when neither is present. Key chords skip the tip (fromKey).
+    // Continue / a key while the tip is up uses fromKey once — never a sticky flag.
     function lobbyKeyboardReady() {
-        return lobbyUsbKeyboard || lobbyPhoneConnected || lobbyKeyboardOverride
+        return lobbyUsbKeyboard || lobbyPhoneConnected
     }
 
     function lobbyDialogIsOpen() {
@@ -300,7 +298,6 @@ Window {
     function lobbyDismissNoKeyboard() {
         lobbyShowNoKeyboard = false
         lobbyNoKeyboardPending = ""
-        lobbyKeyboardOverride = false
         if (vaultOverlayMode === "")
             writerdeck.notifyLobbyInput(lobbyFilesMode)
         lobbyKeepFocus()
@@ -310,20 +307,17 @@ Window {
         var pending = lobbyNoKeyboardPending
         lobbyShowNoKeyboard = false
         lobbyNoKeyboardPending = ""
-        // Brief override until the next presence push marks phone/USB ready.
-        lobbyKeyboardOverride = true
         if (vaultOverlayMode === "")
             writerdeck.notifyLobbyInput(lobbyFilesMode)
+        // fromKey=true: one-shot past the tip for this action only.
         if (pending === "edit")
-            lobbyOpenSelected()
+            lobbyOpenSelected(true)
         else if (pending === "new")
-            lobbyFilesBeginNew()
+            lobbyFilesBeginNew(true)
         else if (pending === "rename")
-            lobbyFilesBeginRename()
+            lobbyFilesBeginRename(true)
         else if (pending === "new-encrypted")
-            lobbyFilesBeginNewEncrypted()
-        else
-            lobbyKeyboardOverride = false
+            lobbyFilesBeginNewEncrypted(true)
         lobbyKeepFocus()
     }
 
@@ -332,12 +326,25 @@ Window {
     }
 
     function vaultOpFailed(msg) {
+        // Wrong PIN (or other verify failure) while encrypt/decrypt/open is pending:
+        // keep the pad up with a clear message instead of dumping to Files.
+        if (vaultPendingAction !== "" || vaultPendingLoad !== "") {
+            vaultOverlayMode = "pin"
+            vaultPinInput = ""
+            vaultOverlayReason = msg || "Wrong PIN. Try again."
+            lobbyKeepFocus()
+            return
+        }
         lobbyGoPage(0)
         lobbyVaultError = msg || "Operation failed"
     }
 
     function vaultOnPINAccepted() {
         lobbyVaultError = ""
+        vaultOverlayMode = ""
+        vaultPinInput = ""
+        vaultPinPending = ""
+        vaultOverlayReason = ""
         if (vaultPendingAction === "encrypt") {
             var encName = vaultPendingNote
             vaultPendingAction = ""
@@ -673,10 +680,8 @@ Window {
         }
         if (vaultOverlayMode === "pin") {
             writerdeck.verifyVaultPin(vaultPinInput, vaultPinKeepSession)
-            vaultOverlayMode = ""
             vaultPinInput = ""
-            vaultPinPending = ""
-            vaultOverlayReason = ""
+            // Stay on the pad until vaultpinok or vaultopfailed.
             return
         }
         if (vaultOverlayMode === "change-old") {
