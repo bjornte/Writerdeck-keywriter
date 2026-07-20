@@ -40,7 +40,8 @@ Window {
     property string lobbyPinDigits: "6"
     property string lobbySettingsMode: ""
     property int lobbyPage: 0
-    property var lobbyTabLabels: ["Files", "Keyboard", "Sync", "Settings", "Shortcuts", "Home"]
+    property var lobbyTabLabels: ["Files", "Keyboard", "Sync", "Settings", "Shortcuts", "About"]
+    property string lobbyVersionText: ""
     property int lobbyFilesIndex: 0
     // How many note rows fit on one Files page (set from list height; e-ink pages, no flick).
     // Page-aligned window: decisions.md §35.
@@ -476,7 +477,44 @@ Window {
             lobbyDismissNoKeyboard()
         if (idx === 0) lobbyRefreshNotes()
         if (idx === 1) writerdeck.requestLobbyInfo()
+        if (idx === 5) lobbyRefreshVersion()
         lobbyKeepFocus()
+    }
+
+    // About tab: show local stamp, then ask the server to compare with GitHub.
+    function lobbyRefreshVersion() {
+        lobbyVersionText = "Writerdeck version \u2026 (checking GitHub for updates\u2026)"
+        var req = new XMLHttpRequest()
+        req.open("GET", "http://127.0.0.1:8000/api/version")
+        req.onreadystatechange = function() {
+            if (req.readyState !== XMLHttpRequest.DONE) return
+            var local = "unknown"
+            if (req.status === 200) {
+                try {
+                    var j = JSON.parse(req.responseText)
+                    if (j.version) local = j.version
+                } catch (e) {}
+            }
+            lobbyVersionText = "Writerdeck version " + local + " (checking GitHub for updates\u2026)"
+            var chk = new XMLHttpRequest()
+            chk.open("GET", "http://127.0.0.1:8000/api/version/check")
+            chk.onreadystatechange = function() {
+                if (chk.readyState !== XMLHttpRequest.DONE) return
+                if (chk.status === 200) {
+                    try {
+                        var k = JSON.parse(chk.responseText)
+                        if (k.message) {
+                            lobbyVersionText = k.message
+                            return
+                        }
+                    } catch (e2) {}
+                }
+                lobbyVersionText = "Writerdeck version " + local
+                        + " (couldn't reach GitHub to check for updates)"
+            }
+            chk.send()
+        }
+        req.send()
     }
 
     function lobbyRefreshNotes() {
@@ -2502,20 +2540,20 @@ Window {
                     anchors.leftMargin: lobby.pageMargin
                     anchors.rightMargin: lobby.pageMargin
 
-                    // 0 Home
+                    // 5 About
                     Item {
                         visible: lobbyPage === 5
                         anchors.fill: parent
                         Flickable {
                             anchors.fill: parent
                             contentWidth: width
-                            contentHeight: homeCol.height
+                            contentHeight: aboutCol.height
                             clip: true
                             focus: false
                             interactive: true
                             flickableDirection: Flickable.VerticalFlick
                             Column {
-                                id: homeCol
+                                id: aboutCol
                                 width: parent.width
                                 spacing: lobby.contentSpacing
                                 Text {
@@ -2529,6 +2567,15 @@ Window {
                                     text: "A text editor for use with a physical keyboard.\nWith Markdown support."
                                     color: "black"
                                     font.pointSize: 12
+                                    font.family: "Noto Sans"
+                                    width: parent.width
+                                    wrapMode: Text.WordWrap
+                                }
+                                Text {
+                                    text: lobbyVersionText !== "" ? lobbyVersionText
+                                          : "Writerdeck version \u2026 (checking GitHub for updates\u2026)"
+                                    color: "black"
+                                    font.pointSize: 11
                                     font.family: "Noto Sans"
                                     width: parent.width
                                     wrapMode: Text.WordWrap
