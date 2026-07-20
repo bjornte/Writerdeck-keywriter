@@ -1,20 +1,17 @@
 #include "lobby_bridge.h"
+#include "product_version.h"
 
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMetaObject>
 #include <QVariant>
 
-#ifndef PRODUCT_VERSION
-#define PRODUCT_VERSION "unknown"
-#endif
-
 // Defined in socket-inject.patch (main.cpp).
 extern void rmkbdWriteLine(const std::string &line);
 
 QString LobbyBridge::productVersion() const
 {
-    return QString::fromLatin1(PRODUCT_VERSION);
+    return QString::fromLatin1(WRITERDECK_PRODUCT_VERSION);
 }
 
 void LobbyBridge::sendReq(const QString &jsonLine)
