@@ -7,6 +7,10 @@ CONFIG += c++11
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 
+# Product stamp from CI / qmake PRODUCT_VERSION=YYYY-MM-DD (same as Writerdeck-server).
+isEmpty(PRODUCT_VERSION): PRODUCT_VERSION = unknown
+DEFINES += "PRODUCT_VERSION=\"$$PRODUCT_VERSION\""
+
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.

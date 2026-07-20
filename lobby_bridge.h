@@ -8,8 +8,10 @@
 class LobbyBridge : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(QString productVersion READ productVersion CONSTANT)
 public:
     void setRoot(QObject *root) { m_root = root; }
+    QString productVersion() const;
 
 public slots:
     Q_INVOKABLE void requestNotesList();

@@ -5,8 +5,17 @@
 #include <QMetaObject>
 #include <QVariant>
 
+#ifndef PRODUCT_VERSION
+#define PRODUCT_VERSION "unknown"
+#endif
+
 // Defined in socket-inject.patch (main.cpp).
 extern void rmkbdWriteLine(const std::string &line);
+
+QString LobbyBridge::productVersion() const
+{
+    return QString::fromLatin1(PRODUCT_VERSION);
+}
 
 void LobbyBridge::sendReq(const QString &jsonLine)
 {

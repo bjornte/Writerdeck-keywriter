@@ -481,40 +481,32 @@ Window {
         lobbyKeepFocus()
     }
 
-    // About tab: show local stamp, then ask the server to compare with GitHub.
+    // About tab: one product stamp from server + editor, then compare to GitHub.
     function lobbyRefreshVersion() {
         lobbyVersionText = "Writerdeck version \u2026 (checking GitHub for updates\u2026)"
-        var req = new XMLHttpRequest()
-        req.open("GET", "http://127.0.0.1:8000/api/version")
-        req.onreadystatechange = function() {
-            if (req.readyState !== XMLHttpRequest.DONE) return
-            var local = "unknown"
-            if (req.status === 200) {
+        var ed = "unknown"
+        try {
+            if (writerdeck && writerdeck.productVersion)
+                ed = writerdeck.productVersion
+        } catch (e0) {}
+        var chk = new XMLHttpRequest()
+        chk.open("GET", "http://127.0.0.1:8000/api/version/check?editor="
+                 + encodeURIComponent(ed))
+        chk.onreadystatechange = function() {
+            if (chk.readyState !== XMLHttpRequest.DONE) return
+            if (chk.status === 200) {
                 try {
-                    var j = JSON.parse(req.responseText)
-                    if (j.version) local = j.version
-                } catch (e) {}
+                    var k = JSON.parse(chk.responseText)
+                    if (k.message) {
+                        lobbyVersionText = k.message
+                        return
+                    }
+                } catch (e2) {}
             }
-            lobbyVersionText = "Writerdeck version " + local + " (checking GitHub for updates\u2026)"
-            var chk = new XMLHttpRequest()
-            chk.open("GET", "http://127.0.0.1:8000/api/version/check")
-            chk.onreadystatechange = function() {
-                if (chk.readyState !== XMLHttpRequest.DONE) return
-                if (chk.status === 200) {
-                    try {
-                        var k = JSON.parse(chk.responseText)
-                        if (k.message) {
-                            lobbyVersionText = k.message
-                            return
-                        }
-                    } catch (e2) {}
-                }
-                lobbyVersionText = "Writerdeck version " + local
-                        + " (couldn't reach GitHub to check for updates)"
-            }
-            chk.send()
+            lobbyVersionText = "Writerdeck version unknown"
+                    + " (couldn't reach GitHub to check for updates)"
         }
-        req.send()
+        chk.send()
     }
 
     function lobbyRefreshNotes() {
