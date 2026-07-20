@@ -30,7 +30,7 @@ Mac and Linux shortcuts. Word and line motion, shift-selection, wrap-aware Up/Do
 
 EditHelper in C++. Caret math, shortcut handling, wrapped-line motion, and undo live in `edit_helper.*`. QML still owns the on-screen text box, sticky column, timers, and applying results (`edit_mac_helpers.qml.inc`).
 
-Lobby. Files, Home, Settings, and sleep on the tablet; file and vault ops over the same socket (`lobby/`, `lobby_bridge`).
+Lobby. Files, About, Settings, and sleep on the tablet; file and vault ops over the same socket (`lobby/`, `lobby_bridge`). Product version is stamped at CI build into `product_version.h` (same date as Writerdeck-server).
 
 Plain Markdown on disk. Editing stays plain text. Fancy rendering is for preview only.
 
