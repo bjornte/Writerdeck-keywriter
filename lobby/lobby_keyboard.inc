@@ -141,7 +141,7 @@
                                                     Loader {
                                                         anchors.fill: parent
                                                         property string labelText: modelData.label
-                                                        property string shortcutKey: lobbyUi.shortcut(modelData.action)
+                                                        property string shortcutKey: lobbyUi.shortcutBadge(modelData.action)
                                                         property int pointSize: lobby.labelPointSize
                                                         sourceComponent: lobbyBtnLabelComp
                                                     }

@@ -1,6 +1,5 @@
 import QtQuick 2.11
 import QtQuick.Window 2.2
-import Qt.labs.folderlistmodel 1.0
 import io.singleton 1.0
 
 Window {
@@ -15,7 +14,6 @@ Window {
     property int mode: 1
     property int lastCursorPostion: -1
     property bool ctrlPressed: false
-    property bool isOmni: false
     property bool isLobby: true
     property bool isSleeping: false
     property string lobbyIP: ""
@@ -41,6 +39,7 @@ Window {
     property string lobbySettingsMode: ""
     property int lobbyPage: 0
     property var lobbyTabLabels: ["Files", "Keyboard", "Sync", "Settings", "Shortcuts", "About"]
+    property var lobbyTabShortcutIds: ["tabs.files", "tabs.keyboard", "tabs.sync", "tabs.settings", "tabs.shortcuts", "tabs.about"]
     property string lobbyVersionText: ""
     property int lobbyFilesIndex: 0
     // How many note rows fit on one Files page (set from list height; e-ink pages, no flick).
@@ -81,14 +80,13 @@ Window {
     property string vaultPendingLoad: ""
     property string vaultPendingAction: ""
     property string vaultPendingNote: ""
-    property string omniQuery: ""
     property string currentFile: ""
     property string folder: "file://%1/Writerdeck-user-documents/".arg(home_dir)
 
     function lobbyKeepFocus() {
-        if (!isLobby || isOmni) return
+        if (!isLobby) return
         Qt.callLater(function() {
-            if (isLobby && !isOmni && typeof lobbyFocus !== "undefined" && lobbyFocus)
+            if (isLobby && typeof lobbyFocus !== "undefined" && lobbyFocus)
                 lobbyFocus.forceActiveFocus()
         })
     }
@@ -195,7 +193,6 @@ Window {
                     return
                 }
                 var response = sanitizeLoadedNote(xhr.responseText)
-                isOmni = false
                 mode = 1
                 currentFile = name
                 doc = response
@@ -233,11 +230,6 @@ Window {
         request.send(JSON.stringify({ content: content }))
         console.log("save -> " + request.status + " " + request.statusText)
         return request.status
-    }
-
-    function openNotePicker() {
-        isOmni = true
-        omniQuery = ""
     }
 
     function saveAndLoad(name) {
@@ -905,8 +897,6 @@ Window {
 
     // Phone keys arrive as text codepoints (event.key == 0); USB sends Qt::Key_A..Z.
     // Lobby action letter: Ctrl/Cmd+letter only; bindings from lobby-ui.json.
-    // Ctrl-K / Ctrl-Q stay global. files.rename letter rotates on other Lobby pages
-    // when that letter is r (Ctrl-R); otherwise Ctrl-R still rotates (handleKeyDown).
     function lobbyChordLetter(event) {
         if (event.modifiers & Qt.AltModifier)
             return ""
@@ -916,20 +906,52 @@ Window {
         if (event.key < Qt.Key_A || event.key > Qt.Key_Z)
             return ""
         var letter = String.fromCharCode(event.key).toLowerCase()
-        if (letter === "k" || letter === "q")
-            return ""
         if (letter === lobbyUi.shortcut("files.rename")
                 && !(lobbyPage === 0 && lobbyFilesMode === ""))
             return ""
         return letter
     }
 
+    function lobbyCtrlLetter(event) {
+        if (event.modifiers & Qt.AltModifier)
+            return ""
+        var ctrl = !!(event.modifiers & (Qt.ControlModifier | Qt.MetaModifier)) || !!ctrlPressed
+        if (!ctrl)
+            return ""
+        if (event.key < Qt.Key_A || event.key > Qt.Key_Z)
+            return ""
+        return String.fromCharCode(event.key).toLowerCase()
+    }
+
     function lobbyShortcutIs(letter, actionId) {
         return letter !== "" && letter === lobbyUi.shortcut(actionId)
     }
 
+    function lobbyShortcutIsEnter(actionId) {
+        return lobbyUi.shortcut(actionId) === "enter"
+    }
+
+    function lobbyMatchesEnter(event, actionId) {
+        return lobbyShortcutIsEnter(actionId)
+            && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
+    }
+
+    function lobbyHandleGlobalChord(event) {
+        var letter = lobbyCtrlLetter(event)
+        if (letter === "")
+            return false
+        if (!isLobby && lobbyShortcutIs(letter, "global.toLobby")) {
+            handleToLobby()
+            return true
+        }
+        if (isLobby && lobbyShortcutIs(letter, "global.quit")) {
+            handleQuitToStock()
+            return true
+        }
+        return false
+    }
+
     function lobbyHandleKey(event) {
-        if (isOmni) return false
         if (lobbyShowNoKeyboard) {
             if (event.key === Qt.Key_Escape) {
                 lobbyDismissNoKeyboard()
@@ -941,10 +963,6 @@ Window {
         }
         if (vaultOverlayMode !== "") {
             return vaultConsumeKey(event)
-        }
-        if (event.modifiers & Qt.ControlModifier) {
-            if (event.key === Qt.Key_Left || event.key === Qt.Key_Right)
-                return false
         }
         if (lobbyFilesMode === "confirm-delete") {
             if (event.key === Qt.Key_Escape) { lobbyFilesMode = ""; return true }
@@ -1012,17 +1030,6 @@ Window {
                 lobbyGoPage((lobbyPage + 1) % lobbyTabLabels.length)
             return true
         }
-        // Digits: USB sends Qt.Key_1..6; phone injects printable text "1".."6".
-        if (event.key >= Qt.Key_1 && event.key <= Qt.Key_6) {
-            lobbyGoPage(event.key - Qt.Key_1)
-            return true
-        }
-        if (!(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))
-                && event.text && event.text.length === 1
-                && event.text >= "1" && event.text <= "6") {
-            lobbyGoPage(parseInt(event.text, 10) - 1)
-            return true
-        }
         if (event.key === Qt.Key_Left && event.modifiers === Qt.NoModifier) {
             lobbyGoPage((lobbyPage + lobbyTabLabels.length - 1) % lobbyTabLabels.length)
             return true
@@ -1030,6 +1037,17 @@ Window {
         if (event.key === Qt.Key_Right && event.modifiers === Qt.NoModifier) {
             lobbyGoPage((lobbyPage + 1) % lobbyTabLabels.length)
             return true
+        }
+        if (lobbyHandleGlobalChord(event))
+            return true
+        var tabLetter = lobbyChordLetter(event)
+        if (tabLetter !== "") {
+            for (var ti = 0; ti < lobbyTabShortcutIds.length; ti++) {
+                if (lobbyShortcutIs(tabLetter, lobbyTabShortcutIds[ti])) {
+                    lobbyGoPage(ti)
+                    return true
+                }
+            }
         }
         if (lobbyPage === 1) {
             var kbLetter = lobbyChordLetter(event)
@@ -1039,7 +1057,7 @@ Window {
                 writerdeck.setKeyboardLayout("no"); return true }
         }
         if (lobbyPage === 2) {
-            if (event.key === Qt.Key_Return
+            if (lobbyMatchesEnter(event, "sync.now")
                     || lobbyShortcutIs(lobbyChordLetter(event), "sync.now")) {
                 if (lobbySyncReady && !lobbySyncing) writerdeck.syncNow()
                 return true
@@ -1100,7 +1118,8 @@ Window {
                 lobbyFilesSetIndex(Math.min(last, lobbyFilesIndex + ps))
                 return true
             }
-            if (event.key === Qt.Key_Return) {
+            if (lobbyMatchesEnter(event, "files.edit")
+                    || lobbyShortcutIs(lobbyChordLetter(event), "files.edit")) {
                 lobbyOpenSelected(true)
                 return true
             }
@@ -1141,25 +1160,35 @@ Window {
         isSleeping = true
     }
 
+    function handleQuitToStock() {
+        Qt.quit()
+    }
+
+    function handleToLobby() {
+        harnessSetWidth(0)
+        if (mode == 1) doc = query.text
+        // Remember before saveFile: sync XHR can re-enter the event loop and deliver
+        // noteslist before this function continues.
+        var lastFile = currentFile
+        if (lastFile !== "") lobbyLastEditedFile = lastFile
+        saveFile()
+        isLobby = true
+        currentFile = ""
+        doc = ""
+        query.text = ""
+        autosaveSnapshot = ""
+        lobbyFilesMode = ""
+        lobbyPage = 0
+        lobbyRefreshNotes()
+    }
+
+    // Physical Home button (socket cmd). Honors hardware_home bindings only.
     function handleHome() {
         if (isLobby) {
-            Qt.quit()
-        } else {
-            harnessSetWidth(0)
-            if (mode == 1) doc = query.text
-            // Remember before saveFile: sync XHR can re-enter the event loop and deliver
-            // noteslist before this function continues.
-            var lastFile = currentFile
-            if (lastFile !== "") lobbyLastEditedFile = lastFile
-            saveFile()
-            isLobby = true
-            currentFile = ""
-            doc = ""
-            query.text = ""
-            autosaveSnapshot = ""
-            lobbyFilesMode = ""
-            lobbyPage = 0
-            lobbyRefreshNotes()
+            if (lobbyUi.shortcut("global.quit") === "hardware_home")
+                handleQuitToStock()
+        } else if (lobbyUi.shortcut("global.toLobby") === "hardware_home") {
+            handleToLobby()
         }
     }
 
@@ -2078,23 +2107,8 @@ Window {
     function handleKeyDown(event) {
         if (event.key === Qt.Key_Control) {
             ctrlPressed = true
-        } else if (event.key === Qt.Key_K && (ctrlPressed || (event.modifiers & Qt.ControlModifier))) {
-            if (isLobby) {
-                if (isOmni) isOmni = false
-                else { lobbyGoPage(0); openNotePicker() }
-            } else isOmni = !isOmni
+        } else if (lobbyHandleGlobalChord(event)) {
             event.accepted = true
-        } else if (event.key === Qt.Key_R && (ctrlPressed || (event.modifiers & Qt.ControlModifier))) {
-            // Ctrl-R rotates unless lobby-ui maps files.rename to r and Files is active.
-            if (isLobby) {
-                if (!(lobbyUi.shortcut("files.rename") === "r"
-                        && lobbyPage === 0 && lobbyFilesMode === "")) {
-                    rotateScreen()
-                    event.accepted = true
-                }
-            }
-        } else if (event.key === Qt.Key_Q && (ctrlPressed || (event.modifiers & Qt.ControlModifier))) {
-            saveAndQuit()
         }
     }
     function handleKeyUp(event) {
@@ -2105,17 +2119,12 @@ Window {
 
     function handleKey(event) {
         if (event.key === Qt.Key_Home && event.modifiers === Qt.NoModifier) {
-            // Edit mode: line start is handled on press (handleMacArrow); do not
-            // treat Key_Home release as physical Home -> lobby.
-            if (mode == 1 && !isLobby) {
-                event.accepted = true
-                return
-            }
-            handleHome()
+            // Keyboard Home is not hardware_home. Caret Home/End stay in edit
+            // (handleMacArrow on press) and New/Rename fields; never Lobby/quit.
             event.accepted = true
             return
         }
-        if (isLobby && !isOmni) {
+        if (isLobby) {
             // Lobby chords (including vault PIN) run on Keys.onPressed via
             // lobbyHandleKey. Accept releases so they do not fall through to
             // edit/preview Escape toggle.
@@ -2123,23 +2132,8 @@ Window {
             return
         }
         if (event.key === Qt.Key_Escape) {
-            if (isOmni) {
-                isOmni = false
-            } else if (!(event.modifiers & (Qt.AltModifier | Qt.ControlModifier))) {
+            if (!(event.modifiers & (Qt.AltModifier | Qt.ControlModifier))) {
                 toggleMode()
-            }
-        }
-
-        if (mode == 0 || isLobby) {
-            switch (event.key) {
-            case Qt.Key_Right:
-                if (ctrlPressed || (event.modifiers & Qt.ControlModifier))
-                    root.rotation = (root.rotation + 90) % 360
-                break
-            case Qt.Key_Left:
-                if (ctrlPressed || (event.modifiers & Qt.ControlModifier))
-                    root.rotation = (root.rotation - 90) % 360
-                break
             }
         }
     }
@@ -2160,12 +2154,6 @@ Window {
         EditUtils {
             id: utils
         }
-        FolderListModel {
-            id: folderModel
-            folder: root.folder
-            nameFilters: ["*.md"]
-        }
-
         Flickable {
             id: flick
             anchors.fill: parent
@@ -2216,7 +2204,7 @@ Window {
         objectName: "writerdeckQuery"
                 textFormat: mode == 0 ? TextEdit.RichText : TextEdit.PlainText
                 font.family: mode == 0 ? readFont : "Noto Mono"
-                focus: !isOmni && !isLobby
+                focus: !isLobby
                 renderType: Text.NativeRendering
                 Component {
                     id: curDelegate
@@ -2288,85 +2276,6 @@ Window {
                             flick.ensureVisible(cursorRectangle, margin)
                     }
                 }
-            }
-        }
-
-        Rectangle {
-            id: quick
-            z: isOmni ? 10 : 0
-            anchors.centerIn: parent
-            width: parent.width * 0.6
-            height: parent.height * 0.6
-            color: "black"
-            visible: isOmni ? true : false
-            radius: 20
-            border.width: 5
-            border.color: "gray"
-
-            TextEdit {
-                id: omniQueryTextEdit
-                text: omniQuery
-                textFormat: TextEdit.PlainText
-                x: 40
-                width: parent.width - 20
-                color: "white"
-                font.pointSize: 24
-                font.family: "Noto Mono"
-                focus: isOmni
-                Keys.enabled: true
-                Keys.onPressed: {
-                    if (event.key === Qt.Key_Enter
-                            || event.key === Qt.Key_Return) {
-                        if (mode == 1) doc = query.text
-                        saveFile()
-                        if (!omniList.currentItem) {
-                            initFile(omniQuery)
-                            doLoad(omniQuery + ".md")
-                        } else {
-                            doLoad(omniList.currentItem.text)
-                        }
-                        isLobby = false
-                        isOmni = false
-                        event.accepted = true
-                        return
-                    }
-
-                    handleKeyDown(event)
-                }
-                Keys.onReleased: {
-                    handleKeyUp(event)
-                    handleKey(event)
-                    omniQuery = omniQueryTextEdit.text
-                    folderModel.nameFilters = [omniQuery + "*"]
-                }
-
-                Keys.forwardTo: omniList
-            }
-            ListView {
-                id: omniList
-                anchors.top: omniQueryTextEdit.bottom
-                anchors.bottom: parent.bottom
-                anchors.left: parent.left
-                anchors.leftMargin: 40
-                anchors.rightMargin: 40
-                anchors.right: parent.right
-                highlightResizeDuration: 0
-                highlight: Rectangle {
-                    color: "white"
-                    radius: 5
-                    width: 600
-                }
-                Component {
-                    id: fileDelegate
-                    Text {
-                        width: parent.width
-                        text: fileName
-                        color: ListView.isCurrentItem ? "black" : "white"
-                    }
-                }
-
-                model: folderModel
-                delegate: fileDelegate
             }
         }
         ListModel {
@@ -2452,8 +2361,8 @@ Window {
             FocusScope {
                 id: lobbyFocus
                 anchors.fill: parent
-                focus: isLobby && !isOmni
-                Keys.enabled: isLobby && !isOmni
+                focus: isLobby
+                Keys.enabled: isLobby
                 Keys.onPressed: {
                     handleKeyDown(event)
                     if (lobbyHandleKey(event))
@@ -2471,16 +2380,16 @@ Window {
                     }
                     // Touch on tabs/buttons/Flickable can steal focus; keys must stay on Lobby.
                     function onActiveFocusItemChanged() {
-                        if (!isLobby || isOmni) return
+                        if (!isLobby) return
                         if (root.activeFocusItem === lobbyFocus) return
                         Qt.callLater(function() {
-                            if (isLobby && !isOmni)
+                            if (isLobby)
                                 lobbyFocus.forceActiveFocus()
                         })
                     }
                 }
 
-                // ---- tab bar (touch + keyboard 1-6 / Tab / arrows) ----
+                // ---- tab bar (touch + Tab / arrows / optional tabs.* chords) ----
                 Row {
                     id: lobbyTabRow
                     anchors.top: parent.top
@@ -2505,7 +2414,7 @@ Window {
                             Loader {
                                 anchors.fill: parent
                                 property string labelText: modelData
-                                property string shortcutKey: "" + (index + 1)
+                                property string shortcutKey: lobbyUi.shortcutBadge(lobbyTabShortcutIds[index])
                                 property int pointSize: lobby.labelPointSize
                                 sourceComponent: lobbyBtnLabelComp
                             }
@@ -2771,7 +2680,7 @@ Window {
                                 Repeater {
                                     model: [
                                         { label: "New", action: "files.new" },
-                                        { label: "Edit", action: "" },
+                                        { label: "Edit", action: "files.edit" },
                                         { label: "Read", action: "files.read" },
                                         { label: "Rename", action: "files.rename" },
                                         { label: "Delete", action: "files.delete" },
@@ -2787,9 +2696,7 @@ Window {
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: modelData.label
-                                            property string shortcutKey: modelData.action === ""
-                                                ? lobbyUi.str("files.editBadge")
-                                                : lobbyUi.shortcut(modelData.action)
+                                            property string shortcutKey: lobbyUi.shortcutBadge(modelData.action)
                                             property int pointSize: 10
                                             sourceComponent: lobbyBtnLabelComp
                                         }
@@ -2835,7 +2742,7 @@ Window {
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: "Encrypt"
-                                            property string shortcutKey: lobbyUi.shortcut("files.encrypt")
+                                            property string shortcutKey: lobbyUi.shortcutBadge("files.encrypt")
                                             property int pointSize: lobby.labelPointSize
                                             sourceComponent: lobbyBtnLabelComp
                                         }
@@ -2858,7 +2765,7 @@ Window {
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: "New encrypted"
-                                            property string shortcutKey: lobbyUi.shortcut("files.newEncrypted")
+                                            property string shortcutKey: lobbyUi.shortcutBadge("files.newEncrypted")
                                             property int pointSize: lobby.labelPointSize
                                             sourceComponent: lobbyBtnLabelComp
                                         }
@@ -2881,7 +2788,7 @@ Window {
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: "Decrypt"
-                                            property string shortcutKey: lobbyUi.shortcut("files.decrypt")
+                                            property string shortcutKey: lobbyUi.shortcutBadge("files.decrypt")
                                             property int pointSize: lobby.labelPointSize
                                             sourceComponent: lobbyBtnLabelComp
                                         }
@@ -3108,7 +3015,7 @@ Window {
                                                     Loader {
                                                         anchors.fill: parent
                                                         property string labelText: modelData.label
-                                                        property string shortcutKey: lobbyUi.shortcut(modelData.action)
+                                                        property string shortcutKey: lobbyUi.shortcutBadge(modelData.action)
                                                         property int pointSize: lobby.labelPointSize
                                                         sourceComponent: lobbyBtnLabelComp
                                                     }
@@ -3241,7 +3148,7 @@ Window {
                                         property string labelText: !lobbySyncReady ? "Token needed — phone Sync setup"
                                             : (lobbySyncing ? "Syncing…" : "Sync now")
                                         property string shortcutKey: (lobbySyncReady && !lobbySyncing)
-                                            ? lobbyUi.shortcut("sync.now") : ""
+                                            ? lobbyUi.shortcutBadge("sync.now") : ""
                                         property int pointSize: !lobbySyncReady ? 14 : 12
                                         property bool labelBold: !lobbySyncReady
                                         property color labelColor: "black"
@@ -3384,7 +3291,7 @@ Window {
                                             Loader {
                                                 anchors.fill: parent
                                                 property string labelText: "Enable"
-                                                property string shortcutKey: lobbyUi.shortcut("settings.enableVault")
+                                                property string shortcutKey: lobbyUi.shortcutBadge("settings.enableVault")
                                                 property int pointSize: lobby.labelPointSize
                                                 sourceComponent: lobbyBtnLabelComp
                                             }
@@ -3411,7 +3318,7 @@ Window {
                                             Loader {
                                                 anchors.fill: parent
                                                 property string labelText: "Change PIN"
-                                                property string shortcutKey: lobbyUi.shortcut("settings.changePin")
+                                                property string shortcutKey: lobbyUi.shortcutBadge("settings.changePin")
                                                 property int pointSize: lobby.labelPointSize
                                                 sourceComponent: lobbyBtnLabelComp
                                             }
@@ -3570,7 +3477,7 @@ Window {
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: "Exit Writerdeck"
-                                            property string shortcutKey: lobbyUi.shortcut("settings.exit")
+                                            property string shortcutKey: lobbyUi.shortcutBadge("settings.exit")
                                             property int pointSize: 12
                                             sourceComponent: lobbyBtnLabelComp
                                         }

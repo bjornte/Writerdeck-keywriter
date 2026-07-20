@@ -78,8 +78,8 @@
             FocusScope {
                 id: lobbyFocus
                 anchors.fill: parent
-                focus: isLobby && !isOmni
-                Keys.enabled: isLobby && !isOmni
+                focus: isLobby
+                Keys.enabled: isLobby
                 Keys.onPressed: {
                     handleKeyDown(event)
                     if (lobbyHandleKey(event))
@@ -97,16 +97,16 @@
                     }
                     // Touch on tabs/buttons/Flickable can steal focus; keys must stay on Lobby.
                     function onActiveFocusItemChanged() {
-                        if (!isLobby || isOmni) return
+                        if (!isLobby) return
                         if (root.activeFocusItem === lobbyFocus) return
                         Qt.callLater(function() {
-                            if (isLobby && !isOmni)
+                            if (isLobby)
                                 lobbyFocus.forceActiveFocus()
                         })
                     }
                 }
 
-                // ---- tab bar (touch + keyboard 1-6 / Tab / arrows) ----
+                // ---- tab bar (touch + Tab / arrows / optional tabs.* chords) ----
                 Row {
                     id: lobbyTabRow
                     anchors.top: parent.top
@@ -131,7 +131,7 @@
                             Loader {
                                 anchors.fill: parent
                                 property string labelText: modelData
-                                property string shortcutKey: "" + (index + 1)
+                                property string shortcutKey: lobbyUi.shortcutBadge(lobbyTabShortcutIds[index])
                                 property int pointSize: lobby.labelPointSize
                                 sourceComponent: lobbyBtnLabelComp
                             }

@@ -115,7 +115,7 @@
                                             Loader {
                                                 anchors.fill: parent
                                                 property string labelText: "Enable"
-                                                property string shortcutKey: lobbyUi.shortcut("settings.enableVault")
+                                                property string shortcutKey: lobbyUi.shortcutBadge("settings.enableVault")
                                                 property int pointSize: lobby.labelPointSize
                                                 sourceComponent: lobbyBtnLabelComp
                                             }
@@ -142,7 +142,7 @@
                                             Loader {
                                                 anchors.fill: parent
                                                 property string labelText: "Change PIN"
-                                                property string shortcutKey: lobbyUi.shortcut("settings.changePin")
+                                                property string shortcutKey: lobbyUi.shortcutBadge("settings.changePin")
                                                 property int pointSize: lobby.labelPointSize
                                                 sourceComponent: lobbyBtnLabelComp
                                             }
@@ -301,7 +301,7 @@
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: "Exit Writerdeck"
-                                            property string shortcutKey: lobbyUi.shortcut("settings.exit")
+                                            property string shortcutKey: lobbyUi.shortcutBadge("settings.exit")
                                             property int pointSize: 12
                                             sourceComponent: lobbyBtnLabelComp
                                         }

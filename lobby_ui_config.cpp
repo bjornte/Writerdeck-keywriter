@@ -13,45 +13,7 @@ namespace {
 
 // ASCII-only embedded fallback (device still runs if lobby-ui.json is missing).
 static const char kDefaultJson[] =
-    "{"
-    "\"visual\":{"
-    "\"btnBorder\":2,\"btnBorderSelected\":4,\"shortcutBadgeMargin\":8,"
-    "\"pageMargin\":24,\"tabBtnHeight\":64,\"rowHeight\":72,\"actionBtnHeight\":72,"
-    "\"tabSpacing\":16,\"contentSpacing\":12,\"labelPointSize\":11,\"badgePointSize\":9,"
-    "\"textColor\":\"#000000\",\"borderColor\":\"#000000\",\"badgeTextColor\":\"#000000\""
-    "},"
-    "\"strings\":{"
-    "\"files.editBadge\":\"\\u21b5\","
-    "\"settings.fontHelp\":\"Ctrl-A - cycle through fonts.\","
-    "\"settings.pinHelp\":\"Ctrl-M - cycle PIN length. Adding a PIN ensures that only intended devices can access your notes.\","
-    "\"settings.rotationHelp\":\"Ctrl-O - cycle. Ctrl-R or Ctrl+arrows also rotate.\","
-    "\"settings.privateOn\":\"On - encrypted notes require PIN to open, read, or edit\","
-    "\"settings.privateOff\":\"Off - optional encryption with a separate 6-digit PIN. Recovery via GitHub secret/pin when sync is on.\","
-    "\"settings.serviceHelp\":\"Stop Writerdeck and return the tablet to the stock reMarkable UI. Reconnect later via SSH or reboot.\","
-    "\"settings.confirmExit\":\"Stop Writerdeck? Enter=yes  Esc=no\","
-    "\"dialog.connectTitle\":\"Connect a keyboard\","
-    "\"dialog.deleteTitle\":\"Delete this note?\","
-    "\"dialog.newTitle\":\"New note\","
-    "\"dialog.renameTitle\":\"Rename note\","
-    "\"dialog.newEncryptedTitle\":\"New encrypted note\","
-    "\"dialog.noKeyboardBody\":\"USB: plug in with an OTG cable.\\n\\nBluetooth: pair to your phone, then open the address below (or scan the code).\","
-    "\"dialog.cancel\":\"Cancel\","
-    "\"dialog.delete\":\"Delete\","
-    "\"dialog.create\":\"Create\","
-    "\"dialog.rename\":\"Rename\","
-    "\"files.tapDismiss\":\"Tap to dismiss\","
-    "\"home.tip\":\"Open the Files tab (1) or press Ctrl-K.\\nUse Tab / arrows / 1-6 to switch pages.\","
-    "\"shortcuts.title\":\"Shortcuts\","
-    "\"shortcuts.body\":\"Pages\\nTab or Left / Right - next or previous page\\n1 to 6 - jump straight to a page\\n\\nFiles\\nUp / Down - move the selection (turns the page at the edge)\\nPage Up / Page Down - previous or next page of notes\\nEnter - edit the selected note\\nCtrl-V - read · Ctrl-M - new · Ctrl-I - rename · Ctrl-B - delete\\nCtrl-G - download to phone\\nWith private notes on: Ctrl-E - new encrypted · Ctrl-X - encrypt · Ctrl-Y - decrypt\\n\\nKeyboard\\nCtrl-U - US layout · Ctrl-O - Norwegian\\n\\nSync\\nEnter - sync now\\n\\nSettings\\nCtrl-A - cycle reading font · Ctrl-M - cycle phone PIN length\\nCtrl-O - cycle rotation · Ctrl-E - enable private notes · Ctrl-C - change private PIN\\nCtrl-X - exit Writerdeck (then Enter to confirm)\\n\\nAnywhere\\nCtrl-K - quick file picker\\nCtrl-C / Ctrl-X / Ctrl-V - copy, cut, paste (while editing a note)\\nCtrl-R - rotate (Lobby) · Ctrl-O or Ctrl+arrows also rotate · Ctrl-Q - quit\\nHome - from a note, back to Files; from Lobby, quit to the stock UI\\n\\nPrivate PIN\\nType the six digits on a USB keyboard, or on the phone while it shows the PIN banner.\\n\\nOpen Lobby from the stock UI\\nEsc on a USB keyboard, or both page buttons together.\""
-    "},"
-    "\"shortcuts\":{"
-    "\"files.new\":\"m\",\"files.read\":\"v\",\"files.rename\":\"i\",\"files.delete\":\"b\","
-    "\"files.download\":\"g\",\"files.encrypt\":\"x\",\"files.decrypt\":\"y\",\"files.newEncrypted\":\"e\","
-    "\"keyboard.us\":\"u\",\"keyboard.no\":\"o\","
-    "\"settings.font\":\"a\",\"settings.pin\":\"m\",\"settings.rotation\":\"o\","
-    "\"settings.enableVault\":\"e\",\"settings.changePin\":\"c\",\"settings.exit\":\"x\""
-    "}"
-    "}";
+    "{\"visual\":{\"btnBorder\":2,\"btnBorderSelected\":4,\"shortcutBadgeMargin\":8,\"pageMargin\":24,\"tabBtnHeight\":64,\"rowHeight\":72,\"actionBtnHeight\":72,\"tabSpacing\":16,\"contentSpacing\":12,\"labelPointSize\":11,\"badgePointSize\":9,\"textColor\":\"#000000\",\"borderColor\":\"#000000\",\"badgeTextColor\":\"#000000\"},\"strings\":{\"files.editBadge\":\"\\u21b5\",\"settings.fontHelp\":\"Ctrl-A - cycle through fonts.\",\"settings.pinHelp\":\"Ctrl-M - cycle PIN length. Adding a PIN ensures that only intended devices can access your notes.\",\"settings.rotationHelp\":\"Ctrl-O - cycle rotation.\",\"settings.privateOn\":\"On - encrypted notes require PIN to open, read, or edit\",\"settings.privateOff\":\"Off - optional encryption with a separate 6-digit PIN. Recovery via GitHub secret/pin when sync is on.\",\"settings.serviceHelp\":\"Stop Writerdeck and return the tablet to the stock reMarkable UI. Reconnect later via SSH or reboot.\",\"settings.confirmExit\":\"Stop Writerdeck? Enter=yes  Esc=no\",\"dialog.connectTitle\":\"Connect a keyboard\",\"dialog.deleteTitle\":\"Delete this note?\",\"dialog.newTitle\":\"New note\",\"dialog.renameTitle\":\"Rename note\",\"dialog.newEncryptedTitle\":\"New encrypted note\",\"dialog.noKeyboardBody\":\"USB: plug in with an OTG cable.\\n\\nBluetooth: pair to your phone, then open the address below (or scan the code).\",\"dialog.cancel\":\"Cancel\",\"dialog.delete\":\"Delete\",\"dialog.create\":\"Create\",\"dialog.rename\":\"Rename\",\"files.tapDismiss\":\"Tap to dismiss\",\"home.tip\":\"Open the Files tab.\\nUse Tab or Left / Right to switch pages.\",\"shortcuts.title\":\"Shortcuts\",\"shortcuts.body\":\"Pages\\nTab or Left / Right - next or previous page\\nOptional Ctrl-letter jumps live in lobby-ui.json (tabs.*); none ship by default\\n\\nFiles\\nUp / Down - move the selection (turns the page at the edge)\\nPage Up / Page Down - previous or next page of notes\\n\\u21b5 - edit the selected note\\nCtrl-V - read \\u00b7 Ctrl-M - new \\u00b7 Ctrl-I - rename \\u00b7 Ctrl-B - delete\\nCtrl-G - download to phone\\nWith private notes on: Ctrl-E - new encrypted \\u00b7 Ctrl-X - encrypt \\u00b7 Ctrl-Y - decrypt\\n\\nKeyboard\\nCtrl-U - US layout \\u00b7 Ctrl-O - Norwegian\\n\\nSync\\n\\u21b5 - sync now\\n\\nSettings\\nCtrl-A - cycle reading font \\u00b7 Ctrl-M - cycle phone PIN length\\nCtrl-O - cycle rotation \\u00b7 Ctrl-E - enable private notes \\u00b7 Ctrl-C - change private PIN\\nCtrl-X - exit Writerdeck (then Enter to confirm)\\n\\nAnywhere\\nCtrl-C / Ctrl-X / Ctrl-V - copy, cut, paste (while editing a note)\\nPhysical Home - from a note, back to Files; from Lobby, quit to the stock UI\\n(Keyboard Home is caret motion only \\u2014 not that button.)\\n\\nPrivate PIN\\nType the six digits on a USB keyboard, or on the phone while it shows the PIN banner.\\n\\nOpen Lobby from the stock UI\\nEsc on a USB keyboard, or both page buttons together.\"},\"shortcuts\":{\"tabs.files\":\"\",\"tabs.keyboard\":\"\",\"tabs.sync\":\"\",\"tabs.settings\":\"\",\"tabs.shortcuts\":\"\",\"tabs.about\":\"\",\"global.toLobby\":\"hardware_home\",\"global.quit\":\"hardware_home\",\"files.edit\":\"enter\",\"files.new\":\"m\",\"files.read\":\"v\",\"files.rename\":\"i\",\"files.delete\":\"b\",\"files.download\":\"g\",\"files.encrypt\":\"x\",\"files.decrypt\":\"y\",\"files.newEncrypted\":\"e\",\"keyboard.us\":\"u\",\"keyboard.no\":\"o\",\"sync.now\":\"enter\",\"settings.font\":\"a\",\"settings.pin\":\"m\",\"settings.rotation\":\"o\",\"settings.enableVault\":\"e\",\"settings.changePin\":\"c\",\"settings.exit\":\"x\"}}";
 
 static int jsonInt(const QJsonObject &o, const char *key, int fallback)
 {
@@ -206,7 +168,7 @@ void LobbyUiConfig::parseObject(const QJsonObject &root)
 
     const QJsonObject strings = root.value(QLatin1String("strings")).toObject();
     if (root.contains(QLatin1String("strings"))) {
-        m_strings.clear();
+        // Merge: disk keys overlay embedded defaults (do not clear).
         for (auto it = strings.begin(); it != strings.end(); ++it) {
             if (it.value().isString())
                 m_strings.insert(it.key(), it.value().toString());
@@ -215,17 +177,25 @@ void LobbyUiConfig::parseObject(const QJsonObject &root)
 
     const QJsonObject shortcuts = root.value(QLatin1String("shortcuts")).toObject();
     if (root.contains(QLatin1String("shortcuts"))) {
-        m_shortcuts.clear();
+        // Merge key-by-key so new embedded actions survive older tablet JSON.
         for (auto it = shortcuts.begin(); it != shortcuts.end(); ++it) {
             if (!it.value().isString())
                 continue;
-            QString letter = it.value().toString().trimmed().toLower();
-            if (letter.size() != 1 || letter[0] < QLatin1Char('a') || letter[0] > QLatin1Char('z'))
+            QString value = it.value().toString().trimmed().toLower();
+            if (value.isEmpty()) {
+                m_shortcuts.insert(it.key(), QString());
                 continue;
-            // Never steal global Ctrl-K / Ctrl-Q.
-            if (letter == QLatin1String("k") || letter == QLatin1String("q"))
+            }
+            if (value == QLatin1String("enter")
+                    || value == QLatin1String("hardware_home")) {
+                m_shortcuts.insert(it.key(), value);
                 continue;
-            m_shortcuts.insert(it.key(), letter);
+            }
+            if (value.size() == 1 && value[0] >= QLatin1Char('a')
+                    && value[0] <= QLatin1Char('z')) {
+                m_shortcuts.insert(it.key(), value);
+                continue;
+            }
         }
     }
     rebuildLetterIndex();
@@ -234,8 +204,11 @@ void LobbyUiConfig::parseObject(const QJsonObject &root)
 void LobbyUiConfig::rebuildLetterIndex()
 {
     m_letterToAction.clear();
-    for (auto it = m_shortcuts.constBegin(); it != m_shortcuts.constEnd(); ++it)
-        m_letterToAction.insert(it.value(), it.key());
+    for (auto it = m_shortcuts.constBegin(); it != m_shortcuts.constEnd(); ++it) {
+        const QString &v = it.value();
+        if (v.size() == 1 && v[0] >= QLatin1Char('a') && v[0] <= QLatin1Char('z'))
+            m_letterToAction.insert(v, it.key());
+    }
 }
 
 void LobbyUiConfig::watchPath()
@@ -322,6 +295,16 @@ QString LobbyUiConfig::str(const QString &key) const
 QString LobbyUiConfig::shortcut(const QString &key) const
 {
     return m_shortcuts.value(key);
+}
+
+QString LobbyUiConfig::shortcutBadge(const QString &key) const
+{
+    const QString v = m_shortcuts.value(key);
+    if (v == QLatin1String("enter"))
+        return QString(QChar(0x21b5));
+    if (v.isEmpty() || v == QLatin1String("hardware_home"))
+        return QString();
+    return v;
 }
 
 QString LobbyUiConfig::actionForLetter(const QString &letter) const

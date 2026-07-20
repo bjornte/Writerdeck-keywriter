@@ -170,7 +170,7 @@
                                 Repeater {
                                     model: [
                                         { label: "New", action: "files.new" },
-                                        { label: "Edit", action: "" },
+                                        { label: "Edit", action: "files.edit" },
                                         { label: "Read", action: "files.read" },
                                         { label: "Rename", action: "files.rename" },
                                         { label: "Delete", action: "files.delete" },
@@ -186,9 +186,7 @@
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: modelData.label
-                                            property string shortcutKey: modelData.action === ""
-                                                ? lobbyUi.str("files.editBadge")
-                                                : lobbyUi.shortcut(modelData.action)
+                                            property string shortcutKey: lobbyUi.shortcutBadge(modelData.action)
                                             property int pointSize: 10
                                             sourceComponent: lobbyBtnLabelComp
                                         }
@@ -234,7 +232,7 @@
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: "Encrypt"
-                                            property string shortcutKey: lobbyUi.shortcut("files.encrypt")
+                                            property string shortcutKey: lobbyUi.shortcutBadge("files.encrypt")
                                             property int pointSize: lobby.labelPointSize
                                             sourceComponent: lobbyBtnLabelComp
                                         }
@@ -257,7 +255,7 @@
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: "New encrypted"
-                                            property string shortcutKey: lobbyUi.shortcut("files.newEncrypted")
+                                            property string shortcutKey: lobbyUi.shortcutBadge("files.newEncrypted")
                                             property int pointSize: lobby.labelPointSize
                                             sourceComponent: lobbyBtnLabelComp
                                         }
@@ -280,7 +278,7 @@
                                         Loader {
                                             anchors.fill: parent
                                             property string labelText: "Decrypt"
-                                            property string shortcutKey: lobbyUi.shortcut("files.decrypt")
+                                            property string shortcutKey: lobbyUi.shortcutBadge("files.decrypt")
                                             property int pointSize: lobby.labelPointSize
                                             sourceComponent: lobbyBtnLabelComp
                                         }

@@ -20,7 +20,7 @@ Those tests live in Writerdeck (`scripts/test-keyboard-harness.sh`, `docs/editor
 
 ## What’s different from the original
 
-Singleton’s original is a Qt Markdown notepad for reMarkable: USB keyboard, Esc for preview, Ctrl-K note switcher, sundown rendering.
+Singleton’s original is a Qt Markdown notepad for reMarkable: USB keyboard, Esc for preview, a note switcher, sundown rendering.
 
 This fork keeps that core and adds what Writerdeck needs:
 

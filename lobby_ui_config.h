@@ -8,7 +8,7 @@
 #include <QVariantMap>
 #include <QFileSystemWatcher>
 
-// On-disk Lobby look / copy / Ctrl-letter chords (/home/root/.Writerdeck/lobby-ui.json).
+// On-disk Lobby look / copy / shortcut chords (/home/root/.Writerdeck/lobby-ui.json).
 // Not compiled into resources -- edit on the tablet; hot-reloads via QFileSystemWatcher
 // plus a short mtime poll (reMarkable inotify often misses rename replaces).
 class LobbyUiConfig : public QObject
@@ -58,6 +58,8 @@ public:
 
     Q_INVOKABLE QString str(const QString &key) const;
     Q_INVOKABLE QString shortcut(const QString &key) const;
+    // Badge glyph for a shortcut: enter -> return arrow; letter as-is; empty / hardware_home -> "".
+    Q_INVOKABLE QString shortcutBadge(const QString &key) const;
     Q_INVOKABLE QString actionForLetter(const QString &letter) const;
 
 signals:

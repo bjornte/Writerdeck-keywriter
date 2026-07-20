@@ -112,7 +112,7 @@
                                         property string labelText: !lobbySyncReady ? "Token needed — phone Sync setup"
                                             : (lobbySyncing ? "Syncing…" : "Sync now")
                                         property string shortcutKey: (lobbySyncReady && !lobbySyncing)
-                                            ? lobbyUi.shortcut("sync.now") : ""
+                                            ? lobbyUi.shortcutBadge("sync.now") : ""
                                         property int pointSize: !lobbySyncReady ? 14 : 12
                                         property bool labelBold: !lobbySyncReady
                                         property color labelColor: "black"
