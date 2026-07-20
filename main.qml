@@ -875,7 +875,8 @@ Window {
 
     // Phone keys arrive as text codepoints (event.key == 0); USB sends Qt::Key_A..Z.
     // Lobby action letter: Ctrl/Cmd+letter only; bindings from lobby-ui.json.
-    // Ctrl-K / Ctrl-Q stay global. files.rename letter rotates on other Lobby pages.
+    // Ctrl-K / Ctrl-Q stay global (note picker / quit). Bare letters and digits are
+    // left free for future Finder-style document jump (not Lobby tab shortcuts).
     function lobbyChordLetter(event) {
         if (event.modifiers & Qt.AltModifier)
             return ""
@@ -886,9 +887,6 @@ Window {
             return ""
         var letter = String.fromCharCode(event.key).toLowerCase()
         if (letter === "k" || letter === "q")
-            return ""
-        if (letter === lobbyUi.shortcut("files.rename")
-                && !(lobbyPage === 0 && lobbyFilesMode === ""))
             return ""
         return letter
     }
@@ -979,17 +977,6 @@ Window {
                 lobbyGoPage((lobbyPage + lobbyTabLabels.length - 1) % lobbyTabLabels.length)
             else
                 lobbyGoPage((lobbyPage + 1) % lobbyTabLabels.length)
-            return true
-        }
-        // Digits: USB sends Qt.Key_1..6; phone injects printable text "1".."6".
-        if (event.key >= Qt.Key_1 && event.key <= Qt.Key_6) {
-            lobbyGoPage(event.key - Qt.Key_1)
-            return true
-        }
-        if (!(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))
-                && event.text && event.text.length === 1
-                && event.text >= "1" && event.text <= "6") {
-            lobbyGoPage(parseInt(event.text, 10) - 1)
             return true
         }
         if (event.key === Qt.Key_Left && event.modifiers === Qt.NoModifier) {
@@ -1094,6 +1081,11 @@ Window {
                 lobbyFilesBeginDownload()
                 return true
             }
+        }
+        // settings.rotation letter rotates on any Lobby page (Settings also cycles via its own handler).
+        if (lobbyShortcutIs(lobbyChordLetter(event), "settings.rotation")) {
+            rotateScreen()
+            return true
         }
         return false
     }
@@ -2048,15 +2040,6 @@ Window {
                 else { lobbyGoPage(0); openNotePicker() }
             } else isOmni = !isOmni
             event.accepted = true
-        } else if (event.key === Qt.Key_R && (ctrlPressed || (event.modifiers & Qt.ControlModifier))) {
-            // Ctrl-R rotates unless lobby-ui maps files.rename to r and Files is active.
-            if (isLobby) {
-                if (!(lobbyUi.shortcut("files.rename") === "r"
-                        && lobbyPage === 0 && lobbyFilesMode === "")) {
-                    rotateScreen()
-                    event.accepted = true
-                }
-            }
         } else if (event.key === Qt.Key_Q && (ctrlPressed || (event.modifiers & Qt.ControlModifier))) {
             saveAndQuit()
         }
@@ -2444,7 +2427,7 @@ Window {
                     }
                 }
 
-                // ---- tab bar (touch + keyboard 1-6 / Tab / arrows) ----
+                // ---- tab bar (touch + Tab / Shift-Tab / Left / Right) ----
                 Row {
                     id: lobbyTabRow
                     anchors.top: parent.top
@@ -2469,7 +2452,7 @@ Window {
                             Loader {
                                 anchors.fill: parent
                                 property string labelText: modelData
-                                property string shortcutKey: "" + (index + 1)
+                                property string shortcutKey: ""
                                 property int pointSize: lobby.labelPointSize
                                 sourceComponent: lobbyBtnLabelComp
                             }

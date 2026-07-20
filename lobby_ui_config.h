@@ -85,12 +85,12 @@ private:
 
     int m_btnBorder = 2;
     int m_btnBorderSelected = 4;
-    int m_shortcutBadgeMargin = 4;
+    int m_shortcutBadgeMargin = 8;
     int m_pageMargin = 24;
     int m_tabBtnHeight = 64;
     int m_rowHeight = 72;
     int m_actionBtnHeight = 72;
-    int m_tabSpacing = 12;
+    int m_tabSpacing = 16;
     int m_contentSpacing = 12;
     int m_labelPointSize = 11;
     int m_badgePointSize = 9;

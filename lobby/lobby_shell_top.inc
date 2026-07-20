@@ -106,7 +106,7 @@
                     }
                 }
 
-                // ---- tab bar (touch + keyboard 1-6 / Tab / arrows) ----
+                // ---- tab bar (touch + Tab / Shift-Tab / Left / Right) ----
                 Row {
                     id: lobbyTabRow
                     anchors.top: parent.top
@@ -131,7 +131,7 @@
                             Loader {
                                 anchors.fill: parent
                                 property string labelText: modelData
-                                property string shortcutKey: "" + (index + 1)
+                                property string shortcutKey: ""
                                 property int pointSize: lobby.labelPointSize
                                 sourceComponent: lobbyBtnLabelComp
                             }

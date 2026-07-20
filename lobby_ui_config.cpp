@@ -15,16 +15,16 @@ namespace {
 static const char kDefaultJson[] =
     "{"
     "\"visual\":{"
-    "\"btnBorder\":2,\"btnBorderSelected\":4,\"shortcutBadgeMargin\":4,"
+    "\"btnBorder\":2,\"btnBorderSelected\":4,\"shortcutBadgeMargin\":8,"
     "\"pageMargin\":24,\"tabBtnHeight\":64,\"rowHeight\":72,\"actionBtnHeight\":72,"
-    "\"tabSpacing\":12,\"contentSpacing\":12,\"labelPointSize\":11,\"badgePointSize\":9,"
+    "\"tabSpacing\":16,\"contentSpacing\":12,\"labelPointSize\":11,\"badgePointSize\":9,"
     "\"textColor\":\"#000000\",\"borderColor\":\"#000000\",\"badgeTextColor\":\"#000000\""
     "},"
     "\"strings\":{"
     "\"files.editBadge\":\"\\u21b5\","
-    "\"settings.fontHelp\":\"Ctrl-F - cycle through fonts.\","
-    "\"settings.pinHelp\":\"Ctrl-P - cycle PIN length. Adding a PIN ensures that only intended devices can access your notes.\","
-    "\"settings.rotationHelp\":\"Ctrl-T - cycle. Ctrl-R or Ctrl+arrows also rotate.\","
+    "\"settings.fontHelp\":\"Ctrl-A - cycle through fonts.\","
+    "\"settings.pinHelp\":\"Ctrl-M - cycle PIN length. Adding a PIN ensures that only intended devices can access your notes.\","
+    "\"settings.rotationHelp\":\"Ctrl-O - cycle. Ctrl+arrows also rotate.\","
     "\"settings.privateOn\":\"On - encrypted notes require PIN to open, read, or edit\","
     "\"settings.privateOff\":\"Off - optional encryption with a separate 6-digit PIN. Recovery via GitHub secret/pin when sync is on.\","
     "\"settings.serviceHelp\":\"Stop Writerdeck and return the tablet to the stock reMarkable UI. Reconnect later via SSH or reboot.\","
@@ -40,15 +40,15 @@ static const char kDefaultJson[] =
     "\"dialog.create\":\"Create\","
     "\"dialog.rename\":\"Rename\","
     "\"files.tapDismiss\":\"Tap to dismiss\","
-    "\"home.tip\":\"Open the Files tab (1) or press Ctrl-K.\\nUse Tab / arrows / 1-6 to switch pages.\","
+    "\"home.tip\":\"Open the Files tab or press Ctrl-K.\\nUse Tab / Shift-Tab / Left / Right to switch pages.\","
     "\"shortcuts.title\":\"Shortcuts\","
-    "\"shortcuts.body\":\"Pages\\nTab or Left / Right - next or previous page\\n1 to 6 - jump straight to a page\\n\\nFiles\\nUp / Down - move the selection (turns the page at the edge)\\nPage Up / Page Down - previous or next page of notes\\nEnter - edit the selected note\\nCtrl-V - read · Ctrl-N - new · Ctrl-R - rename · Ctrl-D - delete\\nCtrl-G - download to phone\\nWith private notes on: Ctrl-E - new encrypted · Ctrl-X - encrypt · Ctrl-Y - decrypt\\n\\nKeyboard\\nCtrl-U - US layout · Ctrl-O - Norwegian\\n\\nSync\\nEnter or Ctrl-S - sync now\\n\\nSettings\\nCtrl-F - cycle reading font · Ctrl-P - cycle phone PIN length\\nCtrl-T - cycle rotation · Ctrl-E - enable private notes · Ctrl-C - change private PIN\\nCtrl-X - exit Writerdeck (then Enter to confirm)\\n\\nAnywhere\\nCtrl-K - quick file picker\\nCtrl-C / Ctrl-X / Ctrl-V - copy, cut, paste (while editing a note)\\nCtrl-R - rotate (Lobby pages other than Files) · Ctrl-Q - quit\\nHome - from a note, back to Files; from Lobby, quit to the stock UI\\n\\nPrivate PIN\\nType the six digits on a USB keyboard, or on the phone while it shows the PIN banner.\\n\\nOpen Lobby from the stock UI\\nEsc on a USB keyboard, or both page buttons together.\""
+    "\"shortcuts.body\":\"Pages\\nTab or Shift-Tab - next or previous page\\nLeft / Right - same\\n\\nFiles\\nUp / Down - move the selection (turns the page at the edge)\\nPage Up / Page Down - previous or next page of notes\\nEnter - edit the selected note\\nCtrl-V - read · Ctrl-M - new · Ctrl-I - rename · Ctrl-B - delete\\nCtrl-G - download to phone\\nWith private notes on: Ctrl-E - new encrypted · Ctrl-X - encrypt · Ctrl-Y - decrypt\\n\\nKeyboard\\nCtrl-U - US layout · Ctrl-O - Norwegian\\n\\nSync\\nEnter - sync now\\n\\nSettings\\nCtrl-A - cycle reading font · Ctrl-M - cycle phone PIN length\\nCtrl-O - cycle rotation · Ctrl-E - enable private notes · Ctrl-C - change private PIN\\nCtrl-X - exit Writerdeck (then Enter to confirm)\\n\\nAnywhere\\nCtrl-K - quick file picker\\nCtrl-C / Ctrl-X / Ctrl-V - copy, cut, paste (while editing a note)\\nCtrl-O - rotate (Lobby) · Ctrl+arrows also rotate · Ctrl-Q - quit\\nHome - from a note, back to Files; from Lobby, quit to the stock UI\\n\\nPrivate PIN\\nType the six digits on a USB keyboard, or on the phone while it shows the PIN banner.\\n\\nOpen Lobby from the stock UI\\nEsc on a USB keyboard, or both page buttons together.\""
     "},"
     "\"shortcuts\":{"
-    "\"files.new\":\"n\",\"files.read\":\"v\",\"files.rename\":\"r\",\"files.delete\":\"d\","
+    "\"files.new\":\"m\",\"files.read\":\"v\",\"files.rename\":\"i\",\"files.delete\":\"b\","
     "\"files.download\":\"g\",\"files.encrypt\":\"x\",\"files.decrypt\":\"y\",\"files.newEncrypted\":\"e\","
-    "\"keyboard.us\":\"u\",\"keyboard.no\":\"o\",\"sync.now\":\"s\","
-    "\"settings.font\":\"f\",\"settings.pin\":\"p\",\"settings.rotation\":\"t\","
+    "\"keyboard.us\":\"u\",\"keyboard.no\":\"o\","
+    "\"settings.font\":\"a\",\"settings.pin\":\"m\",\"settings.rotation\":\"o\","
     "\"settings.enableVault\":\"e\",\"settings.changePin\":\"c\",\"settings.exit\":\"x\""
     "}"
     "}";
@@ -148,12 +148,12 @@ void LobbyUiConfig::applyDefaults()
 {
     m_btnBorder = 2;
     m_btnBorderSelected = 4;
-    m_shortcutBadgeMargin = 4;
+    m_shortcutBadgeMargin = 8;
     m_pageMargin = 24;
     m_tabBtnHeight = 64;
     m_rowHeight = 72;
     m_actionBtnHeight = 72;
-    m_tabSpacing = 12;
+    m_tabSpacing = 16;
     m_contentSpacing = 12;
     m_labelPointSize = 11;
     m_badgePointSize = 9;
