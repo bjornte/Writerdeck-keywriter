@@ -55,6 +55,7 @@ class LobbyUiConfig : public QObject
     Q_PROPERTY(int tabRowExtraHeight READ tabRowExtraHeight NOTIFY changed)
     Q_PROPERTY(double dialogWidthFraction READ dialogWidthFraction NOTIFY changed)
     Q_PROPERTY(int dialogPadding READ dialogPadding NOTIFY changed)
+    Q_PROPERTY(int settingsLandscapeScrollGutter READ settingsLandscapeScrollGutter NOTIFY changed)
     Q_PROPERTY(QVariantMap shortcuts READ shortcutsMap NOTIFY changed)
     Q_PROPERTY(QVariantMap strings READ stringsMap NOTIFY changed)
 
@@ -104,6 +105,7 @@ public:
     int tabRowExtraHeight() const { return m_tabRowExtraHeight; }
     double dialogWidthFraction() const { return m_dialogWidthFraction; }
     int dialogPadding() const { return m_dialogPadding; }
+    int settingsLandscapeScrollGutter() const { return m_settingsLandscapeScrollGutter; }
     QVariantMap shortcutsMap() const;
     QVariantMap stringsMap() const;
 
@@ -178,6 +180,7 @@ private:
     int m_tabRowExtraHeight = 8;
     double m_dialogWidthFraction = 0.85;
     int m_dialogPadding = 48;
+    int m_settingsLandscapeScrollGutter = 144;
 
     QHash<QString, QString> m_strings;
     QHash<QString, QString> m_shortcuts;

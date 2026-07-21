@@ -42,6 +42,7 @@
             readonly property int tabRowExtraHeight: lobbyUi.tabRowExtraHeight
             readonly property double dialogWidthFraction: lobbyUi.dialogWidthFraction
             readonly property int dialogPadding: lobbyUi.dialogPadding
+            readonly property int settingsLandscapeScrollGutter: lobbyUi.settingsLandscapeScrollGutter
 
             // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
             // (and optional labelBold / labelColor).

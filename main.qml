@@ -2408,6 +2408,7 @@ Window {
             readonly property int tabRowExtraHeight: lobbyUi.tabRowExtraHeight
             readonly property double dialogWidthFraction: lobbyUi.dialogWidthFraction
             readonly property int dialogPadding: lobbyUi.dialogPadding
+            readonly property int settingsLandscapeScrollGutter: lobbyUi.settingsLandscapeScrollGutter
 
             // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
             // (and optional labelBold / labelColor).
@@ -3303,8 +3304,9 @@ Window {
                             id: settingsFlick
                             anchors.fill: parent
                             // Landscape only: empty right strip so a finger can flick
-                            // without hitting full-width buttons.
-                            property int scrollGutter: root.rotation % 180 != 0 ? 72 : 0
+                            // without hitting full-width buttons (visual.settingsLandscapeScrollGutter).
+                            property int scrollGutter: root.rotation % 180 != 0
+                                                       ? lobby.settingsLandscapeScrollGutter : 0
                             contentWidth: width
                             contentHeight: setCol.height
                             clip: true
