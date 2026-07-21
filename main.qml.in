@@ -1132,6 +1132,12 @@ Window {
                 writerdeck.setKeyboardLayout("us"); return true }
             if (lobbyShortcutIs(kbLetter, "keyboard.no")) {
                 writerdeck.setKeyboardLayout("no"); return true }
+            if (lobbyShortcutIs(kbLetter, "keyboard.es")) {
+                writerdeck.setKeyboardLayout("es"); return true }
+            if (lobbyShortcutIs(kbLetter, "keyboard.de")) {
+                writerdeck.setKeyboardLayout("de"); return true }
+            if (lobbyShortcutIs(kbLetter, "keyboard.fr")) {
+                writerdeck.setKeyboardLayout("fr"); return true }
         }
         if (lobbyPage === 2) {
             if (lobbyMatchesEnter(event, "sync.now")

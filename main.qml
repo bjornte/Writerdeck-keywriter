@@ -1132,6 +1132,12 @@ Window {
                 writerdeck.setKeyboardLayout("us"); return true }
             if (lobbyShortcutIs(kbLetter, "keyboard.no")) {
                 writerdeck.setKeyboardLayout("no"); return true }
+            if (lobbyShortcutIs(kbLetter, "keyboard.es")) {
+                writerdeck.setKeyboardLayout("es"); return true }
+            if (lobbyShortcutIs(kbLetter, "keyboard.de")) {
+                writerdeck.setKeyboardLayout("de"); return true }
+            if (lobbyShortcutIs(kbLetter, "keyboard.fr")) {
+                writerdeck.setKeyboardLayout("fr"); return true }
         }
         if (lobbyPage === 2) {
             if (lobbyMatchesEnter(event, "sync.now")
@@ -3106,17 +3112,21 @@ Window {
                                             color: lobby.textColor
                                             width: parent.width
                                         }
-                                        Row {
-                                            id: kbLayoutRow
+                                        Grid {
+                                            id: kbLayoutGrid
                                             width: parent.width
+                                            columns: 2
                                             spacing: lobby.tabSpacing
                                             Repeater {
                                                 model: [
                                                     { id: "us", labelKey: "keyboard.us", action: "keyboard.us" },
-                                                    { id: "no", labelKey: "keyboard.no", action: "keyboard.no" }
+                                                    { id: "no", labelKey: "keyboard.no", action: "keyboard.no" },
+                                                    { id: "es", labelKey: "keyboard.es", action: "keyboard.es" },
+                                                    { id: "de", labelKey: "keyboard.de", action: "keyboard.de" },
+                                                    { id: "fr", labelKey: "keyboard.fr", action: "keyboard.fr" }
                                                 ]
                                                 delegate: Rectangle {
-                                                    width: (kbLayoutRow.width - lobby.tabSpacing) / 2
+                                                    width: (kbLayoutGrid.width - lobby.tabSpacing) / 2
                                                     height: lobby.actionBtnHeight
                                                     radius: lobby.btnRadius
                                                     property bool selected: lobbyKeyboardLayout === modelData.id
