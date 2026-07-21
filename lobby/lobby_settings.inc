@@ -20,7 +20,7 @@
                                 width: parent.width - settingsFlick.scrollGutter
                                 spacing: lobby.contentSpacing
                                 Text {
-                                    text: lobbyUi.str("settings.title")
+                                    text: root.lobbyT("settings.title")
                                     font.pointSize: lobby.rowPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor
@@ -33,14 +33,14 @@
                                     visible: lobbySettingsMode === ""
 
                                     Text {
-                                        text: lobbyUi.str("settings.languageSection")
+                                        text: root.lobbyT("settings.languageSection")
                                         font.pointSize: lobby.sectionPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
                                         width: parent.width
                                     }
                                     Text {
-                                        text: lobbyUi.str("settings.languageHelp")
+                                        text: root.lobbyT("settings.languageHelp")
                                         font.pointSize: lobby.helpPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -71,14 +71,14 @@
                                     }
 
                                     Text {
-                                        text: lobbyUi.str("settings.fontSection")
+                                        text: root.lobbyT("settings.fontSection")
                                         font.pointSize: lobby.sectionPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
                                         width: parent.width
                                     }
                                     Text {
-                                        text: lobbyUi.str("settings.fontHelp")
+                                        text: root.lobbyT("settings.fontHelp")
                                         font.pointSize: lobby.helpPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -109,7 +109,7 @@
                                     }
 
                                     Text {
-                                        text: lobbyUi.str("settings.privateSection")
+                                        text: root.lobbyT("settings.privateSection")
                                         font.pointSize: lobby.sectionPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -117,8 +117,8 @@
                                     }
                                     Text {
                                         text: lobbyEncryptionEnabled
-                                            ? lobbyUi.str("settings.privateOn")
-                                            : lobbyUi.str("settings.privateOff")
+                                            ? root.lobbyT("settings.privateOn")
+                                            : root.lobbyT("settings.privateOff")
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -138,7 +138,7 @@
                                             border.width: lobby.btnBorder
                                             Loader {
                                                 anchors.fill: parent
-                                                property string labelText: lobbyUi.str("settings.enable")
+                                                property string labelText: root.lobbyT("settings.enable")
                                                 property string shortcutKey: lobbyUi.shortcutBadge("settings.enableVault")
                                                 property int pointSize: lobby.labelPointSize
                                                 sourceComponent: lobbyBtnLabelComp
@@ -165,7 +165,7 @@
                                             border.width: lobby.btnBorder
                                             Loader {
                                                 anchors.fill: parent
-                                                property string labelText: lobbyUi.str("settings.changePin")
+                                                property string labelText: root.lobbyT("settings.changePin")
                                                 property string shortcutKey: lobbyUi.shortcutBadge("settings.changePin")
                                                 property int pointSize: lobby.labelPointSize
                                                 sourceComponent: lobbyBtnLabelComp
@@ -181,14 +181,14 @@
                                     }
 
                                     Text {
-                                        text: lobbyUi.str("settings.pinSection")
+                                        text: root.lobbyT("settings.pinSection")
                                         font.pointSize: lobby.sectionPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
                                         width: parent.width
                                     }
                                     Text {
-                                        text: lobbyUi.str("settings.pinHelp")
+                                        text: root.lobbyT("settings.pinHelp")
                                         font.pointSize: lobby.helpPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -219,14 +219,14 @@
                                     }
 
                                     Text {
-                                        text: lobbyUi.str("settings.rotationSection")
+                                        text: root.lobbyT("settings.rotationSection")
                                         font.pointSize: lobby.sectionPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
                                         width: parent.width
                                     }
                                     Text {
-                                        text: lobbyUi.str("settings.rotationHelp")
+                                        text: root.lobbyT("settings.rotationHelp")
                                         font.pointSize: lobby.helpPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -254,7 +254,7 @@
                                                 border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Text {
                                                     anchors.centerIn: parent
-                                                    text: lobbyUi.str(modelData.labelKey)
+                                                    text: root.lobbyT(modelData.labelKey)
                                                     font.family: "Noto Sans"
                                                     font.pointSize: lobby.sectionPointSize
                                                     color: lobby.textColor
@@ -271,14 +271,14 @@
                                     }
 
                                     Text {
-                                        text: lobbyUi.str("settings.serviceSection")
+                                        text: root.lobbyT("settings.serviceSection")
                                         font.pointSize: lobby.sectionPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
                                         width: parent.width
                                     }
                                     Text {
-                                        text: lobbyUi.str("settings.serviceHelp")
+                                        text: root.lobbyT("settings.serviceHelp")
                                         font.pointSize: lobby.helpPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -294,7 +294,7 @@
                                         border.width: lobby.btnBorder
                                         Loader {
                                             anchors.fill: parent
-                                            property string labelText: lobbyUi.str("settings.exit")
+                                            property string labelText: root.lobbyT("settings.exit")
                                             property string shortcutKey: lobbyUi.shortcutBadge("settings.exit")
                                             property int pointSize: 12
                                             sourceComponent: lobbyBtnLabelComp

@@ -38,10 +38,10 @@
                                         anchors.margins: 12
                                         spacing: 10
                                         Text {
-                                            text: lobbyUi.str("keyboard.btTitle")
+                                            text: root.lobbyT("keyboard.btTitle")
                                                   + (lobbyPhoneConnected
-                                                     ? lobbyUi.str("keyboard.connected")
-                                                     : lobbyUi.str("keyboard.notConnected"))
+                                                     ? root.lobbyT("keyboard.connected")
+                                                     : root.lobbyT("keyboard.notConnected"))
                                             font.pointSize: lobby.rowPointSize
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -49,7 +49,7 @@
                                             wrapMode: Text.WordWrap
                                         }
                                         Text {
-                                            text: lobbyUi.str("keyboard.btBody")
+                                            text: root.lobbyT("keyboard.btBody")
                                             font.pointSize: lobby.labelPointSize
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -67,7 +67,7 @@
                                         }
                                         Text {
                                             visible: lobbyPIN !== ""
-                                            text: lobbyUi.str("keyboard.pinPrefix") + lobbyPIN
+                                            text: root.lobbyT("keyboard.pinPrefix") + lobbyPIN
                                             font.pointSize: lobby.sectionPointSize
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -102,10 +102,10 @@
                                         anchors.margins: 12
                                         spacing: 10
                                         Text {
-                                            text: lobbyUi.str("keyboard.usbTitle")
+                                            text: root.lobbyT("keyboard.usbTitle")
                                                   + (lobbyUsbKeyboard
-                                                     ? lobbyUi.str("keyboard.connected")
-                                                     : lobbyUi.str("keyboard.notConnected"))
+                                                     ? root.lobbyT("keyboard.connected")
+                                                     : root.lobbyT("keyboard.notConnected"))
                                             font.pointSize: lobby.rowPointSize
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -113,7 +113,7 @@
                                             wrapMode: Text.WordWrap
                                         }
                                         Text {
-                                            text: lobbyUi.str("keyboard.usbBody")
+                                            text: root.lobbyT("keyboard.usbBody")
                                             font.pointSize: lobby.labelPointSize
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -121,7 +121,7 @@
                                             wrapMode: Text.WordWrap
                                         }
                                         Text {
-                                            text: lobbyUi.str("keyboard.layout")
+                                            text: root.lobbyT("keyboard.layout")
                                             font.pointSize: lobby.sectionPointSize
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -150,7 +150,7 @@
                                                     border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                     Loader {
                                                         anchors.fill: parent
-                                                        property string labelText: lobbyUi.str(modelData.labelKey)
+                                                        property string labelText: root.lobbyT(modelData.labelKey)
                                                         property string shortcutKey: lobbyUi.shortcutBadge(modelData.action)
                                                         property int pointSize: lobby.labelPointSize
                                                         sourceComponent: lobbyBtnLabelComp

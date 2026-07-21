@@ -17,13 +17,13 @@
                     font.family: "Noto Sans"
                     font.pointSize: lobby.rowPointSize
                     color: lobby.textColor
-                    text: vaultOverlayMode === "setup" ? lobbyUi.str("vault.setup")
-                        : vaultOverlayMode === "confirm" ? lobbyUi.str("vault.confirm")
-                        : vaultOverlayMode === "change-old" ? lobbyUi.str("vault.changeOld")
-                        : vaultOverlayMode === "change-new" ? lobbyUi.str("vault.changeNew")
-                        : vaultOverlayMode === "change-confirm" ? lobbyUi.str("vault.changeConfirm")
+                    text: vaultOverlayMode === "setup" ? root.lobbyT("vault.setup")
+                        : vaultOverlayMode === "confirm" ? root.lobbyT("vault.confirm")
+                        : vaultOverlayMode === "change-old" ? root.lobbyT("vault.changeOld")
+                        : vaultOverlayMode === "change-new" ? root.lobbyT("vault.changeNew")
+                        : vaultOverlayMode === "change-confirm" ? root.lobbyT("vault.changeConfirm")
                         : vaultOverlayReason !== "" ? vaultOverlayReason
-                        : lobbyUi.str("vault.enter")
+                        : root.lobbyT("vault.enter")
                 }
 
                 Text {
@@ -53,7 +53,7 @@
                             border.width: modelData === "" ? 0 : lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: modelData === "Bksp" ? lobbyUi.str("vault.bksp") : modelData
+                                text: modelData === "Bksp" ? root.lobbyT("vault.bksp") : modelData
                                 font.family: "Noto Sans"
                                 font.pointSize: lobby.sectionPointSize
                                 color: lobby.textColor
@@ -79,7 +79,7 @@
                     border.width: lobby.btnBorder
                     Text {
                         anchors.centerIn: parent
-                        text: lobbyUi.str("dialog.cancel")
+                        text: root.lobbyT("dialog.cancel")
                         font.family: "Noto Sans"
                         font.pointSize: lobby.sectionPointSize
                         color: lobby.textColor

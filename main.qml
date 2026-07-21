@@ -46,15 +46,28 @@ Window {
     property var lobbyTabShortcutIds: ["tabs.files", "tabs.keyboard", "tabs.sync", "tabs.settings", "tabs.shortcuts", "tabs.about"]
     // Depends on lobbyUi.revision so language / pack reloads refresh tab titles.
     property var lobbyTabLabels: {
-        var _ = lobbyUi.revision
         return [
-            lobbyUi.str("tabs.files"),
-            lobbyUi.str("tabs.keyboard"),
-            lobbyUi.str("tabs.sync"),
-            lobbyUi.str("tabs.settings"),
-            lobbyUi.str("tabs.shortcuts"),
-            lobbyUi.str("tabs.about")
+            root.lobbyT("tabs.files"),
+            root.lobbyT("tabs.keyboard"),
+            root.lobbyT("tabs.sync"),
+            root.lobbyT("tabs.settings"),
+            root.lobbyT("tabs.shortcuts"),
+            root.lobbyT("tabs.about")
         ]
+    }
+
+    // String helpers that rebind when lobby-ui language/packs reload.
+    function lobbyT(key) {
+        var _ = lobbyUi.revision
+        return lobbyUi.str(key)
+    }
+    function lobbyTf(key, a1, a2, a3) {
+        var _ = lobbyUi.revision
+        if (a3 !== undefined && a3 !== null && a3 !== "")
+            return lobbyUi.strf(key, a1, a2, a3)
+        if (a2 !== undefined && a2 !== null && a2 !== "")
+            return lobbyUi.strf(key, a1, a2)
+        return lobbyUi.strf(key, a1)
     }
     property string lobbyVersionText: ""
     property int lobbyFilesIndex: 0
@@ -198,13 +211,13 @@ Window {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 423) {
                     vaultPendingLoad = name
-                    vaultBeginPIN(lobbyUi.str("vault.open"), true)
+                    vaultBeginPIN(root.lobbyT("vault.open"), true)
                     return
                 }
                 if (xhr.status !== 200) {
-                    var errMsg = lobbyUi.str("files.openFailed")
+                    var errMsg = root.lobbyT("files.openFailed")
                     if (xhr.status === 500 && name.indexOf(".md.enc") >= 0)
-                        errMsg = lobbyUi.str("files.decryptCorrupt")
+                        errMsg = root.lobbyT("files.decryptCorrupt")
                     vaultOpFailed(errMsg)
                     return
                 }
@@ -251,7 +264,7 @@ Window {
     function saveAndLoad(name) {
         if (name && name.indexOf(".md.enc") >= 0 && currentFile !== name) {
             vaultPendingLoad = name
-            vaultBeginPIN(lobbyUi.str("vault.edit"), true)
+            vaultBeginPIN(root.lobbyT("vault.edit"), true)
             return
         }
         var wasLobby = isLobby
@@ -294,17 +307,17 @@ Window {
         if (!unix || unix <= 0) return ""
         var sec = Math.floor(Date.now() / 1000) - unix
         if (sec < 0) sec = 0
-        if (sec < 60) return lobbyUi.str("sync.agoJustNow")
+        if (sec < 60) return root.lobbyT("sync.agoJustNow")
         if (sec < 3600) {
             var m = Math.floor(sec / 60)
-            return m === 1 ? lobbyUi.str("sync.agoMinute") : lobbyUi.strf("sync.agoMinutes", "" + m)
+            return m === 1 ? root.lobbyT("sync.agoMinute") : root.lobbyTf("sync.agoMinutes", "" + m)
         }
         if (sec < 86400) {
             var h = Math.floor(sec / 3600)
-            return h === 1 ? lobbyUi.str("sync.agoHour") : lobbyUi.strf("sync.agoHours", "" + h)
+            return h === 1 ? root.lobbyT("sync.agoHour") : root.lobbyTf("sync.agoHours", "" + h)
         }
         var d = Math.floor(sec / 86400)
-        return d === 1 ? lobbyUi.str("sync.agoDay") : lobbyUi.strf("sync.agoDays", "" + d)
+        return d === 1 ? root.lobbyT("sync.agoDay") : root.lobbyTf("sync.agoDays", "" + d)
     }
 
     function lobbyLastSyncLabel() {
@@ -313,10 +326,10 @@ Window {
         var ago = lobbyFormatSyncAgo(lobbyLastSyncAt)
         if (lobbySyncPending > 0) {
             var pend = lobbySyncPending === 1
-                ? lobbyUi.str("sync.pendingOne")
-                : lobbyUi.strf("sync.pendingMany", "" + lobbySyncPending)
+                ? root.lobbyT("sync.pendingOne")
+                : root.lobbyTf("sync.pendingMany", "" + lobbySyncPending)
             if (ago === "") return pend
-            return lobbyUi.strf("sync.agoWithPending", ago, pend)
+            return root.lobbyTf("sync.agoWithPending", ago, pend)
         }
         return ago
     }
@@ -356,15 +369,15 @@ Window {
     }
 
     function lobbyDialogTitle() {
-        if (lobbyShowNoKeyboard) return lobbyUi.str("dialog.connectTitle")
-        if (lobbyFilesMode === "confirm-delete") return lobbyUi.str("dialog.deleteTitle")
-        if (lobbyFilesMode === "new") return lobbyUi.str("dialog.newTitle")
-        if (lobbyFilesMode === "rename") return lobbyUi.str("dialog.renameTitle")
-        if (lobbyFilesMode === "new-encrypted") return lobbyUi.str("dialog.newEncryptedTitle")
-        if (lobbySettingsMode === "confirm-exit") return lobbyUi.str("dialog.exitTitle")
-        if (lobbySettingsMode === "pick-language") return lobbyUi.str("dialog.languageTitle")
-        if (lobbySettingsMode === "pick-font") return lobbyUi.str("dialog.fontTitle")
-        if (lobbySettingsMode === "pick-pin") return lobbyUi.str("dialog.pinTitle")
+        if (lobbyShowNoKeyboard) return root.lobbyT("dialog.connectTitle")
+        if (lobbyFilesMode === "confirm-delete") return root.lobbyT("dialog.deleteTitle")
+        if (lobbyFilesMode === "new") return root.lobbyT("dialog.newTitle")
+        if (lobbyFilesMode === "rename") return root.lobbyT("dialog.renameTitle")
+        if (lobbyFilesMode === "new-encrypted") return root.lobbyT("dialog.newEncryptedTitle")
+        if (lobbySettingsMode === "confirm-exit") return root.lobbyT("dialog.exitTitle")
+        if (lobbySettingsMode === "pick-language") return root.lobbyT("dialog.languageTitle")
+        if (lobbySettingsMode === "pick-font") return root.lobbyT("dialog.fontTitle")
+        if (lobbySettingsMode === "pick-pin") return root.lobbyT("dialog.pinTitle")
         return ""
     }
 
@@ -405,9 +418,9 @@ Window {
     }
 
     function lobbySettingsPinLabel() {
-        if (lobbyPinDigits === "6") return lobbyUi.str("settings.pin6")
-        if (lobbyPinDigits === "4") return lobbyUi.str("settings.pin4")
-        if (lobbyPinDigits === "none") return lobbyUi.str("settings.pinNone")
+        if (lobbyPinDigits === "6") return root.lobbyT("settings.pin6")
+        if (lobbyPinDigits === "4") return root.lobbyT("settings.pin4")
+        if (lobbyPinDigits === "none") return root.lobbyT("settings.pinNone")
         return lobbyPinDigits
     }
 
@@ -457,8 +470,12 @@ Window {
             index = lobbySettingsPickIndex
         if (lobbySettingsMode === "pick-language") {
             var langs = lobbySettingsLanguageOptions()
-            if (index >= 0 && index < langs.length)
-                lobbyUi.setLanguage(langs[index].id)
+            if (index >= 0 && index < langs.length) {
+                if (lobbyUi.setLanguage(langs[index].id)) {
+                    writerdeck.notifyLanguageChanged()
+                    lobbyRefreshVersion()
+                }
+            }
         } else if (lobbySettingsMode === "pick-font") {
             var fonts = lobbySettingsFontOptions()
             if (index >= 0 && index < fonts.length)
@@ -536,13 +553,13 @@ Window {
         if (vaultPendingAction !== "" || vaultPendingLoad !== "") {
             vaultOverlayMode = "pin"
             vaultPinInput = ""
-            vaultOverlayReason = msg || lobbyUi.str("vault.wrongPin")
+            vaultOverlayReason = msg || root.lobbyT("vault.wrongPin")
             lobbyKeepFocus()
             return
         }
         // Create/rename failures belong in the name dialog, not the Files header.
         if (lobbyFilesMode === "new" || lobbyFilesMode === "rename" || lobbyFilesMode === "new-encrypted") {
-            lobbyFilesInputError = msg || lobbyUi.str("files.operationFailed")
+            lobbyFilesInputError = msg || root.lobbyT("files.operationFailed")
             lobbyKeepFocus()
             return
         }
@@ -556,12 +573,12 @@ Window {
             lobbyFilesMode = mode
             lobbyFilesInput = input
             lobbyFilesInputPos = input.length
-            lobbyFilesInputError = msg || lobbyUi.str("files.operationFailed")
+            lobbyFilesInputError = msg || root.lobbyT("files.operationFailed")
             lobbyKeepFocus()
             return
         }
         lobbyGoPage(0)
-        lobbyVaultError = msg || lobbyUi.str("files.operationFailed")
+        lobbyVaultError = msg || root.lobbyT("files.operationFailed")
     }
 
     function vaultOnPINAccepted() {
@@ -627,7 +644,7 @@ Window {
 
     function setLobbySyncStatus(syncError, wifi, syncErrorKey) {
         if (syncErrorKey === "noWifi")
-            lobbySyncError = lobbyUi.str("sync.errNoWifi")
+            lobbySyncError = root.lobbyT("sync.errNoWifi")
         else
             lobbySyncError = syncError || ""
         lobbyWifi = !!wifi
@@ -654,7 +671,7 @@ Window {
 
     // About tab: one product stamp from server + editor, then compare to GitHub.
     function lobbyRefreshVersion() {
-        lobbyVersionText = lobbyUi.str("home.versionChecking")
+        lobbyVersionText = root.lobbyT("home.versionChecking")
         var ed = "unknown"
         try {
             if (writerdeck && writerdeck.productVersion)
@@ -671,25 +688,25 @@ Window {
                     var ver = k.version || ""
                     var latest = k.latest || ""
                     if (k.status === "latest")
-                        lobbyVersionText = lobbyUi.strf("home.versionLatest", ver)
+                        lobbyVersionText = root.lobbyTf("home.versionLatest", ver)
                     else if (k.status === "outdated")
-                        lobbyVersionText = lobbyUi.strf("home.versionOutdated", ver, latest)
+                        lobbyVersionText = root.lobbyTf("home.versionOutdated", ver, latest)
                     else if (k.status === "ahead")
-                        lobbyVersionText = lobbyUi.strf("home.versionAhead", ver, latest)
+                        lobbyVersionText = root.lobbyTf("home.versionAhead", ver, latest)
                     else if (k.status === "mismatchLatest")
-                        lobbyVersionText = lobbyUi.strf("home.versionMismatchLatest", ver, latest)
+                        lobbyVersionText = root.lobbyTf("home.versionMismatchLatest", ver, latest)
                     else if (k.status === "mismatch")
-                        lobbyVersionText = lobbyUi.strf("home.versionMismatch", ver)
+                        lobbyVersionText = root.lobbyTf("home.versionMismatch", ver)
                     else if (k.status === "offline")
-                        lobbyVersionText = lobbyUi.strf("home.versionOffline", ver)
+                        lobbyVersionText = root.lobbyTf("home.versionOffline", ver)
                     else if (k.message)
                         lobbyVersionText = k.message
                     else
-                        lobbyVersionText = lobbyUi.str("home.versionUnknown")
+                        lobbyVersionText = root.lobbyT("home.versionUnknown")
                     return
                 } catch (e2) {}
             }
-            lobbyVersionText = lobbyUi.str("home.versionUnknown")
+            lobbyVersionText = root.lobbyT("home.versionUnknown")
         }
         chk.send()
     }
@@ -786,7 +803,7 @@ Window {
         if (!row || row.name === "") return
         if (row.encrypted) {
             vaultPendingLoad = row.name
-            vaultBeginPIN(lobbyUi.str("vault.edit"), true); return }
+            vaultBeginPIN(root.lobbyT("vault.edit"), true); return }
         saveAndLoad(row.name)
     }
 
@@ -807,7 +824,7 @@ Window {
         if (row.encrypted) {
             vaultPendingLoad = row.name
             lobbyOpenInReadMode = true
-            vaultBeginPIN(lobbyUi.str("vault.read"), true); return }
+            vaultBeginPIN(root.lobbyT("vault.read"), true); return }
         isLobby = false
         if (mode == 1) doc = query.text
         saveFile()
@@ -858,7 +875,7 @@ Window {
     function lobbyFilesBeginDownload() {
         if (lobbyNotesModel.count === 0) return
         if (!lobbyPhoneConnected) {
-            lobbyVaultError = lobbyUi.str("files.downloadNeedPhone")
+            lobbyVaultError = root.lobbyT("files.downloadNeedPhone")
             return
         }
         lobbyVaultError = ""
@@ -899,7 +916,7 @@ Window {
             var newTarget = lobbyFilesNormalizedName(name, false)
             if (lobbyFilesNameTaken(newTarget, "")) {
                 lobbyOpenAfterCreate = ""
-                lobbyFilesInputError = lobbyUi.str("files.nameExists")
+                lobbyFilesInputError = root.lobbyT("files.nameExists")
                 return
             }
             lobbyFilesInputError = ""
@@ -917,7 +934,7 @@ Window {
             else newName = lobbyFilesNormalizedName(name, false)
             if (newName !== oldName && lobbyFilesNameTaken(newName, oldName)) {
                 lobbyOpenAfterCreate = ""
-                lobbyFilesInputError = lobbyUi.str("files.nameExists")
+                lobbyFilesInputError = root.lobbyT("files.nameExists")
                 return
             }
             lobbyFilesInputError = ""
@@ -931,7 +948,7 @@ Window {
             var encTarget = lobbyFilesNormalizedName(name, true)
             if (lobbyFilesNameTaken(encTarget, "")) {
                 lobbyOpenAfterCreate = ""
-                lobbyFilesInputError = lobbyUi.str("files.nameExists")
+                lobbyFilesInputError = root.lobbyT("files.nameExists")
                 return
             }
             lobbyFilesInputError = ""
@@ -948,7 +965,7 @@ Window {
     function lobbyFilesBeginNewEncrypted(fromKey) {
         if (!fromKey && !lobbyEnsureKeyboard("new-encrypted")) return
         vaultPendingAction = "new-encrypted"
-        vaultBeginPIN(lobbyUi.str("vault.create"), false)
+        vaultBeginPIN(root.lobbyT("vault.create"), false)
     }
 
     function lobbyEncryptSelected() {
@@ -957,7 +974,7 @@ Window {
         if (!row || row.encrypted) return
         vaultPendingNote = row.name
         vaultPendingAction = "encrypt"
-        vaultBeginPIN(lobbyUi.str("vault.encrypt"), false)
+        vaultBeginPIN(root.lobbyT("vault.encrypt"), false)
     }
 
     function lobbyDecryptSelected() {
@@ -966,7 +983,7 @@ Window {
         if (!row || !row.encrypted) return
         vaultPendingNote = row.name
         vaultPendingAction = "decrypt"
-        vaultBeginPIN(lobbyUi.str("vault.decrypt"), false)
+        vaultBeginPIN(root.lobbyT("vault.decrypt"), false)
     }
 
     function vaultBeginSetup() {
@@ -992,8 +1009,8 @@ Window {
     }
 
     function requestVaultPIN(reason, name) {
-        var msg = lobbyUi.strf("vault.downloadTitle", name || lobbyUi.str("vault.downloadFallbackName"))
-        if (reason === "download") msg = lobbyUi.str("vault.download")
+        var msg = root.lobbyTf("vault.downloadTitle", name || root.lobbyT("vault.downloadFallbackName"))
+        if (reason === "download") msg = root.lobbyT("vault.download")
         if (name) vaultPendingLoad = name
         vaultBeginPIN(msg, false)
     }
@@ -2546,6 +2563,10 @@ Window {
             readonly property double dialogWidthFraction: lobbyUi.dialogWidthFraction
             readonly property int dialogPadding: lobbyUi.dialogPadding
             readonly property int settingsLandscapeScrollGutter: lobbyUi.settingsLandscapeScrollGutter
+            readonly property int fontPickerNamePointSize: lobbyUi.fontPickerNamePointSize
+            readonly property int fontPickerSamplePointSize: lobbyUi.fontPickerSamplePointSize
+            readonly property int fontPickerRowExtra: lobbyUi.fontPickerRowExtra
+            readonly property double dialogCancelWidthFraction: lobbyUi.dialogCancelWidthFraction
 
             // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
             // (and optional labelBold / labelColor).
@@ -2701,14 +2722,14 @@ Window {
                                 width: parent.width
                                 spacing: lobby.contentSpacing
                                 Text {
-                                    text: lobbyUi.str("home.brand")
+                                    text: root.lobbyT("home.brand")
                                     color: lobby.textColor
                                     font.pointSize: lobby.titlePointSize
                                     font.family: "Noto Mono"
                                     width: parent.width
                                 }
                                 Text {
-                                    text: lobbyUi.str("home.tagline")
+                                    text: root.lobbyT("home.tagline")
                                     color: lobby.textColor
                                     font.pointSize: lobby.sectionPointSize
                                     font.family: "Noto Sans"
@@ -2717,7 +2738,7 @@ Window {
                                 }
                                 Text {
                                     text: lobbyVersionText !== "" ? lobbyVersionText
-                                          : lobbyUi.str("home.versionChecking")
+                                          : root.lobbyT("home.versionChecking")
                                     color: lobby.textColor
                                     font.pointSize: lobby.labelPointSize
                                     font.family: "Noto Sans"
@@ -2726,8 +2747,8 @@ Window {
                                 }
                                 Text {
                                     text: lobbyNoteCount === 1
-                                          ? lobbyUi.str("home.docsOne")
-                                          : lobbyUi.strf("home.docsMany", "" + lobbyNoteCount)
+                                          ? root.lobbyT("home.docsOne")
+                                          : root.lobbyTf("home.docsMany", "" + lobbyNoteCount)
                                     color: lobby.textColor
                                     font.pointSize: lobby.labelPointSize
                                     font.family: "Noto Sans"
@@ -2735,7 +2756,7 @@ Window {
                                     wrapMode: Text.WordWrap
                                 }
                                 Text {
-                                    text: lobbyUi.str("home.tip")
+                                    text: root.lobbyT("home.tip")
                                     color: lobby.textColor
                                     font.pointSize: lobby.helpPointSize
                                     font.family: "Noto Sans"
@@ -2743,7 +2764,7 @@ Window {
                                     wrapMode: Text.WordWrap
                                 }
                                 Text {
-                                    text: lobbyUi.str("home.opensource")
+                                    text: root.lobbyT("home.opensource")
                                     color: lobby.textColor
                                     font.pointSize: 9
                                     font.family: "Noto Mono"
@@ -2808,7 +2829,7 @@ Window {
                                         font.family: "Noto Sans"
                                         font.pointSize: lobby.labelPointSize
                                         color: lobby.textColor
-                                        text: lobbyUi.str("files.tapDismiss")
+                                        text: root.lobbyT("files.tapDismiss")
                                     }
                                 }
 
@@ -2852,7 +2873,7 @@ Window {
                                     opacity: lobbyFilesPageStrip.canPrev ? 1 : 0.45
                                     Text {
                                         anchors.centerIn: parent
-                                        text: lobbyUi.str("files.prev")
+                                        text: root.lobbyT("files.prev")
                                         font.family: "Noto Sans"
                                         font.pointSize: lobby.labelPointSize
                                         color: lobby.textColor
@@ -2872,7 +2893,7 @@ Window {
                                     height: lobby.pageStripHeight
                                     Text {
                                         anchors.centerIn: parent
-                                        text: lobbyUi.strf("files.page",
+                                        text: root.lobbyTf("files.page",
                                                            "" + (root.lobbyFilesPageIndex() + 1),
                                                            "" + root.lobbyFilesPageCount())
                                         font.family: "Noto Sans"
@@ -2890,7 +2911,7 @@ Window {
                                     opacity: lobbyFilesPageStrip.canNext ? 1 : 0.45
                                     Text {
                                         anchors.centerIn: parent
-                                        text: lobbyUi.str("files.next")
+                                        text: root.lobbyT("files.next")
                                         font.family: "Noto Sans"
                                         font.pointSize: lobby.labelPointSize
                                         color: lobby.textColor
@@ -2941,7 +2962,7 @@ Window {
                                         border.width: lobby.btnBorder
                                         Loader {
                                             anchors.fill: parent
-                                            property string labelText: lobbyUi.str(modelData.action)
+                                            property string labelText: root.lobbyT(modelData.action)
                                             property string shortcutKey: lobbyUi.shortcutBadge(modelData.action)
                                             property int pointSize: 10
                                             sourceComponent: lobbyBtnLabelComp
@@ -2987,7 +3008,7 @@ Window {
                                     border.width: lobby.btnBorder
                                     Loader {
                                         anchors.fill: parent
-                                        property string labelText: lobbyUi.str("files.encrypt")
+                                        property string labelText: root.lobbyT("files.encrypt")
                                         property string shortcutKey: lobbyUi.shortcutBadge("files.encrypt")
                                         property int pointSize: lobby.labelPointSize
                                         sourceComponent: lobbyBtnLabelComp
@@ -3010,7 +3031,7 @@ Window {
                                     border.width: lobby.btnBorder
                                     Loader {
                                         anchors.fill: parent
-                                        property string labelText: lobbyUi.str("files.newEncrypted")
+                                        property string labelText: root.lobbyT("files.newEncrypted")
                                         property string shortcutKey: lobbyUi.shortcutBadge("files.newEncrypted")
                                         property int pointSize: lobby.labelPointSize
                                         sourceComponent: lobbyBtnLabelComp
@@ -3033,7 +3054,7 @@ Window {
                                     border.width: lobby.btnBorder
                                     Loader {
                                         anchors.fill: parent
-                                        property string labelText: lobbyUi.str("files.decrypt")
+                                        property string labelText: root.lobbyT("files.decrypt")
                                         property string shortcutKey: lobbyUi.shortcutBadge("files.decrypt")
                                         property int pointSize: lobby.labelPointSize
                                         sourceComponent: lobbyBtnLabelComp
@@ -3095,11 +3116,11 @@ Window {
                                             anchors.rightMargin: lobby.listRowInset
                                             anchors.verticalCenter: parent.verticalCenter
                                             text: (noteIndex === lobbyFilesIndex
-                                                   ? lobbyUi.str("files.marker")
-                                                   : lobbyUi.str("files.markerPad"))
+                                                   ? root.lobbyT("files.marker")
+                                                   : root.lobbyT("files.markerPad"))
                                                   + lobbyFilesStripSuffix(noteRow ? noteRow.name : "")
                                                   + (noteRow && noteRow.encrypted
-                                                     ? lobbyUi.str("files.privateSuffix") : "")
+                                                     ? root.lobbyT("files.privateSuffix") : "")
                                             font.family: "Noto Sans"
                                             font.pointSize: lobby.rowPointSize
                                             color: lobby.textColor
@@ -3161,10 +3182,10 @@ Window {
                                         anchors.margins: 12
                                         spacing: 10
                                         Text {
-                                            text: lobbyUi.str("keyboard.btTitle")
+                                            text: root.lobbyT("keyboard.btTitle")
                                                   + (lobbyPhoneConnected
-                                                     ? lobbyUi.str("keyboard.connected")
-                                                     : lobbyUi.str("keyboard.notConnected"))
+                                                     ? root.lobbyT("keyboard.connected")
+                                                     : root.lobbyT("keyboard.notConnected"))
                                             font.pointSize: lobby.rowPointSize
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -3172,7 +3193,7 @@ Window {
                                             wrapMode: Text.WordWrap
                                         }
                                         Text {
-                                            text: lobbyUi.str("keyboard.btBody")
+                                            text: root.lobbyT("keyboard.btBody")
                                             font.pointSize: lobby.labelPointSize
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -3190,7 +3211,7 @@ Window {
                                         }
                                         Text {
                                             visible: lobbyPIN !== ""
-                                            text: lobbyUi.str("keyboard.pinPrefix") + lobbyPIN
+                                            text: root.lobbyT("keyboard.pinPrefix") + lobbyPIN
                                             font.pointSize: lobby.sectionPointSize
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -3225,10 +3246,10 @@ Window {
                                         anchors.margins: 12
                                         spacing: 10
                                         Text {
-                                            text: lobbyUi.str("keyboard.usbTitle")
+                                            text: root.lobbyT("keyboard.usbTitle")
                                                   + (lobbyUsbKeyboard
-                                                     ? lobbyUi.str("keyboard.connected")
-                                                     : lobbyUi.str("keyboard.notConnected"))
+                                                     ? root.lobbyT("keyboard.connected")
+                                                     : root.lobbyT("keyboard.notConnected"))
                                             font.pointSize: lobby.rowPointSize
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -3236,7 +3257,7 @@ Window {
                                             wrapMode: Text.WordWrap
                                         }
                                         Text {
-                                            text: lobbyUi.str("keyboard.usbBody")
+                                            text: root.lobbyT("keyboard.usbBody")
                                             font.pointSize: lobby.labelPointSize
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -3244,7 +3265,7 @@ Window {
                                             wrapMode: Text.WordWrap
                                         }
                                         Text {
-                                            text: lobbyUi.str("keyboard.layout")
+                                            text: root.lobbyT("keyboard.layout")
                                             font.pointSize: lobby.sectionPointSize
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -3273,7 +3294,7 @@ Window {
                                                     border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                     Loader {
                                                         anchors.fill: parent
-                                                        property string labelText: lobbyUi.str(modelData.labelKey)
+                                                        property string labelText: root.lobbyT(modelData.labelKey)
                                                         property string shortcutKey: lobbyUi.shortcutBadge(modelData.action)
                                                         property int pointSize: lobby.labelPointSize
                                                         sourceComponent: lobbyBtnLabelComp
@@ -3310,7 +3331,7 @@ Window {
                                 width: parent.width
                                 spacing: lobby.contentSpacing
                                 Text {
-                                    text: lobbyUi.str("sync.title")
+                                    text: root.lobbyT("sync.title")
                                     font.pointSize: lobby.rowPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor
@@ -3321,9 +3342,9 @@ Window {
                                         && !(lobbySyncOn && lobbySyncRepo !== "" && lobbySyncReady && lobbySyncError !== "")
                                     text: lobbySyncOn && lobbySyncRepo !== ""
                                         ? (root.lobbyLastSyncLabel() !== ""
-                                            ? lobbyUi.strf("sync.lastSync", root.lobbyLastSyncLabel(), lobbySyncRepo)
-                                            : lobbyUi.strf("sync.syncingTo", lobbySyncRepo))
-                                        : lobbyUi.strf("sync.notConfigured", lobbyIP, "" + lobbyPort)
+                                            ? root.lobbyTf("sync.lastSync", root.lobbyLastSyncLabel(), lobbySyncRepo)
+                                            : root.lobbyTf("sync.syncingTo", lobbySyncRepo))
+                                        : root.lobbyTf("sync.notConfigured", lobbyIP, "" + lobbyPort)
                                     font.pointSize: lobby.labelPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor
@@ -3344,7 +3365,7 @@ Window {
                                         width: parent.width - 20
                                         spacing: 10
                                         Text {
-                                            text: !lobbyWifi ? lobbyUi.str("sync.offline") : lobbyUi.str("sync.failed")
+                                            text: !lobbyWifi ? root.lobbyT("sync.offline") : root.lobbyT("sync.failed")
                                             font.pointSize: lobby.bannerPointSize
                                             font.bold: true
                                             font.family: "Noto Sans"
@@ -3376,7 +3397,7 @@ Window {
                                         width: parent.width - 20
                                         spacing: 10
                                         Text {
-                                            text: lobbyUi.str("sync.tokenNeeded")
+                                            text: root.lobbyT("sync.tokenNeeded")
                                             font.pointSize: lobby.bannerPointSize
                                             font.bold: true
                                             font.family: "Noto Sans"
@@ -3384,7 +3405,7 @@ Window {
                                             width: parent.width
                                         }
                                         Text {
-                                            text: lobbyUi.strf("sync.tokenBody", lobbyIP, "" + lobbyPort, lobbySyncRepo)
+                                            text: root.lobbyTf("sync.tokenBody", lobbyIP, "" + lobbyPort, lobbySyncRepo)
                                             font.pointSize: 13
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -3404,8 +3425,8 @@ Window {
                                     border.width: lobbySyncReady ? lobby.btnBorder : lobby.btnBorderSelected
                                     Loader {
                                         anchors.fill: parent
-                                        property string labelText: !lobbySyncReady ? lobbyUi.str("sync.tokenBtn")
-                                            : (lobbySyncing ? lobbyUi.str("sync.syncing") : lobbyUi.str("sync.now"))
+                                        property string labelText: !lobbySyncReady ? root.lobbyT("sync.tokenBtn")
+                                            : (lobbySyncing ? root.lobbyT("sync.syncing") : root.lobbyT("sync.now"))
                                         property string shortcutKey: (lobbySyncReady && !lobbySyncing)
                                             ? lobbyUi.shortcutBadge("sync.now") : ""
                                         property int pointSize: !lobbySyncReady ? 14 : 12
@@ -3423,7 +3444,7 @@ Window {
                                     }
                                 }
                                 Text {
-                                    text: lobbyUi.str("sync.footnote")
+                                    text: root.lobbyT("sync.footnote")
                                     font.pointSize: lobby.helpPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor
@@ -3455,7 +3476,7 @@ Window {
                                 width: parent.width - settingsFlick.scrollGutter
                                 spacing: lobby.contentSpacing
                                 Text {
-                                    text: lobbyUi.str("settings.title")
+                                    text: root.lobbyT("settings.title")
                                     font.pointSize: lobby.rowPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor
@@ -3468,14 +3489,14 @@ Window {
                                     visible: lobbySettingsMode === ""
 
                                     Text {
-                                        text: lobbyUi.str("settings.languageSection")
+                                        text: root.lobbyT("settings.languageSection")
                                         font.pointSize: lobby.sectionPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
                                         width: parent.width
                                     }
                                     Text {
-                                        text: lobbyUi.str("settings.languageHelp")
+                                        text: root.lobbyT("settings.languageHelp")
                                         font.pointSize: lobby.helpPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -3506,14 +3527,14 @@ Window {
                                     }
 
                                     Text {
-                                        text: lobbyUi.str("settings.fontSection")
+                                        text: root.lobbyT("settings.fontSection")
                                         font.pointSize: lobby.sectionPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
                                         width: parent.width
                                     }
                                     Text {
-                                        text: lobbyUi.str("settings.fontHelp")
+                                        text: root.lobbyT("settings.fontHelp")
                                         font.pointSize: lobby.helpPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -3544,7 +3565,7 @@ Window {
                                     }
 
                                     Text {
-                                        text: lobbyUi.str("settings.privateSection")
+                                        text: root.lobbyT("settings.privateSection")
                                         font.pointSize: lobby.sectionPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -3552,8 +3573,8 @@ Window {
                                     }
                                     Text {
                                         text: lobbyEncryptionEnabled
-                                            ? lobbyUi.str("settings.privateOn")
-                                            : lobbyUi.str("settings.privateOff")
+                                            ? root.lobbyT("settings.privateOn")
+                                            : root.lobbyT("settings.privateOff")
                                         font.pointSize: 10
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -3573,7 +3594,7 @@ Window {
                                             border.width: lobby.btnBorder
                                             Loader {
                                                 anchors.fill: parent
-                                                property string labelText: lobbyUi.str("settings.enable")
+                                                property string labelText: root.lobbyT("settings.enable")
                                                 property string shortcutKey: lobbyUi.shortcutBadge("settings.enableVault")
                                                 property int pointSize: lobby.labelPointSize
                                                 sourceComponent: lobbyBtnLabelComp
@@ -3600,7 +3621,7 @@ Window {
                                             border.width: lobby.btnBorder
                                             Loader {
                                                 anchors.fill: parent
-                                                property string labelText: lobbyUi.str("settings.changePin")
+                                                property string labelText: root.lobbyT("settings.changePin")
                                                 property string shortcutKey: lobbyUi.shortcutBadge("settings.changePin")
                                                 property int pointSize: lobby.labelPointSize
                                                 sourceComponent: lobbyBtnLabelComp
@@ -3616,14 +3637,14 @@ Window {
                                     }
 
                                     Text {
-                                        text: lobbyUi.str("settings.pinSection")
+                                        text: root.lobbyT("settings.pinSection")
                                         font.pointSize: lobby.sectionPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
                                         width: parent.width
                                     }
                                     Text {
-                                        text: lobbyUi.str("settings.pinHelp")
+                                        text: root.lobbyT("settings.pinHelp")
                                         font.pointSize: lobby.helpPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -3654,14 +3675,14 @@ Window {
                                     }
 
                                     Text {
-                                        text: lobbyUi.str("settings.rotationSection")
+                                        text: root.lobbyT("settings.rotationSection")
                                         font.pointSize: lobby.sectionPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
                                         width: parent.width
                                     }
                                     Text {
-                                        text: lobbyUi.str("settings.rotationHelp")
+                                        text: root.lobbyT("settings.rotationHelp")
                                         font.pointSize: lobby.helpPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -3689,7 +3710,7 @@ Window {
                                                 border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                 Text {
                                                     anchors.centerIn: parent
-                                                    text: lobbyUi.str(modelData.labelKey)
+                                                    text: root.lobbyT(modelData.labelKey)
                                                     font.family: "Noto Sans"
                                                     font.pointSize: lobby.sectionPointSize
                                                     color: lobby.textColor
@@ -3706,14 +3727,14 @@ Window {
                                     }
 
                                     Text {
-                                        text: lobbyUi.str("settings.serviceSection")
+                                        text: root.lobbyT("settings.serviceSection")
                                         font.pointSize: lobby.sectionPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
                                         width: parent.width
                                     }
                                     Text {
-                                        text: lobbyUi.str("settings.serviceHelp")
+                                        text: root.lobbyT("settings.serviceHelp")
                                         font.pointSize: lobby.helpPointSize
                                         font.family: "Noto Sans"
                                         color: lobby.textColor
@@ -3729,7 +3750,7 @@ Window {
                                         border.width: lobby.btnBorder
                                         Loader {
                                             anchors.fill: parent
-                                            property string labelText: lobbyUi.str("settings.exit")
+                                            property string labelText: root.lobbyT("settings.exit")
                                             property string shortcutKey: lobbyUi.shortcutBadge("settings.exit")
                                             property int pointSize: 12
                                             sourceComponent: lobbyBtnLabelComp
@@ -3763,14 +3784,14 @@ Window {
                                 width: parent.width
                                 spacing: lobby.contentSpacing
                                 Text {
-                                    text: lobbyUi.str("shortcuts.title")
+                                    text: root.lobbyT("shortcuts.title")
                                     font.pointSize: lobby.rowPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor
                                     width: parent.width
                                 }
                                 Text {
-                                    text: lobbyUi.str("shortcuts.body")
+                                    text: root.lobbyT("shortcuts.body")
                                     font.pointSize: lobby.labelPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor
@@ -3803,13 +3824,13 @@ Window {
                     font.family: "Noto Sans"
                     font.pointSize: lobby.rowPointSize
                     color: lobby.textColor
-                    text: vaultOverlayMode === "setup" ? lobbyUi.str("vault.setup")
-                        : vaultOverlayMode === "confirm" ? lobbyUi.str("vault.confirm")
-                        : vaultOverlayMode === "change-old" ? lobbyUi.str("vault.changeOld")
-                        : vaultOverlayMode === "change-new" ? lobbyUi.str("vault.changeNew")
-                        : vaultOverlayMode === "change-confirm" ? lobbyUi.str("vault.changeConfirm")
+                    text: vaultOverlayMode === "setup" ? root.lobbyT("vault.setup")
+                        : vaultOverlayMode === "confirm" ? root.lobbyT("vault.confirm")
+                        : vaultOverlayMode === "change-old" ? root.lobbyT("vault.changeOld")
+                        : vaultOverlayMode === "change-new" ? root.lobbyT("vault.changeNew")
+                        : vaultOverlayMode === "change-confirm" ? root.lobbyT("vault.changeConfirm")
                         : vaultOverlayReason !== "" ? vaultOverlayReason
-                        : lobbyUi.str("vault.enter")
+                        : root.lobbyT("vault.enter")
                 }
 
                 Text {
@@ -3839,7 +3860,7 @@ Window {
                             border.width: modelData === "" ? 0 : lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: modelData === "Bksp" ? lobbyUi.str("vault.bksp") : modelData
+                                text: modelData === "Bksp" ? root.lobbyT("vault.bksp") : modelData
                                 font.family: "Noto Sans"
                                 font.pointSize: lobby.sectionPointSize
                                 color: lobby.textColor
@@ -3865,7 +3886,7 @@ Window {
                     border.width: lobby.btnBorder
                     Text {
                         anchors.centerIn: parent
-                        text: lobbyUi.str("dialog.cancel")
+                        text: root.lobbyT("dialog.cancel")
                         font.family: "Noto Sans"
                         font.pointSize: lobby.sectionPointSize
                         color: lobby.textColor
@@ -3969,7 +3990,7 @@ Window {
                         font.family: "Noto Sans"
                         font.pointSize: 12
                         color: lobby.textColor
-                        text: lobbyUi.str("dialog.noKeyboardBody")
+                        text: root.lobbyT("dialog.noKeyboardBody")
                     }
 
                     Text {
@@ -3991,7 +4012,7 @@ Window {
                         font.family: "Noto Sans"
                         font.pointSize: 12
                         color: lobby.textColor
-                        text: lobbyUi.str("dialog.pinPrefix") + lobbyPIN
+                        text: root.lobbyT("dialog.pinPrefix") + lobbyPIN
                     }
 
                     Image {
@@ -4042,7 +4063,7 @@ Window {
                             model: root.lobbySettingsFontOptions()
                             delegate: Rectangle {
                                 width: parent.width
-                                height: lobby.actionBtnHeight + 28
+                                height: lobby.actionBtnHeight + lobby.fontPickerRowExtra
                                 radius: lobby.btnRadius
                                 property bool selected: index === lobbySettingsPickIndex
                                 color: selected ? lobby.btnFillSelected : lobby.btnFill
@@ -4051,12 +4072,12 @@ Window {
                                 Column {
                                     anchors.centerIn: parent
                                     width: parent.width - 16
-                                    spacing: 2
+                                    spacing: 4
                                     Text {
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         text: modelData.label
                                         font.family: modelData.id
-                                        font.pointSize: lobby.labelPointSize
+                                        font.pointSize: lobby.fontPickerNamePointSize
                                         color: lobby.textColor
                                     }
                                     Text {
@@ -4065,7 +4086,7 @@ Window {
                                         wrapMode: Text.WordWrap
                                         text: root.lobbyFontSample
                                         font.family: modelData.id
-                                        font.pointSize: 10
+                                        font.pointSize: lobby.fontPickerSamplePointSize
                                         color: lobby.textColor
                                     }
                                 }
@@ -4097,7 +4118,7 @@ Window {
                                     spacing: 2
                                     Text {
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        text: lobbyUi.str(modelData.labelKey)
+                                        text: root.lobbyT(modelData.labelKey)
                                         font.family: "Noto Sans"
                                         font.pointSize: lobby.labelPointSize
                                         color: lobby.textColor
@@ -4107,7 +4128,7 @@ Window {
                                         width: parent.width
                                         horizontalAlignment: Text.AlignHCenter
                                         wrapMode: Text.WordWrap
-                                        text: modelData.warnKey ? lobbyUi.str(modelData.warnKey) : ""
+                                        text: modelData.warnKey ? root.lobbyT(modelData.warnKey) : ""
                                         font.family: "Noto Sans"
                                         font.pointSize: 9
                                         color: lobby.textColor
@@ -4136,7 +4157,7 @@ Window {
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("dialog.cancel")
+                                text: root.lobbyT("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -4158,7 +4179,7 @@ Window {
                             border.width: lobby.btnBorderSelected
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("dialog.delete")
+                                text: root.lobbyT("dialog.delete")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -4187,7 +4208,7 @@ Window {
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("dialog.cancel")
+                                text: root.lobbyT("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -4206,7 +4227,7 @@ Window {
                             border.width: lobby.btnBorderSelected
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("settings.exit")
+                                text: root.lobbyT("settings.exit")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -4218,24 +4239,37 @@ Window {
                         }
                     }
 
-                    Row {
+                    // Separator + narrower Cancel — not another full-width choice.
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: parent.width * 0.4
+                        height: 2
+                        color: lobby.borderColor
+                        visible: !lobbyShowNoKeyboard
+                                 && (lobbySettingsMode === "pick-language"
+                                     || lobbySettingsMode === "pick-font"
+                                     || lobbySettingsMode === "pick-pin")
+                    }
+
+                    Item {
                         width: parent.width
-                        spacing: lobby.tabSpacing
+                        height: lobby.actionBtnHeight
                         visible: !lobbyShowNoKeyboard
                                  && (lobbySettingsMode === "pick-language"
                                      || lobbySettingsMode === "pick-font"
                                      || lobbySettingsMode === "pick-pin")
 
                         Rectangle {
-                            width: parent.width
+                            width: Math.max(120, parent.width * lobby.dialogCancelWidthFraction)
                             height: lobby.actionBtnHeight
+                            anchors.horizontalCenter: parent.horizontalCenter
                             radius: lobby.btnRadius
                             color: lobby.btnFill
                             border.color: lobby.borderColor
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("dialog.cancel")
+                                text: root.lobbyT("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -4264,7 +4298,7 @@ Window {
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("dialog.cancel")
+                                text: root.lobbyT("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -4292,8 +4326,8 @@ Window {
                             Text {
                                 anchors.centerIn: parent
                                 text: lobbyFilesMode === "rename"
-                                      ? lobbyUi.str("dialog.rename")
-                                      : lobbyUi.str("dialog.create")
+                                      ? root.lobbyT("dialog.rename")
+                                      : root.lobbyT("dialog.create")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -4322,7 +4356,7 @@ Window {
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("dialog.cancel")
+                                text: root.lobbyT("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor

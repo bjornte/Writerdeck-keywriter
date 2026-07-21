@@ -46,15 +46,28 @@ Window {
     property var lobbyTabShortcutIds: ["tabs.files", "tabs.keyboard", "tabs.sync", "tabs.settings", "tabs.shortcuts", "tabs.about"]
     // Depends on lobbyUi.revision so language / pack reloads refresh tab titles.
     property var lobbyTabLabels: {
-        var _ = lobbyUi.revision
         return [
-            lobbyUi.str("tabs.files"),
-            lobbyUi.str("tabs.keyboard"),
-            lobbyUi.str("tabs.sync"),
-            lobbyUi.str("tabs.settings"),
-            lobbyUi.str("tabs.shortcuts"),
-            lobbyUi.str("tabs.about")
+            root.lobbyT("tabs.files"),
+            root.lobbyT("tabs.keyboard"),
+            root.lobbyT("tabs.sync"),
+            root.lobbyT("tabs.settings"),
+            root.lobbyT("tabs.shortcuts"),
+            root.lobbyT("tabs.about")
         ]
+    }
+
+    // String helpers that rebind when lobby-ui language/packs reload.
+    function lobbyT(key) {
+        var _ = lobbyUi.revision
+        return lobbyUi.str(key)
+    }
+    function lobbyTf(key, a1, a2, a3) {
+        var _ = lobbyUi.revision
+        if (a3 !== undefined && a3 !== null && a3 !== "")
+            return lobbyUi.strf(key, a1, a2, a3)
+        if (a2 !== undefined && a2 !== null && a2 !== "")
+            return lobbyUi.strf(key, a1, a2)
+        return lobbyUi.strf(key, a1)
     }
     property string lobbyVersionText: ""
     property int lobbyFilesIndex: 0
@@ -198,13 +211,13 @@ Window {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 423) {
                     vaultPendingLoad = name
-                    vaultBeginPIN(lobbyUi.str("vault.open"), true)
+                    vaultBeginPIN(root.lobbyT("vault.open"), true)
                     return
                 }
                 if (xhr.status !== 200) {
-                    var errMsg = lobbyUi.str("files.openFailed")
+                    var errMsg = root.lobbyT("files.openFailed")
                     if (xhr.status === 500 && name.indexOf(".md.enc") >= 0)
-                        errMsg = lobbyUi.str("files.decryptCorrupt")
+                        errMsg = root.lobbyT("files.decryptCorrupt")
                     vaultOpFailed(errMsg)
                     return
                 }
@@ -251,7 +264,7 @@ Window {
     function saveAndLoad(name) {
         if (name && name.indexOf(".md.enc") >= 0 && currentFile !== name) {
             vaultPendingLoad = name
-            vaultBeginPIN(lobbyUi.str("vault.edit"), true)
+            vaultBeginPIN(root.lobbyT("vault.edit"), true)
             return
         }
         var wasLobby = isLobby
@@ -294,17 +307,17 @@ Window {
         if (!unix || unix <= 0) return ""
         var sec = Math.floor(Date.now() / 1000) - unix
         if (sec < 0) sec = 0
-        if (sec < 60) return lobbyUi.str("sync.agoJustNow")
+        if (sec < 60) return root.lobbyT("sync.agoJustNow")
         if (sec < 3600) {
             var m = Math.floor(sec / 60)
-            return m === 1 ? lobbyUi.str("sync.agoMinute") : lobbyUi.strf("sync.agoMinutes", "" + m)
+            return m === 1 ? root.lobbyT("sync.agoMinute") : root.lobbyTf("sync.agoMinutes", "" + m)
         }
         if (sec < 86400) {
             var h = Math.floor(sec / 3600)
-            return h === 1 ? lobbyUi.str("sync.agoHour") : lobbyUi.strf("sync.agoHours", "" + h)
+            return h === 1 ? root.lobbyT("sync.agoHour") : root.lobbyTf("sync.agoHours", "" + h)
         }
         var d = Math.floor(sec / 86400)
-        return d === 1 ? lobbyUi.str("sync.agoDay") : lobbyUi.strf("sync.agoDays", "" + d)
+        return d === 1 ? root.lobbyT("sync.agoDay") : root.lobbyTf("sync.agoDays", "" + d)
     }
 
     function lobbyLastSyncLabel() {
@@ -313,10 +326,10 @@ Window {
         var ago = lobbyFormatSyncAgo(lobbyLastSyncAt)
         if (lobbySyncPending > 0) {
             var pend = lobbySyncPending === 1
-                ? lobbyUi.str("sync.pendingOne")
-                : lobbyUi.strf("sync.pendingMany", "" + lobbySyncPending)
+                ? root.lobbyT("sync.pendingOne")
+                : root.lobbyTf("sync.pendingMany", "" + lobbySyncPending)
             if (ago === "") return pend
-            return lobbyUi.strf("sync.agoWithPending", ago, pend)
+            return root.lobbyTf("sync.agoWithPending", ago, pend)
         }
         return ago
     }
@@ -356,15 +369,15 @@ Window {
     }
 
     function lobbyDialogTitle() {
-        if (lobbyShowNoKeyboard) return lobbyUi.str("dialog.connectTitle")
-        if (lobbyFilesMode === "confirm-delete") return lobbyUi.str("dialog.deleteTitle")
-        if (lobbyFilesMode === "new") return lobbyUi.str("dialog.newTitle")
-        if (lobbyFilesMode === "rename") return lobbyUi.str("dialog.renameTitle")
-        if (lobbyFilesMode === "new-encrypted") return lobbyUi.str("dialog.newEncryptedTitle")
-        if (lobbySettingsMode === "confirm-exit") return lobbyUi.str("dialog.exitTitle")
-        if (lobbySettingsMode === "pick-language") return lobbyUi.str("dialog.languageTitle")
-        if (lobbySettingsMode === "pick-font") return lobbyUi.str("dialog.fontTitle")
-        if (lobbySettingsMode === "pick-pin") return lobbyUi.str("dialog.pinTitle")
+        if (lobbyShowNoKeyboard) return root.lobbyT("dialog.connectTitle")
+        if (lobbyFilesMode === "confirm-delete") return root.lobbyT("dialog.deleteTitle")
+        if (lobbyFilesMode === "new") return root.lobbyT("dialog.newTitle")
+        if (lobbyFilesMode === "rename") return root.lobbyT("dialog.renameTitle")
+        if (lobbyFilesMode === "new-encrypted") return root.lobbyT("dialog.newEncryptedTitle")
+        if (lobbySettingsMode === "confirm-exit") return root.lobbyT("dialog.exitTitle")
+        if (lobbySettingsMode === "pick-language") return root.lobbyT("dialog.languageTitle")
+        if (lobbySettingsMode === "pick-font") return root.lobbyT("dialog.fontTitle")
+        if (lobbySettingsMode === "pick-pin") return root.lobbyT("dialog.pinTitle")
         return ""
     }
 
@@ -405,9 +418,9 @@ Window {
     }
 
     function lobbySettingsPinLabel() {
-        if (lobbyPinDigits === "6") return lobbyUi.str("settings.pin6")
-        if (lobbyPinDigits === "4") return lobbyUi.str("settings.pin4")
-        if (lobbyPinDigits === "none") return lobbyUi.str("settings.pinNone")
+        if (lobbyPinDigits === "6") return root.lobbyT("settings.pin6")
+        if (lobbyPinDigits === "4") return root.lobbyT("settings.pin4")
+        if (lobbyPinDigits === "none") return root.lobbyT("settings.pinNone")
         return lobbyPinDigits
     }
 
@@ -457,8 +470,12 @@ Window {
             index = lobbySettingsPickIndex
         if (lobbySettingsMode === "pick-language") {
             var langs = lobbySettingsLanguageOptions()
-            if (index >= 0 && index < langs.length)
-                lobbyUi.setLanguage(langs[index].id)
+            if (index >= 0 && index < langs.length) {
+                if (lobbyUi.setLanguage(langs[index].id)) {
+                    writerdeck.notifyLanguageChanged()
+                    lobbyRefreshVersion()
+                }
+            }
         } else if (lobbySettingsMode === "pick-font") {
             var fonts = lobbySettingsFontOptions()
             if (index >= 0 && index < fonts.length)
@@ -536,13 +553,13 @@ Window {
         if (vaultPendingAction !== "" || vaultPendingLoad !== "") {
             vaultOverlayMode = "pin"
             vaultPinInput = ""
-            vaultOverlayReason = msg || lobbyUi.str("vault.wrongPin")
+            vaultOverlayReason = msg || root.lobbyT("vault.wrongPin")
             lobbyKeepFocus()
             return
         }
         // Create/rename failures belong in the name dialog, not the Files header.
         if (lobbyFilesMode === "new" || lobbyFilesMode === "rename" || lobbyFilesMode === "new-encrypted") {
-            lobbyFilesInputError = msg || lobbyUi.str("files.operationFailed")
+            lobbyFilesInputError = msg || root.lobbyT("files.operationFailed")
             lobbyKeepFocus()
             return
         }
@@ -556,12 +573,12 @@ Window {
             lobbyFilesMode = mode
             lobbyFilesInput = input
             lobbyFilesInputPos = input.length
-            lobbyFilesInputError = msg || lobbyUi.str("files.operationFailed")
+            lobbyFilesInputError = msg || root.lobbyT("files.operationFailed")
             lobbyKeepFocus()
             return
         }
         lobbyGoPage(0)
-        lobbyVaultError = msg || lobbyUi.str("files.operationFailed")
+        lobbyVaultError = msg || root.lobbyT("files.operationFailed")
     }
 
     function vaultOnPINAccepted() {
@@ -627,7 +644,7 @@ Window {
 
     function setLobbySyncStatus(syncError, wifi, syncErrorKey) {
         if (syncErrorKey === "noWifi")
-            lobbySyncError = lobbyUi.str("sync.errNoWifi")
+            lobbySyncError = root.lobbyT("sync.errNoWifi")
         else
             lobbySyncError = syncError || ""
         lobbyWifi = !!wifi
@@ -654,7 +671,7 @@ Window {
 
     // About tab: one product stamp from server + editor, then compare to GitHub.
     function lobbyRefreshVersion() {
-        lobbyVersionText = lobbyUi.str("home.versionChecking")
+        lobbyVersionText = root.lobbyT("home.versionChecking")
         var ed = "unknown"
         try {
             if (writerdeck && writerdeck.productVersion)
@@ -671,25 +688,25 @@ Window {
                     var ver = k.version || ""
                     var latest = k.latest || ""
                     if (k.status === "latest")
-                        lobbyVersionText = lobbyUi.strf("home.versionLatest", ver)
+                        lobbyVersionText = root.lobbyTf("home.versionLatest", ver)
                     else if (k.status === "outdated")
-                        lobbyVersionText = lobbyUi.strf("home.versionOutdated", ver, latest)
+                        lobbyVersionText = root.lobbyTf("home.versionOutdated", ver, latest)
                     else if (k.status === "ahead")
-                        lobbyVersionText = lobbyUi.strf("home.versionAhead", ver, latest)
+                        lobbyVersionText = root.lobbyTf("home.versionAhead", ver, latest)
                     else if (k.status === "mismatchLatest")
-                        lobbyVersionText = lobbyUi.strf("home.versionMismatchLatest", ver, latest)
+                        lobbyVersionText = root.lobbyTf("home.versionMismatchLatest", ver, latest)
                     else if (k.status === "mismatch")
-                        lobbyVersionText = lobbyUi.strf("home.versionMismatch", ver)
+                        lobbyVersionText = root.lobbyTf("home.versionMismatch", ver)
                     else if (k.status === "offline")
-                        lobbyVersionText = lobbyUi.strf("home.versionOffline", ver)
+                        lobbyVersionText = root.lobbyTf("home.versionOffline", ver)
                     else if (k.message)
                         lobbyVersionText = k.message
                     else
-                        lobbyVersionText = lobbyUi.str("home.versionUnknown")
+                        lobbyVersionText = root.lobbyT("home.versionUnknown")
                     return
                 } catch (e2) {}
             }
-            lobbyVersionText = lobbyUi.str("home.versionUnknown")
+            lobbyVersionText = root.lobbyT("home.versionUnknown")
         }
         chk.send()
     }
@@ -786,7 +803,7 @@ Window {
         if (!row || row.name === "") return
         if (row.encrypted) {
             vaultPendingLoad = row.name
-            vaultBeginPIN(lobbyUi.str("vault.edit"), true); return }
+            vaultBeginPIN(root.lobbyT("vault.edit"), true); return }
         saveAndLoad(row.name)
     }
 
@@ -807,7 +824,7 @@ Window {
         if (row.encrypted) {
             vaultPendingLoad = row.name
             lobbyOpenInReadMode = true
-            vaultBeginPIN(lobbyUi.str("vault.read"), true); return }
+            vaultBeginPIN(root.lobbyT("vault.read"), true); return }
         isLobby = false
         if (mode == 1) doc = query.text
         saveFile()
@@ -858,7 +875,7 @@ Window {
     function lobbyFilesBeginDownload() {
         if (lobbyNotesModel.count === 0) return
         if (!lobbyPhoneConnected) {
-            lobbyVaultError = lobbyUi.str("files.downloadNeedPhone")
+            lobbyVaultError = root.lobbyT("files.downloadNeedPhone")
             return
         }
         lobbyVaultError = ""
@@ -899,7 +916,7 @@ Window {
             var newTarget = lobbyFilesNormalizedName(name, false)
             if (lobbyFilesNameTaken(newTarget, "")) {
                 lobbyOpenAfterCreate = ""
-                lobbyFilesInputError = lobbyUi.str("files.nameExists")
+                lobbyFilesInputError = root.lobbyT("files.nameExists")
                 return
             }
             lobbyFilesInputError = ""
@@ -917,7 +934,7 @@ Window {
             else newName = lobbyFilesNormalizedName(name, false)
             if (newName !== oldName && lobbyFilesNameTaken(newName, oldName)) {
                 lobbyOpenAfterCreate = ""
-                lobbyFilesInputError = lobbyUi.str("files.nameExists")
+                lobbyFilesInputError = root.lobbyT("files.nameExists")
                 return
             }
             lobbyFilesInputError = ""
@@ -931,7 +948,7 @@ Window {
             var encTarget = lobbyFilesNormalizedName(name, true)
             if (lobbyFilesNameTaken(encTarget, "")) {
                 lobbyOpenAfterCreate = ""
-                lobbyFilesInputError = lobbyUi.str("files.nameExists")
+                lobbyFilesInputError = root.lobbyT("files.nameExists")
                 return
             }
             lobbyFilesInputError = ""
@@ -948,7 +965,7 @@ Window {
     function lobbyFilesBeginNewEncrypted(fromKey) {
         if (!fromKey && !lobbyEnsureKeyboard("new-encrypted")) return
         vaultPendingAction = "new-encrypted"
-        vaultBeginPIN(lobbyUi.str("vault.create"), false)
+        vaultBeginPIN(root.lobbyT("vault.create"), false)
     }
 
     function lobbyEncryptSelected() {
@@ -957,7 +974,7 @@ Window {
         if (!row || row.encrypted) return
         vaultPendingNote = row.name
         vaultPendingAction = "encrypt"
-        vaultBeginPIN(lobbyUi.str("vault.encrypt"), false)
+        vaultBeginPIN(root.lobbyT("vault.encrypt"), false)
     }
 
     function lobbyDecryptSelected() {
@@ -966,7 +983,7 @@ Window {
         if (!row || !row.encrypted) return
         vaultPendingNote = row.name
         vaultPendingAction = "decrypt"
-        vaultBeginPIN(lobbyUi.str("vault.decrypt"), false)
+        vaultBeginPIN(root.lobbyT("vault.decrypt"), false)
     }
 
     function vaultBeginSetup() {
@@ -992,8 +1009,8 @@ Window {
     }
 
     function requestVaultPIN(reason, name) {
-        var msg = lobbyUi.strf("vault.downloadTitle", name || lobbyUi.str("vault.downloadFallbackName"))
-        if (reason === "download") msg = lobbyUi.str("vault.download")
+        var msg = root.lobbyTf("vault.downloadTitle", name || root.lobbyT("vault.downloadFallbackName"))
+        if (reason === "download") msg = root.lobbyT("vault.download")
         if (name) vaultPendingLoad = name
         vaultBeginPIN(msg, false)
     }

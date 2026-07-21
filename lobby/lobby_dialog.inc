@@ -87,7 +87,7 @@
                         font.family: "Noto Sans"
                         font.pointSize: 12
                         color: lobby.textColor
-                        text: lobbyUi.str("dialog.noKeyboardBody")
+                        text: root.lobbyT("dialog.noKeyboardBody")
                     }
 
                     Text {
@@ -109,7 +109,7 @@
                         font.family: "Noto Sans"
                         font.pointSize: 12
                         color: lobby.textColor
-                        text: lobbyUi.str("dialog.pinPrefix") + lobbyPIN
+                        text: root.lobbyT("dialog.pinPrefix") + lobbyPIN
                     }
 
                     Image {
@@ -160,7 +160,7 @@
                             model: root.lobbySettingsFontOptions()
                             delegate: Rectangle {
                                 width: parent.width
-                                height: lobby.actionBtnHeight + 28
+                                height: lobby.actionBtnHeight + lobby.fontPickerRowExtra
                                 radius: lobby.btnRadius
                                 property bool selected: index === lobbySettingsPickIndex
                                 color: selected ? lobby.btnFillSelected : lobby.btnFill
@@ -169,12 +169,12 @@
                                 Column {
                                     anchors.centerIn: parent
                                     width: parent.width - 16
-                                    spacing: 2
+                                    spacing: 4
                                     Text {
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         text: modelData.label
                                         font.family: modelData.id
-                                        font.pointSize: lobby.labelPointSize
+                                        font.pointSize: lobby.fontPickerNamePointSize
                                         color: lobby.textColor
                                     }
                                     Text {
@@ -183,7 +183,7 @@
                                         wrapMode: Text.WordWrap
                                         text: root.lobbyFontSample
                                         font.family: modelData.id
-                                        font.pointSize: 10
+                                        font.pointSize: lobby.fontPickerSamplePointSize
                                         color: lobby.textColor
                                     }
                                 }
@@ -215,7 +215,7 @@
                                     spacing: 2
                                     Text {
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        text: lobbyUi.str(modelData.labelKey)
+                                        text: root.lobbyT(modelData.labelKey)
                                         font.family: "Noto Sans"
                                         font.pointSize: lobby.labelPointSize
                                         color: lobby.textColor
@@ -225,7 +225,7 @@
                                         width: parent.width
                                         horizontalAlignment: Text.AlignHCenter
                                         wrapMode: Text.WordWrap
-                                        text: modelData.warnKey ? lobbyUi.str(modelData.warnKey) : ""
+                                        text: modelData.warnKey ? root.lobbyT(modelData.warnKey) : ""
                                         font.family: "Noto Sans"
                                         font.pointSize: 9
                                         color: lobby.textColor
@@ -254,7 +254,7 @@
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("dialog.cancel")
+                                text: root.lobbyT("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -276,7 +276,7 @@
                             border.width: lobby.btnBorderSelected
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("dialog.delete")
+                                text: root.lobbyT("dialog.delete")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -305,7 +305,7 @@
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("dialog.cancel")
+                                text: root.lobbyT("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -324,7 +324,7 @@
                             border.width: lobby.btnBorderSelected
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("settings.exit")
+                                text: root.lobbyT("settings.exit")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -336,24 +336,37 @@
                         }
                     }
 
-                    Row {
+                    // Separator + narrower Cancel — not another full-width choice.
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: parent.width * 0.4
+                        height: 2
+                        color: lobby.borderColor
+                        visible: !lobbyShowNoKeyboard
+                                 && (lobbySettingsMode === "pick-language"
+                                     || lobbySettingsMode === "pick-font"
+                                     || lobbySettingsMode === "pick-pin")
+                    }
+
+                    Item {
                         width: parent.width
-                        spacing: lobby.tabSpacing
+                        height: lobby.actionBtnHeight
                         visible: !lobbyShowNoKeyboard
                                  && (lobbySettingsMode === "pick-language"
                                      || lobbySettingsMode === "pick-font"
                                      || lobbySettingsMode === "pick-pin")
 
                         Rectangle {
-                            width: parent.width
+                            width: Math.max(120, parent.width * lobby.dialogCancelWidthFraction)
                             height: lobby.actionBtnHeight
+                            anchors.horizontalCenter: parent.horizontalCenter
                             radius: lobby.btnRadius
                             color: lobby.btnFill
                             border.color: lobby.borderColor
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("dialog.cancel")
+                                text: root.lobbyT("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -382,7 +395,7 @@
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("dialog.cancel")
+                                text: root.lobbyT("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -410,8 +423,8 @@
                             Text {
                                 anchors.centerIn: parent
                                 text: lobbyFilesMode === "rename"
-                                      ? lobbyUi.str("dialog.rename")
-                                      : lobbyUi.str("dialog.create")
+                                      ? root.lobbyT("dialog.rename")
+                                      : root.lobbyT("dialog.create")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor
@@ -440,7 +453,7 @@
                             border.width: lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: lobbyUi.str("dialog.cancel")
+                                text: root.lobbyT("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
                                 color: lobby.textColor

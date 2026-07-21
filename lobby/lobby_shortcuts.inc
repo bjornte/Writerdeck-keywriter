@@ -15,14 +15,14 @@
                                 width: parent.width
                                 spacing: lobby.contentSpacing
                                 Text {
-                                    text: lobbyUi.str("shortcuts.title")
+                                    text: root.lobbyT("shortcuts.title")
                                     font.pointSize: lobby.rowPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor
                                     width: parent.width
                                 }
                                 Text {
-                                    text: lobbyUi.str("shortcuts.body")
+                                    text: root.lobbyT("shortcuts.body")
                                     font.pointSize: lobby.labelPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor

@@ -126,6 +126,11 @@ void LobbyBridge::setPinDigits(const QString &digits)
     sendReq(QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Compact)));
 }
 
+void LobbyBridge::notifyLanguageChanged()
+{
+    sendReq(QStringLiteral("{\"t\":\"req\",\"op\":\"languagechanged\"}"));
+}
+
 void LobbyBridge::exitWriterdeck()
 {
     sendReq(QStringLiteral("{\"t\":\"req\",\"op\":\"shutdown\"}"));

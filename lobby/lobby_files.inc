@@ -53,7 +53,7 @@
                                         font.family: "Noto Sans"
                                         font.pointSize: lobby.labelPointSize
                                         color: lobby.textColor
-                                        text: lobbyUi.str("files.tapDismiss")
+                                        text: root.lobbyT("files.tapDismiss")
                                     }
                                 }
 
@@ -97,7 +97,7 @@
                                     opacity: lobbyFilesPageStrip.canPrev ? 1 : 0.45
                                     Text {
                                         anchors.centerIn: parent
-                                        text: lobbyUi.str("files.prev")
+                                        text: root.lobbyT("files.prev")
                                         font.family: "Noto Sans"
                                         font.pointSize: lobby.labelPointSize
                                         color: lobby.textColor
@@ -117,7 +117,7 @@
                                     height: lobby.pageStripHeight
                                     Text {
                                         anchors.centerIn: parent
-                                        text: lobbyUi.strf("files.page",
+                                        text: root.lobbyTf("files.page",
                                                            "" + (root.lobbyFilesPageIndex() + 1),
                                                            "" + root.lobbyFilesPageCount())
                                         font.family: "Noto Sans"
@@ -135,7 +135,7 @@
                                     opacity: lobbyFilesPageStrip.canNext ? 1 : 0.45
                                     Text {
                                         anchors.centerIn: parent
-                                        text: lobbyUi.str("files.next")
+                                        text: root.lobbyT("files.next")
                                         font.family: "Noto Sans"
                                         font.pointSize: lobby.labelPointSize
                                         color: lobby.textColor
@@ -186,7 +186,7 @@
                                         border.width: lobby.btnBorder
                                         Loader {
                                             anchors.fill: parent
-                                            property string labelText: lobbyUi.str(modelData.action)
+                                            property string labelText: root.lobbyT(modelData.action)
                                             property string shortcutKey: lobbyUi.shortcutBadge(modelData.action)
                                             property int pointSize: 10
                                             sourceComponent: lobbyBtnLabelComp
@@ -232,7 +232,7 @@
                                     border.width: lobby.btnBorder
                                     Loader {
                                         anchors.fill: parent
-                                        property string labelText: lobbyUi.str("files.encrypt")
+                                        property string labelText: root.lobbyT("files.encrypt")
                                         property string shortcutKey: lobbyUi.shortcutBadge("files.encrypt")
                                         property int pointSize: lobby.labelPointSize
                                         sourceComponent: lobbyBtnLabelComp
@@ -255,7 +255,7 @@
                                     border.width: lobby.btnBorder
                                     Loader {
                                         anchors.fill: parent
-                                        property string labelText: lobbyUi.str("files.newEncrypted")
+                                        property string labelText: root.lobbyT("files.newEncrypted")
                                         property string shortcutKey: lobbyUi.shortcutBadge("files.newEncrypted")
                                         property int pointSize: lobby.labelPointSize
                                         sourceComponent: lobbyBtnLabelComp
@@ -278,7 +278,7 @@
                                     border.width: lobby.btnBorder
                                     Loader {
                                         anchors.fill: parent
-                                        property string labelText: lobbyUi.str("files.decrypt")
+                                        property string labelText: root.lobbyT("files.decrypt")
                                         property string shortcutKey: lobbyUi.shortcutBadge("files.decrypt")
                                         property int pointSize: lobby.labelPointSize
                                         sourceComponent: lobbyBtnLabelComp
@@ -340,11 +340,11 @@
                                             anchors.rightMargin: lobby.listRowInset
                                             anchors.verticalCenter: parent.verticalCenter
                                             text: (noteIndex === lobbyFilesIndex
-                                                   ? lobbyUi.str("files.marker")
-                                                   : lobbyUi.str("files.markerPad"))
+                                                   ? root.lobbyT("files.marker")
+                                                   : root.lobbyT("files.markerPad"))
                                                   + lobbyFilesStripSuffix(noteRow ? noteRow.name : "")
                                                   + (noteRow && noteRow.encrypted
-                                                     ? lobbyUi.str("files.privateSuffix") : "")
+                                                     ? root.lobbyT("files.privateSuffix") : "")
                                             font.family: "Noto Sans"
                                             font.pointSize: lobby.rowPointSize
                                             color: lobby.textColor

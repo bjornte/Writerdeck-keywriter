@@ -43,6 +43,10 @@
             readonly property double dialogWidthFraction: lobbyUi.dialogWidthFraction
             readonly property int dialogPadding: lobbyUi.dialogPadding
             readonly property int settingsLandscapeScrollGutter: lobbyUi.settingsLandscapeScrollGutter
+            readonly property int fontPickerNamePointSize: lobbyUi.fontPickerNamePointSize
+            readonly property int fontPickerSamplePointSize: lobbyUi.fontPickerSamplePointSize
+            readonly property int fontPickerRowExtra: lobbyUi.fontPickerRowExtra
+            readonly property double dialogCancelWidthFraction: lobbyUi.dialogCancelWidthFraction
 
             // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
             // (and optional labelBold / labelColor).

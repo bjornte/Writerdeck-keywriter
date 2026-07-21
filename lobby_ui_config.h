@@ -56,6 +56,10 @@ class LobbyUiConfig : public QObject
     Q_PROPERTY(double dialogWidthFraction READ dialogWidthFraction NOTIFY changed)
     Q_PROPERTY(int dialogPadding READ dialogPadding NOTIFY changed)
     Q_PROPERTY(int settingsLandscapeScrollGutter READ settingsLandscapeScrollGutter NOTIFY changed)
+    Q_PROPERTY(int fontPickerNamePointSize READ fontPickerNamePointSize NOTIFY changed)
+    Q_PROPERTY(int fontPickerSamplePointSize READ fontPickerSamplePointSize NOTIFY changed)
+    Q_PROPERTY(int fontPickerRowExtra READ fontPickerRowExtra NOTIFY changed)
+    Q_PROPERTY(double dialogCancelWidthFraction READ dialogCancelWidthFraction NOTIFY changed)
     Q_PROPERTY(QVariantMap shortcuts READ shortcutsMap NOTIFY changed)
     Q_PROPERTY(QVariantMap strings READ stringsMap NOTIFY changed)
 
@@ -106,6 +110,10 @@ public:
     double dialogWidthFraction() const { return m_dialogWidthFraction; }
     int dialogPadding() const { return m_dialogPadding; }
     int settingsLandscapeScrollGutter() const { return m_settingsLandscapeScrollGutter; }
+    int fontPickerNamePointSize() const { return m_fontPickerNamePointSize; }
+    int fontPickerSamplePointSize() const { return m_fontPickerSamplePointSize; }
+    int fontPickerRowExtra() const { return m_fontPickerRowExtra; }
+    double dialogCancelWidthFraction() const { return m_dialogCancelWidthFraction; }
     QVariantMap shortcutsMap() const;
     QVariantMap stringsMap() const;
 
@@ -183,6 +191,10 @@ private:
     double m_dialogWidthFraction = 0.85;
     int m_dialogPadding = 48;
     int m_settingsLandscapeScrollGutter = 144;
+    int m_fontPickerNamePointSize = 16;
+    int m_fontPickerSamplePointSize = 14;
+    int m_fontPickerRowExtra = 48;
+    double m_dialogCancelWidthFraction = 0.55;
 
     QHash<QString, QString> m_strings;
     QHash<QString, QString> m_shortcuts;

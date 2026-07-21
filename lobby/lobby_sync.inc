@@ -15,7 +15,7 @@
                                 width: parent.width
                                 spacing: lobby.contentSpacing
                                 Text {
-                                    text: lobbyUi.str("sync.title")
+                                    text: root.lobbyT("sync.title")
                                     font.pointSize: lobby.rowPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor
@@ -26,9 +26,9 @@
                                         && !(lobbySyncOn && lobbySyncRepo !== "" && lobbySyncReady && lobbySyncError !== "")
                                     text: lobbySyncOn && lobbySyncRepo !== ""
                                         ? (root.lobbyLastSyncLabel() !== ""
-                                            ? lobbyUi.strf("sync.lastSync", root.lobbyLastSyncLabel(), lobbySyncRepo)
-                                            : lobbyUi.strf("sync.syncingTo", lobbySyncRepo))
-                                        : lobbyUi.strf("sync.notConfigured", lobbyIP, "" + lobbyPort)
+                                            ? root.lobbyTf("sync.lastSync", root.lobbyLastSyncLabel(), lobbySyncRepo)
+                                            : root.lobbyTf("sync.syncingTo", lobbySyncRepo))
+                                        : root.lobbyTf("sync.notConfigured", lobbyIP, "" + lobbyPort)
                                     font.pointSize: lobby.labelPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor
@@ -49,7 +49,7 @@
                                         width: parent.width - 20
                                         spacing: 10
                                         Text {
-                                            text: !lobbyWifi ? lobbyUi.str("sync.offline") : lobbyUi.str("sync.failed")
+                                            text: !lobbyWifi ? root.lobbyT("sync.offline") : root.lobbyT("sync.failed")
                                             font.pointSize: lobby.bannerPointSize
                                             font.bold: true
                                             font.family: "Noto Sans"
@@ -81,7 +81,7 @@
                                         width: parent.width - 20
                                         spacing: 10
                                         Text {
-                                            text: lobbyUi.str("sync.tokenNeeded")
+                                            text: root.lobbyT("sync.tokenNeeded")
                                             font.pointSize: lobby.bannerPointSize
                                             font.bold: true
                                             font.family: "Noto Sans"
@@ -89,7 +89,7 @@
                                             width: parent.width
                                         }
                                         Text {
-                                            text: lobbyUi.strf("sync.tokenBody", lobbyIP, "" + lobbyPort, lobbySyncRepo)
+                                            text: root.lobbyTf("sync.tokenBody", lobbyIP, "" + lobbyPort, lobbySyncRepo)
                                             font.pointSize: 13
                                             font.family: "Noto Sans"
                                             color: lobby.textColor
@@ -109,8 +109,8 @@
                                     border.width: lobbySyncReady ? lobby.btnBorder : lobby.btnBorderSelected
                                     Loader {
                                         anchors.fill: parent
-                                        property string labelText: !lobbySyncReady ? lobbyUi.str("sync.tokenBtn")
-                                            : (lobbySyncing ? lobbyUi.str("sync.syncing") : lobbyUi.str("sync.now"))
+                                        property string labelText: !lobbySyncReady ? root.lobbyT("sync.tokenBtn")
+                                            : (lobbySyncing ? root.lobbyT("sync.syncing") : root.lobbyT("sync.now"))
                                         property string shortcutKey: (lobbySyncReady && !lobbySyncing)
                                             ? lobbyUi.shortcutBadge("sync.now") : ""
                                         property int pointSize: !lobbySyncReady ? 14 : 12
@@ -128,7 +128,7 @@
                                     }
                                 }
                                 Text {
-                                    text: lobbyUi.str("sync.footnote")
+                                    text: root.lobbyT("sync.footnote")
                                     font.pointSize: lobby.helpPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor

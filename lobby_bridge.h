@@ -27,6 +27,7 @@ public slots:
     Q_INVOKABLE void setKeyboardLayout(const QString &layout);
     Q_INVOKABLE void setReadFont(const QString &font);
     Q_INVOKABLE void setPinDigits(const QString &digits);
+    Q_INVOKABLE void notifyLanguageChanged();
     Q_INVOKABLE void exitWriterdeck();
     Q_INVOKABLE void setVaultPin(const QString &pin);
     Q_INVOKABLE void changeVaultPin(const QString &oldPin, const QString &newPin);

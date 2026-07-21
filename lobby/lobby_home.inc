@@ -15,14 +15,14 @@
                                 width: parent.width
                                 spacing: lobby.contentSpacing
                                 Text {
-                                    text: lobbyUi.str("home.brand")
+                                    text: root.lobbyT("home.brand")
                                     color: lobby.textColor
                                     font.pointSize: lobby.titlePointSize
                                     font.family: "Noto Mono"
                                     width: parent.width
                                 }
                                 Text {
-                                    text: lobbyUi.str("home.tagline")
+                                    text: root.lobbyT("home.tagline")
                                     color: lobby.textColor
                                     font.pointSize: lobby.sectionPointSize
                                     font.family: "Noto Sans"
@@ -31,7 +31,7 @@
                                 }
                                 Text {
                                     text: lobbyVersionText !== "" ? lobbyVersionText
-                                          : lobbyUi.str("home.versionChecking")
+                                          : root.lobbyT("home.versionChecking")
                                     color: lobby.textColor
                                     font.pointSize: lobby.labelPointSize
                                     font.family: "Noto Sans"
@@ -40,8 +40,8 @@
                                 }
                                 Text {
                                     text: lobbyNoteCount === 1
-                                          ? lobbyUi.str("home.docsOne")
-                                          : lobbyUi.strf("home.docsMany", "" + lobbyNoteCount)
+                                          ? root.lobbyT("home.docsOne")
+                                          : root.lobbyTf("home.docsMany", "" + lobbyNoteCount)
                                     color: lobby.textColor
                                     font.pointSize: lobby.labelPointSize
                                     font.family: "Noto Sans"
@@ -49,7 +49,7 @@
                                     wrapMode: Text.WordWrap
                                 }
                                 Text {
-                                    text: lobbyUi.str("home.tip")
+                                    text: root.lobbyT("home.tip")
                                     color: lobby.textColor
                                     font.pointSize: lobby.helpPointSize
                                     font.family: "Noto Sans"
@@ -57,7 +57,7 @@
                                     wrapMode: Text.WordWrap
                                 }
                                 Text {
-                                    text: lobbyUi.str("home.opensource")
+                                    text: root.lobbyT("home.opensource")
                                     color: lobby.textColor
                                     font.pointSize: 9
                                     font.family: "Noto Mono"
