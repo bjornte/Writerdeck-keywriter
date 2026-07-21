@@ -1,7 +1,7 @@
         Rectangle {
             id: lobby
             anchors.fill: parent
-            color: "white"
+            color: lobbyUi.pageBg
             visible: isLobby
             z: 5
 
@@ -17,8 +17,31 @@
             readonly property color textColor: lobbyUi.textColor
             readonly property color borderColor: lobbyUi.borderColor
             readonly property color badgeTextColor: lobbyUi.badgeTextColor
+            readonly property color badgeBorderColor: lobbyUi.badgeBorderColor
+            readonly property color btnFill: lobbyUi.btnFill
+            readonly property color btnFillSelected: lobbyUi.btnFillSelected
+            readonly property color tabFill: lobbyUi.tabFill
+            readonly property color tabFillSelected: lobbyUi.tabFillSelected
+            readonly property color dialogBg: lobbyUi.dialogBg
+            readonly property color dialogScrim: lobbyUi.dialogScrim
+            readonly property color vaultWash: lobbyUi.vaultWash
+            readonly property int btnRadius: lobbyUi.btnRadius
+            readonly property int dialogRadius: lobbyUi.dialogRadius
+            readonly property int badgeRadius: lobbyUi.badgeRadius
+            readonly property int bannerRadius: lobbyUi.bannerRadius
             readonly property int labelPointSize: lobbyUi.labelPointSize
             readonly property int badgePointSize: lobbyUi.badgePointSize
+            readonly property int titlePointSize: lobbyUi.titlePointSize
+            readonly property int sectionPointSize: lobbyUi.sectionPointSize
+            readonly property int rowPointSize: lobbyUi.rowPointSize
+            readonly property int dialogTitlePointSize: lobbyUi.dialogTitlePointSize
+            readonly property int bannerPointSize: lobbyUi.bannerPointSize
+            readonly property int helpPointSize: lobbyUi.helpPointSize
+            readonly property int pageStripHeight: lobbyUi.pageStripHeight
+            readonly property int listRowInset: lobbyUi.listRowInset
+            readonly property int tabRowExtraHeight: lobbyUi.tabRowExtraHeight
+            readonly property double dialogWidthFraction: lobbyUi.dialogWidthFraction
+            readonly property int dialogPadding: lobbyUi.dialogPadding
 
             // Button caption + optional keycap. Loader sets labelText / shortcutKey / pointSize
             // (and optional labelBold / labelColor).
@@ -56,9 +79,9 @@
                         anchors.topMargin: lobby.shortcutBadgeMargin
                         anchors.bottomMargin: lobby.shortcutBadgeMargin
                         width: showBadge ? height : 0
-                        radius: 3
+                        radius: lobby.badgeRadius
                         color: "white"
-                        border.color: lobby.borderColor
+                        border.color: lobby.badgeBorderColor
                         border.width: showBadge ? lobby.btnBorder : 0
                         // Keep layout width when keyboard drops; only fade the keycap.
                         opacity: (showBadge && root.lobbyKeyboardReady()) ? 1 : 0
@@ -115,7 +138,7 @@
                     anchors.leftMargin: lobby.pageMargin
                     anchors.rightMargin: lobby.pageMargin
                     anchors.topMargin: lobby.pageMargin
-                    height: lobby.tabBtnHeight + 8
+                    height: lobby.tabBtnHeight + lobby.tabRowExtraHeight
                     spacing: lobby.tabSpacing
 
                     Repeater {
@@ -123,8 +146,8 @@
                         delegate: Rectangle {
                             width: Math.max(88, (lobby.width - lobby.pageMargin * 2 - lobby.tabSpacing * (lobbyTabLabels.length - 1)) / lobbyTabLabels.length)
                             height: lobby.tabBtnHeight
-                            radius: 6
-                            color: lobbyPage === index ? "#e0e0e0" : "#f5f5f5"
+                            radius: lobby.btnRadius
+                            color: lobbyPage === index ? lobby.tabFillSelected : lobby.tabFill
                             border.color: lobby.borderColor
                             border.width: lobbyPage === index ? lobby.btnBorderSelected : lobby.btnBorder
 
@@ -157,4 +180,3 @@
                     anchors.bottomMargin: lobby.pageMargin
                     anchors.leftMargin: lobby.pageMargin
                     anchors.rightMargin: lobby.pageMargin
-

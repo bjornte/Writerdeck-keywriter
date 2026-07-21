@@ -26,10 +26,10 @@
                                 Rectangle {
                                     width: parent.width
                                     height: btKbInner.height + 24
-                                    color: "white"
+                                    color: lobby.dialogBg
                                     border.color: lobby.borderColor
                                     border.width: lobbyPhoneConnected ? lobby.btnBorderSelected : lobby.btnBorder
-                                    radius: 6
+                                    radius: lobby.btnRadius
                                     Column {
                                         id: btKbInner
                                         anchors.left: parent.left
@@ -38,18 +38,21 @@
                                         anchors.margins: 12
                                         spacing: 10
                                         Text {
-                                            text: "Bluetooth keyboard" + (lobbyPhoneConnected ? " (connected)" : " (not connected)")
-                                            font.pointSize: 14
+                                            text: lobbyUi.str("keyboard.btTitle")
+                                                  + (lobbyPhoneConnected
+                                                     ? lobbyUi.str("keyboard.connected")
+                                                     : lobbyUi.str("keyboard.notConnected"))
+                                            font.pointSize: lobby.rowPointSize
                                             font.family: "Noto Sans"
-                                            color: "black"
+                                            color: lobby.textColor
                                             width: parent.width
                                             wrapMode: Text.WordWrap
                                         }
                                         Text {
-                                            text: "Pair the keyboard to your phone, then open the address below (or scan the code). Typing is forwarded over Wi-Fi."
-                                            font.pointSize: 11
+                                            text: lobbyUi.str("keyboard.btBody")
+                                            font.pointSize: lobby.labelPointSize
                                             font.family: "Noto Sans"
-                                            color: "black"
+                                            color: lobby.textColor
                                             width: parent.width
                                             wrapMode: Text.WordWrap
                                         }
@@ -57,17 +60,17 @@
                                             text: root.lobbyPhoneUrl()
                                             font.pointSize: 13
                                             font.family: "Noto Mono"
-                                            color: "black"
+                                            color: lobby.textColor
                                             width: parent.width
                                             wrapMode: Text.WrapAnywhere
                                             horizontalAlignment: Text.AlignHCenter
                                         }
                                         Text {
                                             visible: lobbyPIN !== ""
-                                            text: "PIN: " + lobbyPIN
-                                            font.pointSize: 12
+                                            text: lobbyUi.str("keyboard.pinPrefix") + lobbyPIN
+                                            font.pointSize: lobby.sectionPointSize
                                             font.family: "Noto Sans"
-                                            color: "black"
+                                            color: lobby.textColor
                                             width: parent.width
                                             horizontalAlignment: Text.AlignHCenter
                                         }
@@ -87,10 +90,10 @@
                                 Rectangle {
                                     width: parent.width
                                     height: usbKbInner.height + 24
-                                    color: "white"
+                                    color: lobby.dialogBg
                                     border.color: lobby.borderColor
                                     border.width: lobbyUsbKeyboard ? lobby.btnBorderSelected : lobby.btnBorder
-                                    radius: 6
+                                    radius: lobby.btnRadius
                                     Column {
                                         id: usbKbInner
                                         anchors.left: parent.left
@@ -99,26 +102,29 @@
                                         anchors.margins: 12
                                         spacing: 10
                                         Text {
-                                            text: "USB keyboard" + (lobbyUsbKeyboard ? " (connected)" : " (not connected)")
-                                            font.pointSize: 14
+                                            text: lobbyUi.str("keyboard.usbTitle")
+                                                  + (lobbyUsbKeyboard
+                                                     ? lobbyUi.str("keyboard.connected")
+                                                     : lobbyUi.str("keyboard.notConnected"))
+                                            font.pointSize: lobby.rowPointSize
                                             font.family: "Noto Sans"
-                                            color: "black"
+                                            color: lobby.textColor
                                             width: parent.width
                                             wrapMode: Text.WordWrap
                                         }
                                         Text {
-                                            text: "Connect with a USB OTG cable.\nChanging layout restarts Writerdeck."
-                                            font.pointSize: 11
+                                            text: lobbyUi.str("keyboard.usbBody")
+                                            font.pointSize: lobby.labelPointSize
                                             font.family: "Noto Sans"
-                                            color: "black"
+                                            color: lobby.textColor
                                             width: parent.width
                                             wrapMode: Text.WordWrap
                                         }
                                         Text {
-                                            text: "Layout"
-                                            font.pointSize: 12
+                                            text: lobbyUi.str("keyboard.layout")
+                                            font.pointSize: lobby.sectionPointSize
                                             font.family: "Noto Sans"
-                                            color: "black"
+                                            color: lobby.textColor
                                             width: parent.width
                                         }
                                         Row {
@@ -127,20 +133,20 @@
                                             spacing: lobby.tabSpacing
                                             Repeater {
                                                 model: [
-                                                    { id: "us", label: "US QWERTY", action: "keyboard.us" },
-                                                    { id: "no", label: "Norwegian", action: "keyboard.no" }
+                                                    { id: "us", labelKey: "keyboard.us", action: "keyboard.us" },
+                                                    { id: "no", labelKey: "keyboard.no", action: "keyboard.no" }
                                                 ]
                                                 delegate: Rectangle {
                                                     width: (kbLayoutRow.width - lobby.tabSpacing) / 2
                                                     height: lobby.actionBtnHeight
-                                                    radius: 6
+                                                    radius: lobby.btnRadius
                                                     property bool selected: lobbyKeyboardLayout === modelData.id
-                                                    color: selected ? "#e8e8e8" : "#f0f0f0"
+                                                    color: selected ? lobby.btnFillSelected : lobby.btnFill
                                                     border.color: lobby.borderColor
                                                     border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
                                                     Loader {
                                                         anchors.fill: parent
-                                                        property string labelText: modelData.label
+                                                        property string labelText: lobbyUi.str(modelData.labelKey)
                                                         property string shortcutKey: lobbyUi.shortcutBadge(modelData.action)
                                                         property int pointSize: lobby.labelPointSize
                                                         sourceComponent: lobbyBtnLabelComp

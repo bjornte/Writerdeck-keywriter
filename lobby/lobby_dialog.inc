@@ -3,26 +3,26 @@
         Rectangle {
             id: lobbyDialogScrim
             anchors.fill: parent
-            color: "#dddddd"
+            color: lobby.dialogScrim
             visible: root.lobbyDialogIsOpen()
             z: 24
 
             Rectangle {
                 id: lobbyDialogBox
                 anchors.centerIn: parent
-                width: Math.min(parent.width * 0.85, parent.width - 48)
-                height: lobbyDialogCol.height + 48
-                color: "white"
+                width: Math.min(parent.width * lobby.dialogWidthFraction, parent.width - lobby.dialogPadding)
+                height: lobbyDialogCol.height + lobby.dialogPadding
+                color: lobby.dialogBg
                 border.color: lobby.borderColor
                 border.width: lobby.btnBorderSelected
-                radius: 8
+                radius: lobby.dialogRadius
 
                 Column {
                     id: lobbyDialogCol
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.top: parent.top
                     anchors.topMargin: 24
-                    width: parent.width - 48
+                    width: parent.width - lobby.dialogPadding
                     spacing: 16
 
                     Text {
@@ -30,8 +30,8 @@
                         horizontalAlignment: Text.AlignHCenter
                         wrapMode: Text.WordWrap
                         font.family: "Noto Sans"
-                        font.pointSize: 16
-                        color: "black"
+                        font.pointSize: lobby.dialogTitlePointSize
+                        color: lobby.textColor
                         text: root.lobbyDialogTitle()
                     }
 
@@ -44,7 +44,7 @@
                         elide: Text.ElideMiddle
                         font.family: "Noto Sans"
                         font.pointSize: 13
-                        color: "black"
+                        color: lobby.textColor
                         text: root.lobbyDialogSelectedNoteLabel()
                     }
 
@@ -59,7 +59,7 @@
                         wrapMode: Text.WrapAnywhere
                         font.family: "Noto Mono"
                         font.pointSize: 14
-                        color: "black"
+                        color: lobby.textColor
                         text: root.lobbyFilesInputDisplay()
                     }
 
@@ -74,7 +74,7 @@
                         wrapMode: Text.WordWrap
                         font.family: "Noto Sans"
                         font.pointSize: 12
-                        color: "black"
+                        color: lobby.textColor
                         text: lobbyFilesInputError
                     }
 
@@ -86,7 +86,7 @@
                         wrapMode: Text.WordWrap
                         font.family: "Noto Sans"
                         font.pointSize: 12
-                        color: "black"
+                        color: lobby.textColor
                         text: lobbyUi.str("dialog.noKeyboardBody")
                     }
 
@@ -97,7 +97,7 @@
                         wrapMode: Text.WordWrap
                         font.family: "Noto Mono"
                         font.pointSize: 13
-                        color: "black"
+                        color: lobby.textColor
                         text: root.lobbyPhoneUrl()
                     }
 
@@ -108,8 +108,8 @@
                         wrapMode: Text.WordWrap
                         font.family: "Noto Sans"
                         font.pointSize: 12
-                        color: "black"
-                        text: "PIN: " + lobbyPIN
+                        color: lobby.textColor
+                        text: lobbyUi.str("dialog.pinPrefix") + lobbyPIN
                     }
 
                     Image {
@@ -131,8 +131,8 @@
                         Rectangle {
                             width: (parent.width - lobby.tabSpacing) / 2
                             height: lobby.actionBtnHeight
-                            radius: 6
-                            color: "white"
+                            radius: lobby.btnRadius
+                            color: lobby.btnFill
                             border.color: lobby.borderColor
                             border.width: lobby.btnBorder
                             Text {
@@ -140,7 +140,7 @@
                                 text: lobbyUi.str("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
-                                color: "black"
+                                color: lobby.textColor
                             }
                             MouseArea {
                                 anchors.fill: parent
@@ -153,8 +153,8 @@
                         Rectangle {
                             width: (parent.width - lobby.tabSpacing) / 2
                             height: lobby.actionBtnHeight
-                            radius: 6
-                            color: "white"
+                            radius: lobby.btnRadius
+                            color: lobby.btnFill
                             border.color: lobby.borderColor
                             border.width: lobby.btnBorderSelected
                             Text {
@@ -162,7 +162,7 @@
                                 text: lobbyUi.str("dialog.delete")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
-                                color: "black"
+                                color: lobby.textColor
                             }
                             MouseArea {
                                 anchors.fill: parent
@@ -185,8 +185,8 @@
                         Rectangle {
                             width: (parent.width - lobby.tabSpacing) / 2
                             height: lobby.actionBtnHeight
-                            radius: 6
-                            color: "white"
+                            radius: lobby.btnRadius
+                            color: lobby.btnFill
                             border.color: lobby.borderColor
                             border.width: lobby.btnBorder
                             Text {
@@ -194,7 +194,7 @@
                                 text: lobbyUi.str("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
-                                color: "black"
+                                color: lobby.textColor
                             }
                             MouseArea {
                                 anchors.fill: parent
@@ -212,8 +212,8 @@
                         Rectangle {
                             width: (parent.width - lobby.tabSpacing) / 2
                             height: lobby.actionBtnHeight
-                            radius: 6
-                            color: "white"
+                            radius: lobby.btnRadius
+                            color: lobby.btnFill
                             border.color: lobby.borderColor
                             border.width: lobby.btnBorderSelected
                             Text {
@@ -223,7 +223,7 @@
                                       : lobbyUi.str("dialog.create")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
-                                color: "black"
+                                color: lobby.textColor
                             }
                             MouseArea {
                                 anchors.fill: parent
@@ -243,8 +243,8 @@
                         Rectangle {
                             width: parent.width
                             height: lobby.actionBtnHeight
-                            radius: 6
-                            color: "white"
+                            radius: lobby.btnRadius
+                            color: lobby.btnFill
                             border.color: lobby.borderColor
                             border.width: lobby.btnBorder
                             Text {
@@ -252,7 +252,7 @@
                                 text: lobbyUi.str("dialog.cancel")
                                 font.family: "Noto Sans"
                                 font.pointSize: 12
-                                color: "black"
+                                color: lobby.textColor
                             }
                             MouseArea {
                                 anchors.fill: parent

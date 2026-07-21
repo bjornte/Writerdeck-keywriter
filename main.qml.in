@@ -38,8 +38,19 @@ Window {
     property string lobbyPinDigits: "6"
     property string lobbySettingsMode: ""
     property int lobbyPage: 0
-    property var lobbyTabLabels: ["Files", "Keyboard", "Sync", "Settings", "Shortcuts", "About"]
     property var lobbyTabShortcutIds: ["tabs.files", "tabs.keyboard", "tabs.sync", "tabs.settings", "tabs.shortcuts", "tabs.about"]
+    // Depends on lobbyUi.revision so language / pack reloads refresh tab titles.
+    property var lobbyTabLabels: {
+        var _ = lobbyUi.revision
+        return [
+            lobbyUi.str("tabs.files"),
+            lobbyUi.str("tabs.keyboard"),
+            lobbyUi.str("tabs.sync"),
+            lobbyUi.str("tabs.settings"),
+            lobbyUi.str("tabs.shortcuts"),
+            lobbyUi.str("tabs.about")
+        ]
+    }
     property string lobbyVersionText: ""
     property int lobbyFilesIndex: 0
     // How many note rows fit on one Files page (set from list height; e-ink pages, no flick).
@@ -182,13 +193,13 @@ Window {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 423) {
                     vaultPendingLoad = name
-                    vaultBeginPIN("Enter PIN to open this document", true)
+                    vaultBeginPIN(lobbyUi.str("vault.open"), true)
                     return
                 }
                 if (xhr.status !== 200) {
-                    var errMsg = "Could not open document"
+                    var errMsg = lobbyUi.str("files.openFailed")
                     if (xhr.status === 500 && name.indexOf(".md.enc") >= 0)
-                        errMsg = "Cannot decrypt: wrong vault key or corrupted file"
+                        errMsg = lobbyUi.str("files.decryptCorrupt")
                     vaultOpFailed(errMsg)
                     return
                 }
@@ -235,7 +246,7 @@ Window {
     function saveAndLoad(name) {
         if (name && name.indexOf(".md.enc") >= 0 && currentFile !== name) {
             vaultPendingLoad = name
-            vaultBeginPIN("Enter PIN to edit encrypted document", true)
+            vaultBeginPIN(lobbyUi.str("vault.edit"), true)
             return
         }
         var wasLobby = isLobby
@@ -360,13 +371,13 @@ Window {
         if (vaultPendingAction !== "" || vaultPendingLoad !== "") {
             vaultOverlayMode = "pin"
             vaultPinInput = ""
-            vaultOverlayReason = msg || "Wrong PIN. Try again."
+            vaultOverlayReason = msg || lobbyUi.str("vault.wrongPin")
             lobbyKeepFocus()
             return
         }
         // Create/rename failures belong in the name dialog, not the Files header.
         if (lobbyFilesMode === "new" || lobbyFilesMode === "rename" || lobbyFilesMode === "new-encrypted") {
-            lobbyFilesInputError = msg || "Operation failed"
+            lobbyFilesInputError = msg || lobbyUi.str("files.operationFailed")
             lobbyKeepFocus()
             return
         }
@@ -380,12 +391,12 @@ Window {
             lobbyFilesMode = mode
             lobbyFilesInput = input
             lobbyFilesInputPos = input.length
-            lobbyFilesInputError = msg || "Operation failed"
+            lobbyFilesInputError = msg || lobbyUi.str("files.operationFailed")
             lobbyKeepFocus()
             return
         }
         lobbyGoPage(0)
-        lobbyVaultError = msg || "Operation failed"
+        lobbyVaultError = msg || lobbyUi.str("files.operationFailed")
     }
 
     function vaultOnPINAccepted() {
@@ -475,7 +486,7 @@ Window {
 
     // About tab: one product stamp from server + editor, then compare to GitHub.
     function lobbyRefreshVersion() {
-        lobbyVersionText = "Writerdeck version \u2026 (checking GitHub for updates\u2026)"
+        lobbyVersionText = lobbyUi.str("home.versionChecking")
         var ed = "unknown"
         try {
             if (writerdeck && writerdeck.productVersion)
@@ -495,7 +506,7 @@ Window {
                     }
                 } catch (e2) {}
             }
-            lobbyVersionText = "Writerdeck version unknown"
+            lobbyVersionText = lobbyUi.str("home.versionUnknown")
                     + " (couldn't reach GitHub to check for updates)"
         }
         chk.send()
@@ -593,7 +604,7 @@ Window {
         if (!row || row.name === "") return
         if (row.encrypted) {
             vaultPendingLoad = row.name
-            vaultBeginPIN("Enter PIN to edit encrypted document", true); return }
+            vaultBeginPIN(lobbyUi.str("vault.edit"), true); return }
         saveAndLoad(row.name)
     }
 
@@ -614,7 +625,7 @@ Window {
         if (row.encrypted) {
             vaultPendingLoad = row.name
             lobbyOpenInReadMode = true
-            vaultBeginPIN("Enter PIN to read encrypted document", true); return }
+            vaultBeginPIN(lobbyUi.str("vault.read"), true); return }
         isLobby = false
         if (mode == 1) doc = query.text
         saveFile()
@@ -665,7 +676,7 @@ Window {
     function lobbyFilesBeginDownload() {
         if (lobbyNotesModel.count === 0) return
         if (!lobbyPhoneConnected) {
-            lobbyVaultError = "Open the phone page, then try Download again."
+            lobbyVaultError = lobbyUi.str("files.downloadNeedPhone")
             return
         }
         lobbyVaultError = ""
@@ -706,7 +717,7 @@ Window {
             var newTarget = lobbyFilesNormalizedName(name, false)
             if (lobbyFilesNameTaken(newTarget, "")) {
                 lobbyOpenAfterCreate = ""
-                lobbyFilesInputError = "A document with that name already exists."
+                lobbyFilesInputError = lobbyUi.str("files.nameExists")
                 return
             }
             lobbyFilesInputError = ""
@@ -724,7 +735,7 @@ Window {
             else newName = lobbyFilesNormalizedName(name, false)
             if (newName !== oldName && lobbyFilesNameTaken(newName, oldName)) {
                 lobbyOpenAfterCreate = ""
-                lobbyFilesInputError = "A document with that name already exists."
+                lobbyFilesInputError = lobbyUi.str("files.nameExists")
                 return
             }
             lobbyFilesInputError = ""
@@ -738,7 +749,7 @@ Window {
             var encTarget = lobbyFilesNormalizedName(name, true)
             if (lobbyFilesNameTaken(encTarget, "")) {
                 lobbyOpenAfterCreate = ""
-                lobbyFilesInputError = "A document with that name already exists."
+                lobbyFilesInputError = lobbyUi.str("files.nameExists")
                 return
             }
             lobbyFilesInputError = ""
@@ -755,7 +766,7 @@ Window {
     function lobbyFilesBeginNewEncrypted(fromKey) {
         if (!fromKey && !lobbyEnsureKeyboard("new-encrypted")) return
         vaultPendingAction = "new-encrypted"
-        vaultBeginPIN("Enter PIN to create encrypted document", false)
+        vaultBeginPIN(lobbyUi.str("vault.create"), false)
     }
 
     function lobbyEncryptSelected() {
@@ -764,7 +775,7 @@ Window {
         if (!row || row.encrypted) return
         vaultPendingNote = row.name
         vaultPendingAction = "encrypt"
-        vaultBeginPIN("Enter PIN to encrypt document", false)
+        vaultBeginPIN(lobbyUi.str("vault.encrypt"), false)
     }
 
     function lobbyDecryptSelected() {
@@ -773,7 +784,7 @@ Window {
         if (!row || !row.encrypted) return
         vaultPendingNote = row.name
         vaultPendingAction = "decrypt"
-        vaultBeginPIN("Enter PIN to decrypt document", false)
+        vaultBeginPIN(lobbyUi.str("vault.decrypt"), false)
     }
 
     function vaultBeginSetup() {
@@ -799,8 +810,8 @@ Window {
     }
 
     function requestVaultPIN(reason, name) {
-        var msg = "Phone download: " + (name || "encrypted document")
-        if (reason === "download") msg = "Enter PIN on tablet to allow phone download"
+        var msg = lobbyUi.strf("vault.downloadTitle", name || lobbyUi.str("vault.downloadFallbackName"))
+        if (reason === "download") msg = lobbyUi.str("vault.download")
         if (name) vaultPendingLoad = name
         vaultBeginPIN(msg, false)
     }

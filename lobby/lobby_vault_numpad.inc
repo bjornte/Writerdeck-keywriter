@@ -1,7 +1,7 @@
         Rectangle {
             id: vaultOverlay
             anchors.fill: parent
-            color: "#f8f8f8"
+            color: lobby.vaultWash
             visible: vaultOverlayMode !== ""
             z: 25
 
@@ -15,15 +15,15 @@
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WordWrap
                     font.family: "Noto Sans"
-                    font.pointSize: 14
-                    color: "black"
-                    text: vaultOverlayMode === "setup" ? "Choose a 6-digit private PIN"
-                        : vaultOverlayMode === "confirm" ? "Confirm private PIN"
-                        : vaultOverlayMode === "change-old" ? "Enter current private PIN"
-                        : vaultOverlayMode === "change-new" ? "Enter new private PIN"
-                        : vaultOverlayMode === "change-confirm" ? "Confirm new private PIN"
+                    font.pointSize: lobby.rowPointSize
+                    color: lobby.textColor
+                    text: vaultOverlayMode === "setup" ? lobbyUi.str("vault.setup")
+                        : vaultOverlayMode === "confirm" ? lobbyUi.str("vault.confirm")
+                        : vaultOverlayMode === "change-old" ? lobbyUi.str("vault.changeOld")
+                        : vaultOverlayMode === "change-new" ? lobbyUi.str("vault.changeNew")
+                        : vaultOverlayMode === "change-confirm" ? lobbyUi.str("vault.changeConfirm")
                         : vaultOverlayReason !== "" ? vaultOverlayReason
-                        : "Enter private PIN"
+                        : lobbyUi.str("vault.enter")
                 }
 
                 Text {
@@ -31,7 +31,7 @@
                     horizontalAlignment: Text.AlignHCenter
                     font.family: "Noto Mono"
                     font.pointSize: 18
-                    color: "black"
+                    color: lobby.textColor
                     text: vaultPinDisplay()
                 }
 
@@ -47,15 +47,16 @@
                         delegate: Rectangle {
                             width: (vaultPad.width - 16) / 3
                             height: lobby.actionBtnHeight
-                            radius: 6
-                            color: modelData === "" ? "transparent" : "#f0f0f0"
-                            border.color: modelData === "" ? "transparent" : "black"
+                            radius: lobby.btnRadius
+                            color: modelData === "" ? "transparent" : lobby.btnFill
+                            border.color: modelData === "" ? "transparent" : lobby.borderColor
                             border.width: modelData === "" ? 0 : lobby.btnBorder
                             Text {
                                 anchors.centerIn: parent
-                                text: modelData
+                                text: modelData === "Bksp" ? lobbyUi.str("vault.bksp") : modelData
                                 font.family: "Noto Sans"
-                                font.pointSize: 12
+                                font.pointSize: lobby.sectionPointSize
+                                color: lobby.textColor
                             }
                             MouseArea {
                                 anchors.fill: parent
@@ -72,15 +73,16 @@
                 Rectangle {
                     width: parent.width
                     height: lobby.actionBtnHeight
-                    radius: 6
-                    color: "#f0f0f0"
-                    border.color: "black"
+                    radius: lobby.btnRadius
+                    color: lobby.btnFill
+                    border.color: lobby.borderColor
                     border.width: lobby.btnBorder
                     Text {
                         anchors.centerIn: parent
-                        text: "Cancel"
+                        text: lobbyUi.str("dialog.cancel")
                         font.family: "Noto Sans"
-                        font.pointSize: 12
+                        font.pointSize: lobby.sectionPointSize
+                        color: lobby.textColor
                     }
                     MouseArea {
                         anchors.fill: parent

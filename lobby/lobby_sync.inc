@@ -15,10 +15,10 @@
                                 width: parent.width
                                 spacing: lobby.contentSpacing
                                 Text {
-                                    text: "GitHub sync"
-                                    font.pointSize: 14
+                                    text: lobbyUi.str("sync.title")
+                                    font.pointSize: lobby.rowPointSize
                                     font.family: "Noto Sans"
-                                    color: "black"
+                                    color: lobby.textColor
                                     width: parent.width
                                 }
                                 Text {
@@ -26,12 +26,12 @@
                                         && !(lobbySyncOn && lobbySyncRepo !== "" && lobbySyncReady && lobbySyncError !== "")
                                     text: lobbySyncOn && lobbySyncRepo !== ""
                                         ? (lobbyLastSync !== ""
-                                            ? "Last sync was " + lobbyLastSync + ".\nDocuments sync to github.com/" + lobbySyncRepo
-                                            : "Documents sync to github.com/" + lobbySyncRepo)
-                                        : ("Sync not configured.\nSet up in phone Sync setup:\nhttp://" + lobbyIP + ":" + lobbyPort)
-                                    font.pointSize: 11
+                                            ? lobbyUi.strf("sync.lastSync", lobbyLastSync, lobbySyncRepo)
+                                            : lobbyUi.strf("sync.syncingTo", lobbySyncRepo))
+                                        : lobbyUi.strf("sync.notConfigured", lobbyIP, "" + lobbyPort)
+                                    font.pointSize: lobby.labelPointSize
                                     font.family: "Noto Sans"
-                                    color: "black"
+                                    color: lobby.textColor
                                     width: parent.width
                                     wrapMode: Text.WordWrap
                                 }
@@ -39,28 +39,28 @@
                                     visible: lobbySyncOn && lobbySyncRepo !== "" && lobbySyncReady && lobbySyncError !== ""
                                     width: parent.width
                                     height: syncErrCol.height + 20
-                                    color: "white"
+                                    color: lobby.dialogBg
                                     border.color: lobby.borderColor
                                     border.width: lobby.btnBorder
-                                    radius: 4
+                                    radius: lobby.bannerRadius
                                     Column {
                                         id: syncErrCol
                                         anchors.centerIn: parent
                                         width: parent.width - 20
                                         spacing: 10
                                         Text {
-                                            text: !lobbyWifi ? "SYNC OFFLINE" : "SYNC FAILED"
-                                            font.pointSize: 16
+                                            text: !lobbyWifi ? lobbyUi.str("sync.offline") : lobbyUi.str("sync.failed")
+                                            font.pointSize: lobby.bannerPointSize
                                             font.bold: true
                                             font.family: "Noto Sans"
-                                            color: "black"
+                                            color: lobby.textColor
                                             width: parent.width
                                         }
                                         Text {
                                             text: lobbySyncError
                                             font.pointSize: 13
                                             font.family: "Noto Sans"
-                                            color: "black"
+                                            color: lobby.textColor
                                             width: parent.width
                                             wrapMode: Text.WordWrap
                                             lineHeight: 1.25
@@ -71,28 +71,28 @@
                                     visible: lobbySyncOn && lobbySyncRepo !== "" && !lobbySyncReady
                                     width: parent.width
                                     height: tokenWarnCol.height + 20
-                                    color: "white"
+                                    color: lobby.dialogBg
                                     border.color: lobby.borderColor
                                     border.width: lobby.btnBorder
-                                    radius: 4
+                                    radius: lobby.bannerRadius
                                     Column {
                                         id: tokenWarnCol
                                         anchors.centerIn: parent
                                         width: parent.width - 20
                                         spacing: 10
                                         Text {
-                                            text: "TOKEN NEEDED"
-                                            font.pointSize: 16
+                                            text: lobbyUi.str("sync.tokenNeeded")
+                                            font.pointSize: lobby.bannerPointSize
                                             font.bold: true
                                             font.family: "Noto Sans"
-                                            color: "black"
+                                            color: lobby.textColor
                                             width: parent.width
                                         }
                                         Text {
-                                            text: "GitHub token is not on the tablet.\nOpen phone Sync setup and tap Save:\nhttp://" + lobbyIP + ":" + lobbyPort + "\nRepo: github.com/" + lobbySyncRepo
+                                            text: lobbyUi.strf("sync.tokenBody", lobbyIP, "" + lobbyPort, lobbySyncRepo)
                                             font.pointSize: 13
                                             font.family: "Noto Sans"
-                                            color: "black"
+                                            color: lobby.textColor
                                             width: parent.width
                                             wrapMode: Text.WordWrap
                                             lineHeight: 1.25
@@ -103,19 +103,19 @@
                                     visible: lobbySyncOn && lobbySyncRepo !== ""
                                     width: parent.width
                                     height: lobby.actionBtnHeight
-                                    radius: 6
-                                    color: (lobbySyncReady && !lobbySyncing) ? "#f0f0f0" : "white"
+                                    radius: lobby.btnRadius
+                                    color: (lobbySyncReady && !lobbySyncing) ? lobby.btnFill : lobby.dialogBg
                                     border.color: lobby.borderColor
                                     border.width: lobbySyncReady ? lobby.btnBorder : lobby.btnBorderSelected
                                     Loader {
                                         anchors.fill: parent
-                                        property string labelText: !lobbySyncReady ? "Token needed — phone Sync setup"
-                                            : (lobbySyncing ? "Syncing…" : "Sync now")
+                                        property string labelText: !lobbySyncReady ? lobbyUi.str("sync.tokenBtn")
+                                            : (lobbySyncing ? lobbyUi.str("sync.syncing") : lobbyUi.str("sync.now"))
                                         property string shortcutKey: (lobbySyncReady && !lobbySyncing)
                                             ? lobbyUi.shortcutBadge("sync.now") : ""
                                         property int pointSize: !lobbySyncReady ? 14 : 12
                                         property bool labelBold: !lobbySyncReady
-                                        property color labelColor: "black"
+                                        property color labelColor: lobby.textColor
                                         sourceComponent: lobbyBtnLabelComp
                                     }
                                     MouseArea {
@@ -128,8 +128,8 @@
                                     }
                                 }
                                 Text {
-                                    text: "Sync also runs automatically on save, Home, and every few minutes."
-                                    font.pointSize: 10
+                                    text: lobbyUi.str("sync.footnote")
+                                    font.pointSize: lobby.helpPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor
                                     width: parent.width

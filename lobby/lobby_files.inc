@@ -22,10 +22,10 @@
                                 anchors.right: parent.right
                                 visible: lobbyVaultError !== "" && lobbyFilesMode === ""
                                 height: lobbyFilesFeedbackCol.height + 24
-                                color: "white"
+                                color: lobby.dialogBg
                                 border.color: lobby.borderColor
                                 border.width: lobby.btnBorder
-                                radius: 8
+                                radius: lobby.dialogRadius
                                 clip: true
 
                                 Column {
@@ -43,7 +43,7 @@
                                         wrapMode: Text.WordWrap
                                         font.family: "Noto Sans"
                                         font.pointSize: 13
-                                        color: "black"
+                                        color: lobby.textColor
                                         text: lobbyVaultError
                                     }
 
@@ -51,8 +51,8 @@
                                         width: parent.width
                                         horizontalAlignment: Text.AlignHCenter
                                         font.family: "Noto Sans"
-                                        font.pointSize: 11
-                                        color: "black"
+                                        font.pointSize: lobby.labelPointSize
+                                        color: lobby.textColor
                                         text: lobbyUi.str("files.tapDismiss")
                                     }
                                 }
@@ -80,7 +80,7 @@
                             Row {
                                 id: lobbyFilesPageStrip
                                 width: parent.width
-                                height: visible ? 48 : 0
+                                height: visible ? lobby.pageStripHeight : 0
                                 spacing: lobby.tabSpacing
                                 visible: lobbyFilesMode === "" && lobbyNotesModel.count > lobbyFilesPageSize
 
@@ -89,18 +89,18 @@
 
                                 Rectangle {
                                     width: (lobbyFilesPageStrip.width - lobby.tabSpacing * 2) / 4
-                                    height: 48
-                                    radius: 6
-                                    color: "#f0f0f0"
+                                    height: lobby.pageStripHeight
+                                    radius: lobby.btnRadius
+                                    color: lobby.btnFill
                                     border.color: lobby.borderColor
                                     border.width: lobby.btnBorder
                                     opacity: lobbyFilesPageStrip.canPrev ? 1 : 0.45
                                     Text {
                                         anchors.centerIn: parent
-                                        text: "Prev"
+                                        text: lobbyUi.str("files.prev")
                                         font.family: "Noto Sans"
-                                        font.pointSize: 11
-                                        color: "black"
+                                        font.pointSize: lobby.labelPointSize
+                                        color: lobby.textColor
                                     }
                                     MouseArea {
                                         anchors.fill: parent
@@ -114,30 +114,31 @@
                                 }
                                 Item {
                                     width: (lobbyFilesPageStrip.width - lobby.tabSpacing * 2) / 2
-                                    height: 48
+                                    height: lobby.pageStripHeight
                                     Text {
                                         anchors.centerIn: parent
-                                        text: "Page " + (root.lobbyFilesPageIndex() + 1)
-                                              + "/" + root.lobbyFilesPageCount()
+                                        text: lobbyUi.strf("files.page",
+                                                           "" + (root.lobbyFilesPageIndex() + 1),
+                                                           "" + root.lobbyFilesPageCount())
                                         font.family: "Noto Sans"
-                                        font.pointSize: 11
-                                        color: "black"
+                                        font.pointSize: lobby.labelPointSize
+                                        color: lobby.textColor
                                     }
                                 }
                                 Rectangle {
                                     width: (lobbyFilesPageStrip.width - lobby.tabSpacing * 2) / 4
-                                    height: 48
-                                    radius: 6
-                                    color: "#f0f0f0"
+                                    height: lobby.pageStripHeight
+                                    radius: lobby.btnRadius
+                                    color: lobby.btnFill
                                     border.color: lobby.borderColor
                                     border.width: lobby.btnBorder
                                     opacity: lobbyFilesPageStrip.canNext ? 1 : 0.45
                                     Text {
                                         anchors.centerIn: parent
-                                        text: "Next"
+                                        text: lobbyUi.str("files.next")
                                         font.family: "Noto Sans"
-                                        font.pointSize: 11
-                                        color: "black"
+                                        font.pointSize: lobby.labelPointSize
+                                        color: lobby.textColor
                                     }
                                     MouseArea {
                                         anchors.fill: parent
@@ -156,7 +157,7 @@
                                 id: lobbyFilesPageSep
                                 width: parent.width
                                 height: visible ? 1 : 0
-                                color: "black"
+                                color: lobby.borderColor
                                 visible: lobbyFilesPageStrip.visible
                             }
 
@@ -169,23 +170,23 @@
 
                                 Repeater {
                                     model: [
-                                        { label: "New", action: "files.new" },
-                                        { label: "Edit", action: "files.edit" },
-                                        { label: "Read", action: "files.read" },
-                                        { label: "Rename", action: "files.rename" },
-                                        { label: "Delete", action: "files.delete" },
-                                        { label: "Download", action: "files.download" }
+                                        { action: "files.new" },
+                                        { action: "files.edit" },
+                                        { action: "files.read" },
+                                        { action: "files.rename" },
+                                        { action: "files.delete" },
+                                        { action: "files.download" }
                                     ]
                                     delegate: Rectangle {
                                         width: (lobbyFilesBar.width - lobby.tabSpacing * 5) / 6
                                         height: lobby.actionBtnHeight
-                                        radius: 6
-                                        color: "#f0f0f0"
+                                        radius: lobby.btnRadius
+                                        color: lobby.btnFill
                                         border.color: lobby.borderColor
                                         border.width: lobby.btnBorder
                                         Loader {
                                             anchors.fill: parent
-                                            property string labelText: modelData.label
+                                            property string labelText: lobbyUi.str(modelData.action)
                                             property string shortcutKey: lobbyUi.shortcutBadge(modelData.action)
                                             property int pointSize: 10
                                             sourceComponent: lobbyBtnLabelComp
@@ -193,12 +194,12 @@
                                         MouseArea {
                                             anchors.fill: parent
                                             onClicked: {
-                                                if (modelData.label === "New") root.lobbyFilesBeginNew()
-                                                else if (modelData.label === "Edit") root.lobbyOpenSelected()
-                                                else if (modelData.label === "Read") root.lobbyReadSelected()
-                                                else if (modelData.label === "Rename") root.lobbyFilesBeginRename()
-                                                else if (modelData.label === "Delete") root.lobbyFilesBeginDelete()
-                                                else if (modelData.label === "Download") root.lobbyFilesBeginDownload()
+                                                if (modelData.action === "files.new") root.lobbyFilesBeginNew()
+                                                else if (modelData.action === "files.edit") root.lobbyOpenSelected()
+                                                else if (modelData.action === "files.read") root.lobbyReadSelected()
+                                                else if (modelData.action === "files.rename") root.lobbyFilesBeginRename()
+                                                else if (modelData.action === "files.delete") root.lobbyFilesBeginDelete()
+                                                else if (modelData.action === "files.download") root.lobbyFilesBeginDownload()
                                                 root.lobbyKeepFocus()
                                             }
                                         }
@@ -225,17 +226,17 @@
                                     visible: !lobbyFilesVaultBar.selectedEncrypted
                                     width: (lobbyFilesVaultBar.width - lobby.tabSpacing) / 2
                                     height: lobby.actionBtnHeight
-                                    radius: 6
-                                    color: "#f0f0f0"
-                                        border.color: lobby.borderColor
-                                        border.width: lobby.btnBorder
-                                        Loader {
-                                            anchors.fill: parent
-                                            property string labelText: "Encrypt"
-                                            property string shortcutKey: lobbyUi.shortcutBadge("files.encrypt")
-                                            property int pointSize: lobby.labelPointSize
-                                            sourceComponent: lobbyBtnLabelComp
-                                        }
+                                    radius: lobby.btnRadius
+                                    color: lobby.btnFill
+                                    border.color: lobby.borderColor
+                                    border.width: lobby.btnBorder
+                                    Loader {
+                                        anchors.fill: parent
+                                        property string labelText: lobbyUi.str("files.encrypt")
+                                        property string shortcutKey: lobbyUi.shortcutBadge("files.encrypt")
+                                        property int pointSize: lobby.labelPointSize
+                                        sourceComponent: lobbyBtnLabelComp
+                                    }
                                     MouseArea {
                                         anchors.fill: parent
                                         onClicked: {
@@ -248,17 +249,17 @@
                                     visible: !lobbyFilesVaultBar.selectedEncrypted
                                     width: (lobbyFilesVaultBar.width - lobby.tabSpacing) / 2
                                     height: lobby.actionBtnHeight
-                                    radius: 6
-                                    color: "#f0f0f0"
-                                        border.color: lobby.borderColor
-                                        border.width: lobby.btnBorder
-                                        Loader {
-                                            anchors.fill: parent
-                                            property string labelText: "New encrypted"
-                                            property string shortcutKey: lobbyUi.shortcutBadge("files.newEncrypted")
-                                            property int pointSize: lobby.labelPointSize
-                                            sourceComponent: lobbyBtnLabelComp
-                                        }
+                                    radius: lobby.btnRadius
+                                    color: lobby.btnFill
+                                    border.color: lobby.borderColor
+                                    border.width: lobby.btnBorder
+                                    Loader {
+                                        anchors.fill: parent
+                                        property string labelText: lobbyUi.str("files.newEncrypted")
+                                        property string shortcutKey: lobbyUi.shortcutBadge("files.newEncrypted")
+                                        property int pointSize: lobby.labelPointSize
+                                        sourceComponent: lobbyBtnLabelComp
+                                    }
                                     MouseArea {
                                         anchors.fill: parent
                                         onClicked: {
@@ -271,17 +272,17 @@
                                     visible: lobbyFilesVaultBar.selectedEncrypted
                                     width: lobbyFilesVaultBar.width
                                     height: lobby.actionBtnHeight
-                                    radius: 6
-                                    color: "#f0f0f0"
-                                        border.color: lobby.borderColor
-                                        border.width: lobby.btnBorder
-                                        Loader {
-                                            anchors.fill: parent
-                                            property string labelText: "Decrypt"
-                                            property string shortcutKey: lobbyUi.shortcutBadge("files.decrypt")
-                                            property int pointSize: lobby.labelPointSize
-                                            sourceComponent: lobbyBtnLabelComp
-                                        }
+                                    radius: lobby.btnRadius
+                                    color: lobby.btnFill
+                                    border.color: lobby.borderColor
+                                    border.width: lobby.btnBorder
+                                    Loader {
+                                        anchors.fill: parent
+                                        property string labelText: lobbyUi.str("files.decrypt")
+                                        property string shortcutKey: lobbyUi.shortcutBadge("files.decrypt")
+                                        property int pointSize: lobby.labelPointSize
+                                        sourceComponent: lobbyBtnLabelComp
+                                    }
                                     MouseArea {
                                         anchors.fill: parent
                                         onClicked: {
@@ -334,16 +335,19 @@
                                         property var noteRow: lobbyNotesModel.get(noteIndex)
                                         Text {
                                             anchors.left: parent.left
-                                            anchors.leftMargin: 8
+                                            anchors.leftMargin: lobby.listRowInset
                                             anchors.right: parent.right
-                                            anchors.rightMargin: 8
+                                            anchors.rightMargin: lobby.listRowInset
                                             anchors.verticalCenter: parent.verticalCenter
-                                            text: (noteIndex === lobbyFilesIndex ? "\u25B6  " : "   ")
+                                            text: (noteIndex === lobbyFilesIndex
+                                                   ? lobbyUi.str("files.marker")
+                                                   : lobbyUi.str("files.markerPad"))
                                                   + lobbyFilesStripSuffix(noteRow ? noteRow.name : "")
-                                                  + (noteRow && noteRow.encrypted ? " [private]" : "")
+                                                  + (noteRow && noteRow.encrypted
+                                                     ? lobbyUi.str("files.privateSuffix") : "")
                                             font.family: "Noto Sans"
-                                            font.pointSize: 14
-                                            color: "black"
+                                            font.pointSize: lobby.rowPointSize
+                                            color: lobby.textColor
                                             elide: Text.ElideRight
                                         }
                                         MouseArea {

@@ -15,33 +15,35 @@
                                 width: parent.width
                                 spacing: lobby.contentSpacing
                                 Text {
-                                    text: "Writerdeck"
-                                    color: "black"
-                                    font.pointSize: 26
+                                    text: lobbyUi.str("home.brand")
+                                    color: lobby.textColor
+                                    font.pointSize: lobby.titlePointSize
                                     font.family: "Noto Mono"
                                     width: parent.width
                                 }
                                 Text {
-                                    text: "A text editor for use with a physical keyboard.\nWith Markdown support."
-                                    color: "black"
-                                    font.pointSize: 12
+                                    text: lobbyUi.str("home.tagline")
+                                    color: lobby.textColor
+                                    font.pointSize: lobby.sectionPointSize
                                     font.family: "Noto Sans"
                                     width: parent.width
                                     wrapMode: Text.WordWrap
                                 }
                                 Text {
                                     text: lobbyVersionText !== "" ? lobbyVersionText
-                                          : "Writerdeck version \u2026 (checking GitHub for updates\u2026)"
-                                    color: "black"
-                                    font.pointSize: 11
+                                          : lobbyUi.str("home.versionChecking")
+                                    color: lobby.textColor
+                                    font.pointSize: lobby.labelPointSize
                                     font.family: "Noto Sans"
                                     width: parent.width
                                     wrapMode: Text.WordWrap
                                 }
                                 Text {
-                                    text: (lobbyNoteCount === 1 ? "1 document" : lobbyNoteCount + " documents") + " on this device."
-                                    color: "black"
-                                    font.pointSize: 11
+                                    text: lobbyNoteCount === 1
+                                          ? lobbyUi.str("home.docsOne")
+                                          : lobbyUi.strf("home.docsMany", "" + lobbyNoteCount)
+                                    color: lobby.textColor
+                                    font.pointSize: lobby.labelPointSize
                                     font.family: "Noto Sans"
                                     width: parent.width
                                     wrapMode: Text.WordWrap
@@ -49,14 +51,14 @@
                                 Text {
                                     text: lobbyUi.str("home.tip")
                                     color: lobby.textColor
-                                    font.pointSize: 10
+                                    font.pointSize: lobby.helpPointSize
                                     font.family: "Noto Sans"
                                     width: parent.width
                                     wrapMode: Text.WordWrap
                                 }
                                 Text {
-                                    text: "Open sourced at github.com/bjornte/Writerdeck-for-reMarkable"
-                                    color: "black"
+                                    text: lobbyUi.str("home.opensource")
+                                    color: lobby.textColor
                                     font.pointSize: 9
                                     font.family: "Noto Mono"
                                     width: parent.width
