@@ -30,6 +30,8 @@ Window {
     property string lobbySyncRepo: ""
     property int lobbyNoteCount: 0
     property string lobbyLastSync: ""
+    property int lobbyLastSyncAt: 0
+    property int lobbySyncPending: 0
     property bool lobbySyncReady: false
     property bool lobbySyncing: false
     property string lobbySyncError: ""
@@ -266,17 +268,51 @@ Window {
         Qt.quit()
     }
 
-    function setLobbyInfo(ip, pin, syncOn, syncRepo, noteCount, lastSync, syncReady, syncing, keyboardLayout, pinDigits) {
+    function setLobbyInfo(ip, pin, syncOn, syncRepo, noteCount, lastSync, syncReady, syncing, keyboardLayout, pinDigits, lastSyncAt, syncPending) {
         lobbyIP = ip
         lobbyPIN = pin
         lobbySyncOn = !!syncOn
         lobbySyncRepo = syncRepo || ""
         lobbyNoteCount = noteCount || 0
         lobbyLastSync = lastSync || ""
+        lobbyLastSyncAt = lastSyncAt || 0
+        lobbySyncPending = syncPending || 0
         lobbySyncReady = !!syncReady
         lobbySyncing = !!syncing
         lobbyKeyboardLayout = keyboardLayout || "us"
         lobbyPinDigits = pinDigits || "6"
+    }
+
+    // Relative sync time for Lobby (server still sends English lastSync for logs/compat).
+    function lobbyFormatSyncAgo(unix) {
+        if (!unix || unix <= 0) return ""
+        var sec = Math.floor(Date.now() / 1000) - unix
+        if (sec < 0) sec = 0
+        if (sec < 60) return lobbyUi.str("sync.agoJustNow")
+        if (sec < 3600) {
+            var m = Math.floor(sec / 60)
+            return m === 1 ? lobbyUi.str("sync.agoMinute") : lobbyUi.strf("sync.agoMinutes", "" + m)
+        }
+        if (sec < 86400) {
+            var h = Math.floor(sec / 3600)
+            return h === 1 ? lobbyUi.str("sync.agoHour") : lobbyUi.strf("sync.agoHours", "" + h)
+        }
+        var d = Math.floor(sec / 86400)
+        return d === 1 ? lobbyUi.str("sync.agoDay") : lobbyUi.strf("sync.agoDays", "" + d)
+    }
+
+    function lobbyLastSyncLabel() {
+        if (lobbySyncOn && lobbySyncRepo !== "" && !lobbySyncReady)
+            return ""
+        var ago = lobbyFormatSyncAgo(lobbyLastSyncAt)
+        if (lobbySyncPending > 0) {
+            var pend = lobbySyncPending === 1
+                ? lobbyUi.str("sync.pendingOne")
+                : lobbyUi.strf("sync.pendingMany", "" + lobbySyncPending)
+            if (ago === "") return pend
+            return lobbyUi.strf("sync.agoWithPending", ago, pend)
+        }
+        return ago
     }
 
     function setLobbyKeyboardPresence(phoneConnected, usbKeyboard, port, qrPath) {
@@ -460,8 +496,11 @@ Window {
         }
     }
 
-    function setLobbySyncStatus(syncError, wifi) {
-        lobbySyncError = syncError || ""
+    function setLobbySyncStatus(syncError, wifi, syncErrorKey) {
+        if (syncErrorKey === "noWifi")
+            lobbySyncError = lobbyUi.str("sync.errNoWifi")
+        else
+            lobbySyncError = syncError || ""
         lobbyWifi = !!wifi
     }
 
@@ -500,14 +539,28 @@ Window {
             if (chk.status === 200) {
                 try {
                     var k = JSON.parse(chk.responseText)
-                    if (k.message) {
+                    var ver = k.version || ""
+                    var latest = k.latest || ""
+                    if (k.status === "latest")
+                        lobbyVersionText = lobbyUi.strf("home.versionLatest", ver)
+                    else if (k.status === "outdated")
+                        lobbyVersionText = lobbyUi.strf("home.versionOutdated", ver, latest)
+                    else if (k.status === "ahead")
+                        lobbyVersionText = lobbyUi.strf("home.versionAhead", ver, latest)
+                    else if (k.status === "mismatchLatest")
+                        lobbyVersionText = lobbyUi.strf("home.versionMismatchLatest", ver, latest)
+                    else if (k.status === "mismatch")
+                        lobbyVersionText = lobbyUi.strf("home.versionMismatch", ver)
+                    else if (k.status === "offline")
+                        lobbyVersionText = lobbyUi.strf("home.versionOffline", ver)
+                    else if (k.message)
                         lobbyVersionText = k.message
-                        return
-                    }
+                    else
+                        lobbyVersionText = lobbyUi.str("home.versionUnknown")
+                    return
                 } catch (e2) {}
             }
             lobbyVersionText = lobbyUi.str("home.versionUnknown")
-                    + " (couldn't reach GitHub to check for updates)"
         }
         chk.send()
     }
@@ -3116,8 +3169,8 @@ Window {
                                     visible: !(lobbySyncOn && lobbySyncRepo !== "" && !lobbySyncReady)
                                         && !(lobbySyncOn && lobbySyncRepo !== "" && lobbySyncReady && lobbySyncError !== "")
                                     text: lobbySyncOn && lobbySyncRepo !== ""
-                                        ? (lobbyLastSync !== ""
-                                            ? lobbyUi.strf("sync.lastSync", lobbyLastSync, lobbySyncRepo)
+                                        ? (root.lobbyLastSyncLabel() !== ""
+                                            ? lobbyUi.strf("sync.lastSync", root.lobbyLastSyncLabel(), lobbySyncRepo)
                                             : lobbyUi.strf("sync.syncingTo", lobbySyncRepo))
                                         : lobbyUi.strf("sync.notConfigured", lobbyIP, "" + lobbyPort)
                                     font.pointSize: lobby.labelPointSize

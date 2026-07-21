@@ -452,9 +452,12 @@ static void rmkbdInjectLine(const std::string &line)
         QString syncRepo = o.value(QStringLiteral("syncRepo")).toString();
         int noteCount = o.value(QStringLiteral("noteCount")).toInt();
         QString lastSync = o.value(QStringLiteral("lastSync")).toString();
+        qint64 lastSyncAt = static_cast<qint64>(o.value(QStringLiteral("lastSyncAt")).toDouble());
+        int syncPending = o.value(QStringLiteral("syncPending")).toInt();
         bool syncReady = o.value(QStringLiteral("syncReady")).toBool();
         bool syncing = o.value(QStringLiteral("syncing")).toBool();
         QString syncError = o.value(QStringLiteral("syncError")).toString();
+        QString syncErrorKey = o.value(QStringLiteral("syncErrorKey")).toString();
         bool wifi = o.value(QStringLiteral("wifi")).toBool();
         QString keyboardLayout = o.value(QStringLiteral("keyboardLayout")).toString();
         if (keyboardLayout.isEmpty())
@@ -480,7 +483,9 @@ static void rmkbdInjectLine(const std::string &line)
             Q_ARG(QVariant, syncReady),
             Q_ARG(QVariant, syncing),
             Q_ARG(QVariant, keyboardLayout),
-            Q_ARG(QVariant, pinDigits));
+            Q_ARG(QVariant, pinDigits),
+            Q_ARG(QVariant, lastSyncAt),
+            Q_ARG(QVariant, syncPending));
         QMetaObject::invokeMethod(g_rootObj, "setLobbyKeyboardPresence",
             Qt::QueuedConnection,
             Q_ARG(QVariant, phoneConnected),
@@ -493,7 +498,8 @@ static void rmkbdInjectLine(const std::string &line)
         QMetaObject::invokeMethod(g_rootObj, "setLobbySyncStatus",
             Qt::QueuedConnection,
             Q_ARG(QVariant, syncError),
-            Q_ARG(QVariant, wifi));
+            Q_ARG(QVariant, wifi),
+            Q_ARG(QVariant, syncErrorKey));
     } else if (line.find("\"t\":\"notes\"") != std::string::npos) {
         // {"t":"notes","items":[{"name":"a.md","size":N,"modified":"..."},...]}
         QJsonDocument doc = QJsonDocument::fromJson(QByteArray::fromStdString(line));

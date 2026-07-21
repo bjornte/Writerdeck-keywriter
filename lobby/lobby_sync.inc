@@ -25,8 +25,8 @@
                                     visible: !(lobbySyncOn && lobbySyncRepo !== "" && !lobbySyncReady)
                                         && !(lobbySyncOn && lobbySyncRepo !== "" && lobbySyncReady && lobbySyncError !== "")
                                     text: lobbySyncOn && lobbySyncRepo !== ""
-                                        ? (lobbyLastSync !== ""
-                                            ? lobbyUi.strf("sync.lastSync", lobbyLastSync, lobbySyncRepo)
+                                        ? (root.lobbyLastSyncLabel() !== ""
+                                            ? lobbyUi.strf("sync.lastSync", root.lobbyLastSyncLabel(), lobbySyncRepo)
                                             : lobbyUi.strf("sync.syncingTo", lobbySyncRepo))
                                         : lobbyUi.strf("sync.notConfigured", lobbyIP, "" + lobbyPort)
                                     font.pointSize: lobby.labelPointSize
