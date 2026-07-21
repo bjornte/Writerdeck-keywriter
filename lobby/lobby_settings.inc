@@ -85,7 +85,7 @@
                                     }
 
                                     Text {
-                                        text: "\nPrivate notes"
+                                        text: "\nPrivate documents"
                                         font.pointSize: 12
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -179,7 +179,7 @@
                                             model: [
                                                 { id: "6", label: "6 digits" },
                                                 { id: "4", label: "4 digits" },
-                                                { id: "none", label: "No PIN", warn: "Anyone on Wi-Fi can read and edit notes" }
+                                                { id: "none", label: "No PIN", warn: "Anyone on Wi-Fi can read and edit documents" }
                                             ]
                                             delegate: Rectangle {
                                                 // Same height for all three — No PIN warn line sets the size.

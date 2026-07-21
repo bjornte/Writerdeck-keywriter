@@ -26,8 +26,8 @@
                                         && !(lobbySyncOn && lobbySyncRepo !== "" && lobbySyncReady && lobbySyncError !== "")
                                     text: lobbySyncOn && lobbySyncRepo !== ""
                                         ? (lobbyLastSync !== ""
-                                            ? "Last sync was " + lobbyLastSync + ".\nNotes sync to github.com/" + lobbySyncRepo
-                                            : "Notes sync to github.com/" + lobbySyncRepo)
+                                            ? "Last sync was " + lobbyLastSync + ".\nDocuments sync to github.com/" + lobbySyncRepo
+                                            : "Documents sync to github.com/" + lobbySyncRepo)
                                         : ("Sync not configured.\nSet up in phone Sync setup:\nhttp://" + lobbyIP + ":" + lobbyPort)
                                     font.pointSize: 11
                                     font.family: "Noto Sans"

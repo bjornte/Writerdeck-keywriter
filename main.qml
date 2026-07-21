@@ -182,11 +182,11 @@ Window {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 423) {
                     vaultPendingLoad = name
-                    vaultBeginPIN("Enter PIN to open this note", true)
+                    vaultBeginPIN("Enter PIN to open this document", true)
                     return
                 }
                 if (xhr.status !== 200) {
-                    var errMsg = "Could not open note"
+                    var errMsg = "Could not open document"
                     if (xhr.status === 500 && name.indexOf(".md.enc") >= 0)
                         errMsg = "Cannot decrypt: wrong vault key or corrupted file"
                     vaultOpFailed(errMsg)
@@ -235,7 +235,7 @@ Window {
     function saveAndLoad(name) {
         if (name && name.indexOf(".md.enc") >= 0 && currentFile !== name) {
             vaultPendingLoad = name
-            vaultBeginPIN("Enter PIN to edit encrypted note", true)
+            vaultBeginPIN("Enter PIN to edit encrypted document", true)
             return
         }
         var wasLobby = isLobby
@@ -593,7 +593,7 @@ Window {
         if (!row || row.name === "") return
         if (row.encrypted) {
             vaultPendingLoad = row.name
-            vaultBeginPIN("Enter PIN to edit encrypted note", true); return }
+            vaultBeginPIN("Enter PIN to edit encrypted document", true); return }
         saveAndLoad(row.name)
     }
 
@@ -614,7 +614,7 @@ Window {
         if (row.encrypted) {
             vaultPendingLoad = row.name
             lobbyOpenInReadMode = true
-            vaultBeginPIN("Enter PIN to read encrypted note", true); return }
+            vaultBeginPIN("Enter PIN to read encrypted document", true); return }
         isLobby = false
         if (mode == 1) doc = query.text
         saveFile()
@@ -706,7 +706,7 @@ Window {
             var newTarget = lobbyFilesNormalizedName(name, false)
             if (lobbyFilesNameTaken(newTarget, "")) {
                 lobbyOpenAfterCreate = ""
-                lobbyFilesInputError = "A note with that name already exists."
+                lobbyFilesInputError = "A document with that name already exists."
                 return
             }
             lobbyFilesInputError = ""
@@ -724,7 +724,7 @@ Window {
             else newName = lobbyFilesNormalizedName(name, false)
             if (newName !== oldName && lobbyFilesNameTaken(newName, oldName)) {
                 lobbyOpenAfterCreate = ""
-                lobbyFilesInputError = "A note with that name already exists."
+                lobbyFilesInputError = "A document with that name already exists."
                 return
             }
             lobbyFilesInputError = ""
@@ -738,7 +738,7 @@ Window {
             var encTarget = lobbyFilesNormalizedName(name, true)
             if (lobbyFilesNameTaken(encTarget, "")) {
                 lobbyOpenAfterCreate = ""
-                lobbyFilesInputError = "A note with that name already exists."
+                lobbyFilesInputError = "A document with that name already exists."
                 return
             }
             lobbyFilesInputError = ""
@@ -755,7 +755,7 @@ Window {
     function lobbyFilesBeginNewEncrypted(fromKey) {
         if (!fromKey && !lobbyEnsureKeyboard("new-encrypted")) return
         vaultPendingAction = "new-encrypted"
-        vaultBeginPIN("Enter PIN to create encrypted note", false)
+        vaultBeginPIN("Enter PIN to create encrypted document", false)
     }
 
     function lobbyEncryptSelected() {
@@ -764,7 +764,7 @@ Window {
         if (!row || row.encrypted) return
         vaultPendingNote = row.name
         vaultPendingAction = "encrypt"
-        vaultBeginPIN("Enter PIN to encrypt note", false)
+        vaultBeginPIN("Enter PIN to encrypt document", false)
     }
 
     function lobbyDecryptSelected() {
@@ -773,7 +773,7 @@ Window {
         if (!row || !row.encrypted) return
         vaultPendingNote = row.name
         vaultPendingAction = "decrypt"
-        vaultBeginPIN("Enter PIN to decrypt note", false)
+        vaultBeginPIN("Enter PIN to decrypt document", false)
     }
 
     function vaultBeginSetup() {
@@ -799,7 +799,7 @@ Window {
     }
 
     function requestVaultPIN(reason, name) {
-        var msg = "Phone download: " + (name || "encrypted note")
+        var msg = "Phone download: " + (name || "encrypted document")
         if (reason === "download") msg = "Enter PIN on tablet to allow phone download"
         if (name) vaultPendingLoad = name
         vaultBeginPIN(msg, false)
@@ -2492,7 +2492,7 @@ Window {
                                     wrapMode: Text.WordWrap
                                 }
                                 Text {
-                                    text: (lobbyNoteCount === 1 ? "1 note" : lobbyNoteCount + " notes") + " on this device."
+                                    text: (lobbyNoteCount === 1 ? "1 document" : lobbyNoteCount + " documents") + " on this device."
                                     color: "black"
                                     font.pointSize: 11
                                     font.family: "Noto Sans"
@@ -3072,8 +3072,8 @@ Window {
                                         && !(lobbySyncOn && lobbySyncRepo !== "" && lobbySyncReady && lobbySyncError !== "")
                                     text: lobbySyncOn && lobbySyncRepo !== ""
                                         ? (lobbyLastSync !== ""
-                                            ? "Last sync was " + lobbyLastSync + ".\nNotes sync to github.com/" + lobbySyncRepo
-                                            : "Notes sync to github.com/" + lobbySyncRepo)
+                                            ? "Last sync was " + lobbyLastSync + ".\nDocuments sync to github.com/" + lobbySyncRepo
+                                            : "Documents sync to github.com/" + lobbySyncRepo)
                                         : ("Sync not configured.\nSet up in phone Sync setup:\nhttp://" + lobbyIP + ":" + lobbyPort)
                                     font.pointSize: 11
                                     font.family: "Noto Sans"
@@ -3271,7 +3271,7 @@ Window {
                                     }
 
                                     Text {
-                                        text: "\nPrivate notes"
+                                        text: "\nPrivate documents"
                                         font.pointSize: 12
                                         font.family: "Noto Sans"
                                         color: "black"
@@ -3365,7 +3365,7 @@ Window {
                                             model: [
                                                 { id: "6", label: "6 digits" },
                                                 { id: "4", label: "4 digits" },
-                                                { id: "none", label: "No PIN", warn: "Anyone on Wi-Fi can read and edit notes" }
+                                                { id: "none", label: "No PIN", warn: "Anyone on Wi-Fi can read and edit documents" }
                                             ]
                                             delegate: Rectangle {
                                                 // Same height for all three — No PIN warn line sets the size.

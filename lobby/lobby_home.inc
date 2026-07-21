@@ -39,7 +39,7 @@
                                     wrapMode: Text.WordWrap
                                 }
                                 Text {
-                                    text: (lobbyNoteCount === 1 ? "1 note" : lobbyNoteCount + " notes") + " on this device."
+                                    text: (lobbyNoteCount === 1 ? "1 document" : lobbyNoteCount + " documents") + " on this device."
                                     color: "black"
                                     font.pointSize: 11
                                     font.family: "Noto Sans"
