@@ -268,19 +268,22 @@ Window {
         Qt.quit()
     }
 
-    function setLobbyInfo(ip, pin, syncOn, syncRepo, noteCount, lastSync, syncReady, syncing, keyboardLayout, pinDigits, lastSyncAt, syncPending) {
+    function setLobbyInfo(ip, pin, syncOn, syncRepo, noteCount, lastSync, syncReady, syncing, keyboardLayout, pinDigits) {
         lobbyIP = ip
         lobbyPIN = pin
         lobbySyncOn = !!syncOn
         lobbySyncRepo = syncRepo || ""
         lobbyNoteCount = noteCount || 0
         lobbyLastSync = lastSync || ""
-        lobbyLastSyncAt = lastSyncAt || 0
-        lobbySyncPending = syncPending || 0
         lobbySyncReady = !!syncReady
         lobbySyncing = !!syncing
         lobbyKeyboardLayout = keyboardLayout || "us"
         lobbyPinDigits = pinDigits || "6"
+    }
+
+    function setLobbySyncClock(lastSyncAt, syncPending) {
+        lobbyLastSyncAt = lastSyncAt || 0
+        lobbySyncPending = syncPending || 0
     }
 
     // Relative sync time for Lobby (server still sends English lastSync for logs/compat).

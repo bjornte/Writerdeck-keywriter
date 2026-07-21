@@ -472,6 +472,7 @@ static void rmkbdInjectLine(const std::string &line)
         if (port <= 0)
             port = 8000;
         QString qrPath = o.value(QStringLiteral("qrPath")).toString();
+        // Qt5 invokeMethod allows at most 10 Q_ARG values — keep setLobbyInfo at 10.
         QMetaObject::invokeMethod(g_rootObj, "setLobbyInfo",
             Qt::QueuedConnection,
             Q_ARG(QVariant, ip),
@@ -483,7 +484,9 @@ static void rmkbdInjectLine(const std::string &line)
             Q_ARG(QVariant, syncReady),
             Q_ARG(QVariant, syncing),
             Q_ARG(QVariant, keyboardLayout),
-            Q_ARG(QVariant, pinDigits),
+            Q_ARG(QVariant, pinDigits));
+        QMetaObject::invokeMethod(g_rootObj, "setLobbySyncClock",
+            Qt::QueuedConnection,
             Q_ARG(QVariant, lastSyncAt),
             Q_ARG(QVariant, syncPending));
         QMetaObject::invokeMethod(g_rootObj, "setLobbyKeyboardPresence",
