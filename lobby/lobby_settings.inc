@@ -3,7 +3,11 @@
                         visible: lobbyPage === 3
                         anchors.fill: parent
                         Flickable {
+                            id: settingsFlick
                             anchors.fill: parent
+                            // Landscape only: empty right strip so a finger can flick
+                            // without hitting full-width buttons.
+                            property int scrollGutter: root.rotation % 180 != 0 ? 72 : 0
                             contentWidth: width
                             contentHeight: setCol.height
                             clip: true
@@ -12,7 +16,7 @@
                             flickableDirection: Flickable.VerticalFlick
                             Column {
                                 id: setCol
-                                width: parent.width
+                                width: parent.width - settingsFlick.scrollGutter
                                 spacing: lobby.contentSpacing
                                 Text {
                                     text: lobbySettingsMode === "confirm-exit"
