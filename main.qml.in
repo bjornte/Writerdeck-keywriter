@@ -41,7 +41,8 @@ Window {
     property string lobbySettingsMode: ""
     property int lobbySettingsPickIndex: 0
     // Font pangram shown in the Settings font picker (fixed English sample).
-    readonly property string lobbyFontSample: "the quick brown fox jumps over the lazy dog"
+    // Pangram follows Lobby language (settings.fontSample in lobby-ui-i18n).
+    readonly property string lobbyFontSample: root.lobbyT("settings.fontSample")
     property int lobbyPage: 0
     property var lobbyTabShortcutIds: ["tabs.files", "tabs.keyboard", "tabs.sync", "tabs.settings", "tabs.shortcuts", "tabs.about"]
     // Depends on lobbyUi.revision so language / pack reloads refresh tab titles.

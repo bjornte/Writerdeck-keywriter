@@ -193,7 +193,7 @@ private:
     int m_settingsLandscapeScrollGutter = 144;
     int m_fontPickerNamePointSize = 16;
     int m_fontPickerSamplePointSize = 14;
-    int m_fontPickerRowExtra = 48;
+    int m_fontPickerRowExtra = 96;
     double m_dialogCancelWidthFraction = 0.55;
 
     QHash<QString, QString> m_strings;
