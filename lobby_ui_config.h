@@ -116,6 +116,8 @@ public:
     Q_INVOKABLE QString shortcut(const QString &key) const;
     Q_INVOKABLE QString shortcutBadge(const QString &key) const;
     Q_INVOKABLE QString actionForLetter(const QString &letter) const;
+    // Persist language in lobby-ui.json and reload packs (en/no/es/de/fr).
+    Q_INVOKABLE bool setLanguage(const QString &lang);
 
 signals:
     void changed();

@@ -20,9 +20,7 @@
                                 width: parent.width - settingsFlick.scrollGutter
                                 spacing: lobby.contentSpacing
                                 Text {
-                                    text: lobbySettingsMode === "confirm-exit"
-                                          ? lobbyUi.str("settings.confirmExit")
-                                          : lobbyUi.str("settings.title")
+                                    text: lobbyUi.str("settings.title")
                                     font.pointSize: lobby.rowPointSize
                                     font.family: "Noto Sans"
                                     color: lobby.textColor
@@ -33,6 +31,44 @@
                                     width: parent.width
                                     spacing: lobby.contentSpacing
                                     visible: lobbySettingsMode === ""
+
+                                    Text {
+                                        text: lobbyUi.str("settings.languageSection")
+                                        font.pointSize: lobby.sectionPointSize
+                                        font.family: "Noto Sans"
+                                        color: lobby.textColor
+                                        width: parent.width
+                                    }
+                                    Text {
+                                        text: lobbyUi.str("settings.languageHelp")
+                                        font.pointSize: lobby.helpPointSize
+                                        font.family: "Noto Sans"
+                                        color: lobby.textColor
+                                        width: parent.width
+                                        wrapMode: Text.WordWrap
+                                    }
+                                    Rectangle {
+                                        width: parent.width
+                                        height: lobby.actionBtnHeight
+                                        radius: lobby.btnRadius
+                                        color: lobby.btnFill
+                                        border.color: lobby.borderColor
+                                        border.width: lobby.btnBorder
+                                        Loader {
+                                            anchors.fill: parent
+                                            property string labelText: root.lobbySettingsLanguageLabel()
+                                            property string shortcutKey: lobbyUi.shortcutBadge("settings.language")
+                                            property int pointSize: lobby.labelPointSize
+                                            sourceComponent: lobbyBtnLabelComp
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: {
+                                                root.lobbySettingsBeginPickLanguage()
+                                                root.lobbyKeepFocus()
+                                            }
+                                        }
+                                    }
 
                                     Text {
                                         text: lobbyUi.str("settings.fontSection")
@@ -49,42 +85,25 @@
                                         width: parent.width
                                         wrapMode: Text.WordWrap
                                     }
-                                    Grid {
-                                        id: fontGrid
+                                    Rectangle {
                                         width: parent.width
-                                        columns: 2
-                                        rowSpacing: lobby.tabSpacing
-                                        columnSpacing: lobby.tabSpacing
-                                        property var fontOptions: [
-                                            { id: "Inter", label: "Inter" },
-                                            { id: "Literata", label: "Literata" },
-                                            { id: "EB Garamond", label: "EB Garamond" },
-                                            { id: "DejaVu Sans", label: "DejaVu Sans" }
-                                        ]
-                                        Repeater {
-                                            model: fontGrid.fontOptions
-                                            delegate: Rectangle {
-                                                width: (fontGrid.width - lobby.tabSpacing) / 2
-                                                height: lobby.actionBtnHeight
-                                                radius: lobby.btnRadius
-                                                property bool selected: readFont === modelData.id
-                                                color: selected ? lobby.btnFillSelected : lobby.btnFill
-                                                border.color: lobby.borderColor
-                                                border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
-                                                Text {
-                                                    anchors.centerIn: parent
-                                                    text: modelData.label
-                                                    font.family: modelData.id
-                                                    font.pointSize: lobby.labelPointSize
-                                                    color: lobby.textColor
-                                                }
-                                                MouseArea {
-                                                    anchors.fill: parent
-                                                    onClicked: {
-                                                        writerdeck.setReadFont(modelData.id)
-                                                        root.lobbyKeepFocus()
-                                                    }
-                                                }
+                                        height: lobby.actionBtnHeight
+                                        radius: lobby.btnRadius
+                                        color: lobby.btnFill
+                                        border.color: lobby.borderColor
+                                        border.width: lobby.btnBorder
+                                        Loader {
+                                            anchors.fill: parent
+                                            property string labelText: readFont
+                                            property string shortcutKey: lobbyUi.shortcutBadge("settings.font")
+                                            property int pointSize: lobby.labelPointSize
+                                            sourceComponent: lobbyBtnLabelComp
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: {
+                                                root.lobbySettingsBeginPickFont()
+                                                root.lobbyKeepFocus()
                                             }
                                         }
                                     }
@@ -176,55 +195,25 @@
                                         width: parent.width
                                         wrapMode: Text.WordWrap
                                     }
-                                    Row {
-                                        id: pinDigitsRow
+                                    Rectangle {
                                         width: parent.width
-                                        spacing: lobby.tabSpacing
-                                        Repeater {
-                                            model: [
-                                                { id: "6", labelKey: "settings.pin6" },
-                                                { id: "4", labelKey: "settings.pin4" },
-                                                { id: "none", labelKey: "settings.pinNone", warnKey: "settings.pinNoneWarn" }
-                                            ]
-                                            delegate: Rectangle {
-                                                // Same height for all three — No PIN warn line sets the size.
-                                                width: (pinDigitsRow.width - lobby.tabSpacing * 2) / 3
-                                                height: lobby.actionBtnHeight + 36
-                                                radius: lobby.btnRadius
-                                                property bool selected: lobbyPinDigits === modelData.id
-                                                color: selected ? lobby.btnFillSelected : lobby.btnFill
-                                                border.color: lobby.borderColor
-                                                border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
-                                                Column {
-                                                    anchors.centerIn: parent
-                                                    width: parent.width - 12
-                                                    spacing: 2
-                                                    Text {
-                                                        anchors.horizontalCenter: parent.horizontalCenter
-                                                        text: lobbyUi.str(modelData.labelKey)
-                                                        font.family: "Noto Sans"
-                                                        font.pointSize: lobby.labelPointSize
-                                                        color: lobby.textColor
-                                                    }
-                                                    Text {
-                                                        visible: !!modelData.warnKey
-                                                        anchors.horizontalCenter: parent.horizontalCenter
-                                                        text: modelData.warnKey ? lobbyUi.str(modelData.warnKey) : ""
-                                                        font.family: "Noto Sans"
-                                                        font.pointSize: 8
-                                                        color: lobby.textColor
-                                                        horizontalAlignment: Text.AlignHCenter
-                                                        wrapMode: Text.WordWrap
-                                                        width: parent.width
-                                                    }
-                                                }
-                                                MouseArea {
-                                                    anchors.fill: parent
-                                                    onClicked: {
-                                                        writerdeck.setPinDigits(modelData.id)
-                                                        root.lobbyKeepFocus()
-                                                    }
-                                                }
+                                        height: lobby.actionBtnHeight
+                                        radius: lobby.btnRadius
+                                        color: lobby.btnFill
+                                        border.color: lobby.borderColor
+                                        border.width: lobby.btnBorder
+                                        Loader {
+                                            anchors.fill: parent
+                                            property string labelText: root.lobbySettingsPinLabel()
+                                            property string shortcutKey: lobbyUi.shortcutBadge("settings.pin")
+                                            property int pointSize: lobby.labelPointSize
+                                            sourceComponent: lobbyBtnLabelComp
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: {
+                                                root.lobbySettingsBeginPickPin()
+                                                root.lobbyKeepFocus()
                                             }
                                         }
                                     }

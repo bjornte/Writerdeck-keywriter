@@ -122,6 +122,123 @@
                         cache: false
                     }
 
+                    // ---- Settings pickers (language / font / PIN) ----
+                    Column {
+                        width: parent.width
+                        spacing: lobby.tabSpacing
+                        visible: !lobbyShowNoKeyboard && lobbySettingsMode === "pick-language"
+                        Repeater {
+                            model: root.lobbySettingsLanguageOptions()
+                            delegate: Rectangle {
+                                width: parent.width
+                                height: lobby.actionBtnHeight
+                                radius: lobby.btnRadius
+                                property bool selected: index === lobbySettingsPickIndex
+                                color: selected ? lobby.btnFillSelected : lobby.btnFill
+                                border.color: lobby.borderColor
+                                border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.label
+                                    font.family: "Noto Sans"
+                                    font.pointSize: lobby.labelPointSize
+                                    color: lobby.textColor
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: root.lobbySettingsApplyPick(index)
+                                }
+                            }
+                        }
+                    }
+
+                    Column {
+                        width: parent.width
+                        spacing: lobby.tabSpacing
+                        visible: !lobbyShowNoKeyboard && lobbySettingsMode === "pick-font"
+                        Repeater {
+                            model: root.lobbySettingsFontOptions()
+                            delegate: Rectangle {
+                                width: parent.width
+                                height: lobby.actionBtnHeight + 28
+                                radius: lobby.btnRadius
+                                property bool selected: index === lobbySettingsPickIndex
+                                color: selected ? lobby.btnFillSelected : lobby.btnFill
+                                border.color: lobby.borderColor
+                                border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
+                                Column {
+                                    anchors.centerIn: parent
+                                    width: parent.width - 16
+                                    spacing: 2
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: modelData.label
+                                        font.family: modelData.id
+                                        font.pointSize: lobby.labelPointSize
+                                        color: lobby.textColor
+                                    }
+                                    Text {
+                                        width: parent.width
+                                        horizontalAlignment: Text.AlignHCenter
+                                        wrapMode: Text.WordWrap
+                                        text: root.lobbyFontSample
+                                        font.family: modelData.id
+                                        font.pointSize: 10
+                                        color: lobby.textColor
+                                    }
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: root.lobbySettingsApplyPick(index)
+                                }
+                            }
+                        }
+                    }
+
+                    Column {
+                        width: parent.width
+                        spacing: lobby.tabSpacing
+                        visible: !lobbyShowNoKeyboard && lobbySettingsMode === "pick-pin"
+                        Repeater {
+                            model: root.lobbySettingsPinOptions()
+                            delegate: Rectangle {
+                                width: parent.width
+                                height: modelData.warnKey ? lobby.actionBtnHeight + 28 : lobby.actionBtnHeight
+                                radius: lobby.btnRadius
+                                property bool selected: index === lobbySettingsPickIndex
+                                color: selected ? lobby.btnFillSelected : lobby.btnFill
+                                border.color: lobby.borderColor
+                                border.width: selected ? lobby.btnBorderSelected : lobby.btnBorder
+                                Column {
+                                    anchors.centerIn: parent
+                                    width: parent.width - 16
+                                    spacing: 2
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: lobbyUi.str(modelData.labelKey)
+                                        font.family: "Noto Sans"
+                                        font.pointSize: lobby.labelPointSize
+                                        color: lobby.textColor
+                                    }
+                                    Text {
+                                        visible: !!modelData.warnKey
+                                        width: parent.width
+                                        horizontalAlignment: Text.AlignHCenter
+                                        wrapMode: Text.WordWrap
+                                        text: modelData.warnKey ? lobbyUi.str(modelData.warnKey) : ""
+                                        font.family: "Noto Sans"
+                                        font.pointSize: 9
+                                        color: lobby.textColor
+                                    }
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: root.lobbySettingsApplyPick(index)
+                                }
+                            }
+                        }
+                    }
+
                     // ---- buttons ----
                     Row {
                         width: parent.width
@@ -170,6 +287,80 @@
                                     root.lobbyFilesDoDelete()
                                     root.lobbyKeepFocus()
                                 }
+                            }
+                        }
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: lobby.tabSpacing
+                        visible: !lobbyShowNoKeyboard && lobbySettingsMode === "confirm-exit"
+
+                        Rectangle {
+                            width: (parent.width - lobby.tabSpacing) / 2
+                            height: lobby.actionBtnHeight
+                            radius: lobby.btnRadius
+                            color: lobby.btnFill
+                            border.color: lobby.borderColor
+                            border.width: lobby.btnBorder
+                            Text {
+                                anchors.centerIn: parent
+                                text: lobbyUi.str("dialog.cancel")
+                                font.family: "Noto Sans"
+                                font.pointSize: 12
+                                color: lobby.textColor
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: root.lobbySettingsCancelPick()
+                            }
+                        }
+                        Rectangle {
+                            width: (parent.width - lobby.tabSpacing) / 2
+                            height: lobby.actionBtnHeight
+                            radius: lobby.btnRadius
+                            color: lobby.btnFill
+                            border.color: lobby.borderColor
+                            border.width: lobby.btnBorderSelected
+                            Text {
+                                anchors.centerIn: parent
+                                text: lobbyUi.str("settings.exit")
+                                font.family: "Noto Sans"
+                                font.pointSize: 12
+                                color: lobby.textColor
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: root.lobbySettingsApplyPick()
+                            }
+                        }
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: lobby.tabSpacing
+                        visible: !lobbyShowNoKeyboard
+                                 && (lobbySettingsMode === "pick-language"
+                                     || lobbySettingsMode === "pick-font"
+                                     || lobbySettingsMode === "pick-pin")
+
+                        Rectangle {
+                            width: parent.width
+                            height: lobby.actionBtnHeight
+                            radius: lobby.btnRadius
+                            color: lobby.btnFill
+                            border.color: lobby.borderColor
+                            border.width: lobby.btnBorder
+                            Text {
+                                anchors.centerIn: parent
+                                text: lobbyUi.str("dialog.cancel")
+                                font.family: "Noto Sans"
+                                font.pointSize: 12
+                                color: lobby.textColor
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: root.lobbySettingsCancelPick()
                             }
                         }
                     }
