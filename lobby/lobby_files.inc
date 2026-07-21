@@ -350,12 +350,12 @@
                                             anchors.fill: parent
                                             onClicked: {
                                                 if (noteIndex === lobbyFilesIndex)
-                                                    root.lobbyOpenSelected()
+                                                    root.lobbyTapSelected()
                                                 else
                                                     root.lobbyFilesSetIndex(noteIndex)
                                                 root.lobbyKeepFocus()
                                             }
-                                            onDoubleClicked: root.lobbyOpenSelected()
+                                            onDoubleClicked: root.lobbyTapSelected()
                                         }
                                     }
                                 }

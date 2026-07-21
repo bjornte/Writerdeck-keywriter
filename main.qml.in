@@ -597,6 +597,16 @@ Window {
         saveAndLoad(row.name)
     }
 
+    // Tap on the already-selected Files row: edit when a keyboard is present,
+    // otherwise open read (no connect-keyboard tip). Edit button still requires
+    // a keyboard via lobbyOpenSelected.
+    function lobbyTapSelected() {
+        if (lobbyKeyboardReady())
+            lobbyOpenSelected()
+        else
+            lobbyReadSelected()
+    }
+
     function lobbyReadSelected() {
         if (lobbyNotesModel.count === 0) return
         var row = lobbyNotesModel.get(lobbyFilesIndex)
